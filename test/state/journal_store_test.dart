@@ -8,8 +8,9 @@ import '../support/fake_repository.dart';
 void main() {
   group('JournalStore', () {
     test('load nạp dữ liệu và tắt cờ loading', () async {
-      final store =
-          JournalStore(FakeRepository([fakeEntry(id: 1, daysAgo: 0)]));
+      final store = JournalStore(
+        FakeRepository([fakeEntry(id: 1, daysAgo: 0)]),
+      );
 
       await store.load();
 
@@ -42,8 +43,9 @@ void main() {
     });
 
     test('delete bỏ entry khỏi danh sách', () async {
-      final store =
-          JournalStore(FakeRepository([fakeEntry(id: 1, daysAgo: 0)]));
+      final store = JournalStore(
+        FakeRepository([fakeEntry(id: 1, daysAgo: 0)]),
+      );
       await store.load();
 
       await store.delete(1);
@@ -52,60 +54,85 @@ void main() {
     });
 
     test('streak đếm các ngày liền nhau tính từ hôm nay', () async {
-      final store = JournalStore(FakeRepository([
-        fakeEntry(id: 1, daysAgo: 0),
-        fakeEntry(id: 2, daysAgo: 1),
-        fakeEntry(id: 3, daysAgo: 2),
-        // Đứt ở ngày thứ 3, nên chuỗi dừng ở 3.
-        fakeEntry(id: 4, daysAgo: 4),
-      ]));
+      final store = JournalStore(
+        FakeRepository([
+          fakeEntry(id: 1, daysAgo: 0),
+          fakeEntry(id: 2, daysAgo: 1),
+          fakeEntry(id: 3, daysAgo: 2),
+          // Đứt ở ngày thứ 3, nên chuỗi dừng ở 3.
+          fakeEntry(id: 4, daysAgo: 4),
+        ]),
+      );
       await store.load();
 
       expect(store.streak, 3);
     });
 
     test('chưa ghi hôm nay thì chuỗi vẫn tính từ hôm qua', () async {
-      final store = JournalStore(FakeRepository([
-        fakeEntry(id: 1, daysAgo: 1),
-        fakeEntry(id: 2, daysAgo: 2),
-      ]));
+      final store = JournalStore(
+        FakeRepository([
+          fakeEntry(id: 1, daysAgo: 1),
+          fakeEntry(id: 2, daysAgo: 2),
+        ]),
+      );
       await store.load();
 
       expect(store.streak, 2);
     });
 
     test('streak bằng 0 khi lần ghi gần nhất đã quá cũ', () async {
-      final store =
-          JournalStore(FakeRepository([fakeEntry(id: 1, daysAgo: 5)]));
+      final store = JournalStore(
+        FakeRepository([fakeEntry(id: 1, daysAgo: 5)]),
+      );
       await store.load();
 
       expect(store.streak, 0);
     });
 
     test('averageMood lấy trung bình các entry trong khoảng', () async {
-      final store = JournalStore(FakeRepository([
-        fakeEntry(id: 1, daysAgo: 0, mood: Mood.great), // 5
-        fakeEntry(id: 2, daysAgo: 1, mood: Mood.neutral), // 3
-        fakeEntry(id: 3, daysAgo: 40, mood: Mood.awful), // ngoài 30 ngày
-      ]));
+      final store = JournalStore(
+        FakeRepository([
+          fakeEntry(id: 1, daysAgo: 0, mood: Mood.great), // 5
+          fakeEntry(id: 2, daysAgo: 1, mood: Mood.neutral), // 3
+          fakeEntry(id: 3, daysAgo: 40, mood: Mood.awful), // ngoài 30 ngày
+        ]),
+      );
       await store.load();
 
       expect(store.averageMood(days: 30), 4.0);
     });
 
     test('averageMood trả null khi khoảng đó chưa ghi gì', () async {
-      final store =
-          JournalStore(FakeRepository([fakeEntry(id: 1, daysAgo: 40)]));
+      final store = JournalStore(
+        FakeRepository([fakeEntry(id: 1, daysAgo: 40)]),
+      );
       await store.load();
 
       expect(store.averageMood(days: 7), isNull);
     });
 
+    test('thống kê mood bỏ qua entry không có đánh giá cuối buổi', () async {
+      final store = JournalStore(
+        FakeRepository([
+          fakeEntry(id: 1, daysAgo: 0, mood: Mood.great),
+          fakeEntry(id: 2, daysAgo: 0, mood: null),
+        ]),
+      );
+      await store.load();
+
+      expect(store.averageMood(days: 30), 5.0);
+      expect(store.dailyAverages(days: 1).single.average, 5.0);
+      expect(store.moodDistribution[Mood.great], 1);
+      expect(store.moodDistribution.values.fold<int>(0, (a, b) => a + b), 1);
+    });
+
     test('dailyAverages đủ số mốc, ngày trống là null', () async {
-      final store = JournalStore(FakeRepository([
-        fakeEntry(id: 1, daysAgo: 0, mood: Mood.great),
-        fakeEntry(id: 2, daysAgo: 0, mood: Mood.good),
-      ]));
+      final store = JournalStore(
+        FakeRepository([
+          fakeEntry(id: 1, daysAgo: 0, mood: Mood.great),
+          fakeEntry(id: 2, daysAgo: 0, mood: Mood.good),
+        ]),
+      );
       await store.load();
 
       final series = store.dailyAverages(days: 7);
@@ -116,10 +143,12 @@ void main() {
     });
 
     test('moodDistribution đếm đủ cả mức chưa dùng', () async {
-      final store = JournalStore(FakeRepository([
-        fakeEntry(id: 1, daysAgo: 0, mood: Mood.good),
-        fakeEntry(id: 2, daysAgo: 1, mood: Mood.good),
-      ]));
+      final store = JournalStore(
+        FakeRepository([
+          fakeEntry(id: 1, daysAgo: 0, mood: Mood.good),
+          fakeEntry(id: 2, daysAgo: 1, mood: Mood.good),
+        ]),
+      );
       await store.load();
 
       expect(store.moodDistribution[Mood.good], 2);
@@ -128,11 +157,13 @@ void main() {
     });
 
     test('topTags xếp theo số lần dùng, cắt theo limit', () async {
-      final store = JournalStore(FakeRepository([
-        fakeEntry(id: 1, daysAgo: 0, tags: ['Công việc', 'Gia đình']),
-        fakeEntry(id: 2, daysAgo: 1, tags: ['Công việc']),
-        fakeEntry(id: 3, daysAgo: 2, tags: ['Sức khỏe']),
-      ]));
+      final store = JournalStore(
+        FakeRepository([
+          fakeEntry(id: 1, daysAgo: 0, tags: ['Công việc', 'Gia đình']),
+          fakeEntry(id: 2, daysAgo: 1, tags: ['Công việc']),
+          fakeEntry(id: 3, daysAgo: 2, tags: ['Sức khỏe']),
+        ]),
+      );
       await store.load();
 
       final tags = store.topTags(limit: 2);
@@ -143,8 +174,9 @@ void main() {
     });
 
     test('hasCheckedInToday phản ánh đúng ngày hôm nay', () async {
-      final store =
-          JournalStore(FakeRepository([fakeEntry(id: 1, daysAgo: 1)]));
+      final store = JournalStore(
+        FakeRepository([fakeEntry(id: 1, daysAgo: 1)]),
+      );
       await store.load();
       expect(store.hasCheckedInToday, isFalse);
 

@@ -32,6 +32,11 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
+/.firebase/
+
+# Firebase CLI local diagnostics
+firebase-debug.log
+firebase-debug.*.log
 
 # Symbolication related
 app.*.symbols
@@ -43,3 +48,24 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# --- Dựng video ---
+# Hai dự án HyperFrames (countryside-v2, ocean-v2): bộ nhớ đệm khung hình,
+# file render tạm và bản render, tổng khoảng 1,5 GB. Đây là nguồn dựng video,
+# không phải một phần của app — chúng vẫn nằm trên máy, chỉ không vào git.
+/videos/
+
+# --- Media của app ---
+# Chỉ đưa vào git đúng những file app đang phát. Các bản render cũ (v1, v2,
+# v3...) nằm lại trên máy. Khi đổi sang video mới, sửa dòng "!" tương ứng.
+/assets/video/*
+!/assets/video/meditation_narration_8min_v4.mp4
+!/assets/video/beach_narration_8min_v3.mp4
+
+# --- Sản phẩm phụ của test ---
+# Ảnh so sánh Flutter sinh ra mỗi khi test ảnh chụp thất bại.
+/test/failures/
+
+# --- Mẫu nghe thử giọng đọc ---
+# Chỉ dùng để duyệt chọn giọng, app không dùng.
+/docs/voice_samples/

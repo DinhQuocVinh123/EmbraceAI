@@ -50,9 +50,7 @@ class JournalStore extends ChangeNotifier {
       _entries = [saved, ..._entries];
     } else {
       await _repository.update(stamped);
-      _entries = [
-        for (final e in _entries) e.id == stamped.id ? stamped : e,
-      ];
+      _entries = [for (final e in _entries) e.id == stamped.id ? stamped : e];
     }
     _sort();
     notifyListeners();
@@ -64,8 +62,7 @@ class JournalStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _sort() =>
-      _entries.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  void _sort() => _entries.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
   // ---------------------------------------------------------------- thống kê
 
@@ -109,10 +106,11 @@ class JournalStore extends ChangeNotifier {
   /// Điểm tâm trạng trung bình trong [days] ngày gần nhất, null nếu chưa có gì.
   double? averageMood({int days = 30}) {
     final from = _dayOf(DateTime.now()).subtract(Duration(days: days - 1));
-    final recent =
-        _entries.where((e) => !e.day.isBefore(from)).toList();
+    final recent = _entries
+        .where((e) => !e.day.isBefore(from) && e.mood != null)
+        .toList();
     if (recent.isEmpty) return null;
-    final total = recent.fold<int>(0, (sum, e) => sum + e.mood.score);
+    final total = recent.fold<int>(0, (sum, e) => sum + e.mood!.score);
     return total / recent.length;
   }
 
@@ -122,11 +120,11 @@ class JournalStore extends ChangeNotifier {
     final today = _dayOf(DateTime.now());
     return List.generate(days, (i) {
       final date = today.subtract(Duration(days: days - 1 - i));
-      final dayEntries = grouped[date];
+      final dayEntries = grouped[date]?.where((e) => e.mood != null).toList();
       if (dayEntries == null || dayEntries.isEmpty) {
         return DailyAverage(date, null);
       }
-      final total = dayEntries.fold<int>(0, (sum, e) => sum + e.mood.score);
+      final total = dayEntries.fold<int>(0, (sum, e) => sum + e.mood!.score);
       return DailyAverage(date, total / dayEntries.length);
     });
   }
@@ -135,7 +133,8 @@ class JournalStore extends ChangeNotifier {
   Map<Mood, int> get moodDistribution {
     final counts = {for (final mood in Mood.values) mood: 0};
     for (final entry in _entries) {
-      counts[entry.mood] = counts[entry.mood]! + 1;
+      final mood = entry.mood;
+      if (mood != null) counts[mood] = counts[mood]! + 1;
     }
     return counts;
   }

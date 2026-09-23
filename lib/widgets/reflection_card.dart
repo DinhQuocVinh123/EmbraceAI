@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/motion.dart';
 import '../core/theme.dart';
 import '../models/mood.dart';
 import '../services/reflection_service.dart';
@@ -50,7 +51,7 @@ class _ReflectionCardState extends State<ReflectionCard> {
           Gap.s,
           Expanded(
             child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
+              duration: AppMotion.duration(context, AppMotion.standard),
               child: Text(
                 _prompt,
                 key: ValueKey(_prompt),
@@ -62,7 +63,7 @@ class _ReflectionCardState extends State<ReflectionCard> {
             ),
           ),
           IconButton(
-            tooltip: 'Đổi câu khác',
+            tooltip: 'Another question',
             icon: const Icon(Icons.refresh, size: 20),
             color: scheme.onPrimaryContainer,
             onPressed: () => setState(

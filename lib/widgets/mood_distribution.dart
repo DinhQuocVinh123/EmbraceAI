@@ -63,10 +63,12 @@ class _Row extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fraction = max == 0 ? 0.0 : count / max;
+    final theme = Theme.of(context);
     final percent = total == 0 ? 0 : (count * 100 / total).round();
 
     return Semantics(
-      label: '${mood.label}: $count lần, $percent phần trăm',
+      label: '${mood.label}: $count times, $percent percent',
+      excludeSemantics: true,
       child: Row(
         children: [
           SizedBox(
@@ -88,7 +90,10 @@ class _Row extends StatelessWidget {
                   Container(height: 10, color: trackColor),
                   FractionallySizedBox(
                     widthFactor: fraction,
-                    child: Container(height: 10, color: mood.color),
+                    child: Container(
+                      height: 10,
+                      color: mood.colorOn(theme.brightness),
+                    ),
                   ),
                 ],
               ),

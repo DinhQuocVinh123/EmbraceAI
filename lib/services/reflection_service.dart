@@ -4,11 +4,11 @@ import '../models/mood.dart';
 
 /// Sinh câu hỏi gợi mở để người dùng dễ bắt đầu viết.
 ///
-/// Bộ câu hỏi soạn sẵn, chạy hoàn toàn ngoại tuyến — không cần mạng,
-/// không gửi nhật ký đi đâu. Nếu sau này muốn gợi ý do mô hình sinh ra,
-/// thay thân [promptFor] bằng một lời gọi API bất đồng bộ (ví dụ Claude API)
-/// và đổi kiểu trả về thành `Future<String>`; phần UI gọi nó đã tách sẵn ở
-/// widget ReflectionCard nên không phải sửa chỗ khác.
+/// Bộ câu hỏi soạn sẵn, chạy hoàn toàn ngoại tuyến — không cần mạng, không
+/// gửi nhật ký đi đâu. Nếu sau này muốn gợi ý do mô hình sinh ra, thay thân
+/// [promptFor] bằng một lời gọi API bất đồng bộ và đổi kiểu trả về thành
+/// `Future<String>`; phần UI gọi nó đã tách sẵn ở widget ReflectionCard nên
+/// không phải sửa chỗ khác.
 class ReflectionService {
   ReflectionService({Random? random}) : _random = random ?? Random();
 
@@ -16,29 +16,29 @@ class ReflectionService {
 
   static const _byMood = <Mood, List<String>>{
     Mood.awful: [
-      'Điều gì nặng nề nhất lúc này? Thử gọi tên nó ra xem.',
-      'Nếu một người bạn đang ở trong tình cảnh này, bạn sẽ nói gì với họ?',
-      'Có điều gì nhỏ thôi, có thể làm ngay để bớt nặng một chút không?',
+      'What feels heaviest right now? Try naming it.',
+      'If a friend were in this situation, what would you say to them?',
+      'Is there one small thing you could do now to lighten it a little?',
     ],
     Mood.low: [
-      'Hôm nay có chuyện gì khiến bạn thấy hụt đi?',
-      'Cơ thể bạn đang báo hiệu điều gì — mệt, đói, thiếu ngủ?',
-      'Điều gì bạn đang kỳ vọng ở bản thân mà có thể hạ xuống được?',
+      'What happened today that took something out of you?',
+      'What is your body telling you — tired, hungry, short on sleep?',
+      'Is there anything you are expecting of yourself that could wait?',
     ],
     Mood.neutral: [
-      'Một chi tiết nhỏ nào của hôm nay đáng được nhớ lại?',
-      'Bạn đã dành nhiều thời gian nhất cho việc gì hôm nay?',
-      'Nếu ngày mai giống hệt hôm nay, bạn muốn đổi điều gì?',
+      'What small detail of today is worth remembering?',
+      'Where did most of your time go today?',
+      'If tomorrow were just like today, what would you change?',
     ],
     Mood.good: [
-      'Điều gì đã diễn ra suôn sẻ hôm nay?',
-      'Ai đã góp phần vào cảm giác dễ chịu này?',
-      'Thói quen nào đang thật sự có tác dụng với bạn?',
+      'What went smoothly today?',
+      'Who helped make today feel easier?',
+      'Which of your habits is actually working for you?',
     ],
     Mood.great: [
-      'Khoảnh khắc nào làm nên ngày hôm nay?',
-      'Bạn muốn giữ lại điều gì từ hôm nay cho những ngày khó hơn?',
-      'Bạn đã làm được gì mà chính mình cũng thấy bất ngờ?',
+      'Which moment made the day?',
+      'What would you like to keep from today for the harder days?',
+      'What did you manage that surprised even you?',
     ],
   };
 
@@ -48,7 +48,7 @@ class ReflectionService {
     return prompts[_random.nextInt(prompts.length)];
   }
 
-  /// Câu hỏi khác câu [previous], để nút "đổi câu khác" luôn có tác dụng.
+  /// Câu hỏi khác câu [previous], để nút đổi câu luôn có tác dụng.
   String anotherFor(Mood mood, String? previous) {
     final prompts = _byMood[mood] ?? _byMood[Mood.neutral]!;
     if (prompts.length == 1) return prompts.first;
@@ -62,12 +62,12 @@ class ReflectionService {
 
 /// Thẻ gợi ý sẵn có khi thêm nhật ký.
 const kSuggestedTags = <String>[
-  'Công việc',
-  'Gia đình',
-  'Bạn bè',
-  'Sức khỏe',
-  'Học tập',
-  'Nghỉ ngơi',
-  'Thể thao',
-  'Một mình',
+  'Appointment',
+  'Family',
+  'Friends',
+  'Health',
+  'Work',
+  'Rest',
+  'Exercise',
+  'Alone',
 ];

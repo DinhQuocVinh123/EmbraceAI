@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart' show DateFormat;
 
 import '../models/mood.dart';
@@ -28,25 +29,44 @@ class _MoodTrendChartState extends State<MoodTrendChart> {
       height: 180,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          return GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTapDown: (d) => _select(d.localPosition.dx, constraints.maxWidth),
-            onTapUp: (_) => _clear(),
-            onTapCancel: _clear,
-            onHorizontalDragUpdate: (d) =>
-                _select(d.localPosition.dx, constraints.maxWidth),
-            onHorizontalDragEnd: (_) => _clear(),
-            child: CustomPaint(
-              size: Size(constraints.maxWidth, 180),
-              painter: _TrendPainter(
-                data: widget.data,
-                selected: _selected,
-                gridColor: scheme.outlineVariant.withValues(alpha: 0.5),
-                labelColor: scheme.onSurfaceVariant,
-                surfaceColor: scheme.surfaceContainerLow,
-                tooltipColor: scheme.inverseSurface,
-                tooltipTextColor: scheme.onInverseSurface,
-                textDirection: Directionality.of(context),
+          return Semantics(
+            container: true,
+            label: 'Mood trend chart',
+            value: _semanticValue(),
+            increasedValue: _semanticAdjacentValue(1),
+            decreasedValue: _semanticAdjacentValue(-1),
+            hint: 'Use left and right arrows, or adjust, to read each day.',
+            onIncrease: _recordedIndexes.isEmpty
+                ? null
+                : () => _moveSelection(1),
+            onDecrease: _recordedIndexes.isEmpty
+                ? null
+                : () => _moveSelection(-1),
+            child: Focus(
+              onKeyEvent: _handleKeyEvent,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTapDown: (d) =>
+                    _select(d.localPosition.dx, constraints.maxWidth),
+                onTapUp: (_) => _clear(),
+                onTapCancel: _clear,
+                onHorizontalDragUpdate: (d) =>
+                    _select(d.localPosition.dx, constraints.maxWidth),
+                onHorizontalDragEnd: (_) => _clear(),
+                child: CustomPaint(
+                  size: Size(constraints.maxWidth, 180),
+                  painter: _TrendPainter(
+                    data: widget.data,
+                    selected: _selected,
+                    gridColor: scheme.outlineVariant,
+                    brightness: Theme.of(context).brightness,
+                    labelColor: scheme.onSurfaceVariant,
+                    surfaceColor: scheme.surfaceContainerLow,
+                    tooltipColor: scheme.inverseSurface,
+                    tooltipTextColor: scheme.onInverseSurface,
+                    textDirection: Directionality.of(context),
+                  ),
+                ),
               ),
             ),
           );
@@ -66,15 +86,78 @@ class _MoodTrendChartState extends State<MoodTrendChart> {
     final step = widget.data.length > 1
         ? plotWidth / (widget.data.length - 1)
         : plotWidth;
-    final index = ((dx - _TrendPainter.padLeft) / step)
-        .round()
-        .clamp(0, widget.data.length - 1);
+    final index = ((dx - _TrendPainter.padLeft) / step).round().clamp(
+      0,
+      widget.data.length - 1,
+    );
     // Ngày trống thì không có gì để hiện.
     if (widget.data[index].average == null) {
       _clear();
       return;
     }
     if (index != _selected) setState(() => _selected = index);
+  }
+
+  List<int> get _recordedIndexes => [
+    for (var i = 0; i < widget.data.length; i++)
+      if (widget.data[i].average != null) i,
+  ];
+
+  void _moveSelection(int direction) {
+    final indexes = _recordedIndexes;
+    if (indexes.isEmpty) return;
+    final current = _selected == null ? -1 : indexes.indexOf(_selected!);
+    final next = current < 0
+        ? (direction > 0 ? 0 : indexes.length - 1)
+        : (current + direction).clamp(0, indexes.length - 1);
+    setState(() => _selected = indexes[next]);
+  }
+
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    if (event.logicalKey == LogicalKeyboardKey.arrowRight ||
+        event.logicalKey == LogicalKeyboardKey.arrowDown) {
+      _moveSelection(1);
+      return KeyEventResult.handled;
+    }
+    if (event.logicalKey == LogicalKeyboardKey.arrowLeft ||
+        event.logicalKey == LogicalKeyboardKey.arrowUp) {
+      _moveSelection(-1);
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
+  String _semanticValue() {
+    final selected = _selected;
+    if (selected != null && widget.data[selected].average != null) {
+      return _semanticDayValue(selected);
+    }
+    final recorded = widget.data.where((day) => day.average != null).toList();
+    if (recorded.isEmpty) return 'No recorded days';
+    return recorded
+        .map(
+          (day) =>
+              '${DateFormat('d MMM').format(day.date)}, '
+              '${day.average!.toStringAsFixed(1)} out of 5',
+        )
+        .join('; ');
+  }
+
+  String? _semanticAdjacentValue(int direction) {
+    final indexes = _recordedIndexes;
+    if (indexes.isEmpty) return null;
+    final current = _selected == null ? -1 : indexes.indexOf(_selected!);
+    final next = current < 0
+        ? (direction > 0 ? 0 : indexes.length - 1)
+        : (current + direction).clamp(0, indexes.length - 1);
+    return _semanticDayValue(indexes[next]);
+  }
+
+  String _semanticDayValue(int index) {
+    final day = widget.data[index];
+    return '${DateFormat('d MMMM').format(day.date)}, '
+        '${day.average!.toStringAsFixed(1)} out of 5';
   }
 }
 
@@ -83,6 +166,7 @@ class _TrendPainter extends CustomPainter {
     required this.data,
     required this.selected,
     required this.gridColor,
+    required this.brightness,
     required this.labelColor,
     required this.surfaceColor,
     required this.tooltipColor,
@@ -93,6 +177,7 @@ class _TrendPainter extends CustomPainter {
   final List<DailyAverage> data;
   final int? selected;
   final Color gridColor;
+  final Brightness brightness;
   final Color labelColor;
   final Color surfaceColor;
   final Color tooltipColor;
@@ -165,7 +250,7 @@ class _TrendPainter extends CustomPainter {
       ..strokeWidth = 2
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round
-      ..color = Mood.colorForAverage(_overallAverage());
+      ..color = Mood.colorForAverage(_overallAverage(), brightness);
 
     Path? path;
     for (final point in points) {
@@ -192,7 +277,7 @@ class _TrendPainter extends CustomPainter {
       canvas.drawCircle(
         point,
         4,
-        Paint()..color = Mood.colorForAverage(data[i].average!),
+        Paint()..color = Mood.colorForAverage(data[i].average!, brightness),
       );
     }
   }
@@ -236,7 +321,7 @@ class _TrendPainter extends CustomPainter {
     canvas.drawCircle(
       point,
       6,
-      Paint()..color = Mood.colorForAverage(data[index].average!),
+      Paint()..color = Mood.colorForAverage(data[index].average!, brightness),
     );
 
     final day = data[index];
@@ -250,8 +335,7 @@ class _TrendPainter extends CustomPainter {
     const padding = EdgeInsets.symmetric(horizontal: 10, vertical: 6);
     final boxWidth = painter.width + padding.horizontal;
     final boxHeight = painter.height + padding.vertical;
-    final left =
-        (point.dx - boxWidth / 2).clamp(0.0, size.width - boxWidth);
+    final left = (point.dx - boxWidth / 2).clamp(0.0, size.width - boxWidth);
     final top = (point.dy - boxHeight - 14).clamp(0.0, size.height);
 
     canvas.drawRRect(
@@ -298,5 +382,6 @@ class _TrendPainter extends CustomPainter {
   bool shouldRepaint(covariant _TrendPainter old) =>
       old.data != data ||
       old.selected != selected ||
-      old.gridColor != gridColor;
+      old.gridColor != gridColor ||
+      old.brightness != brightness;
 }

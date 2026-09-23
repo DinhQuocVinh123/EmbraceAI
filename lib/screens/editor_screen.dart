@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../core/theme.dart';
+import '../core/motion.dart';
 import '../models/journal_entry.dart';
 import '../models/mood.dart';
 import '../services/reflection_service.dart';
@@ -19,7 +20,7 @@ class EditorScreen extends StatefulWidget {
 
   static Future<void> open(BuildContext context, [JournalEntry? entry]) {
     return Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => EditorScreen(entry: entry)),
+      AppMotion.pageRoute(context, builder: (_) => EditorScreen(entry: entry)),
     );
   }
 
@@ -28,12 +29,12 @@ class EditorScreen extends StatefulWidget {
 }
 
 class _EditorScreenState extends State<EditorScreen> {
-  late final JournalEntry _original =
-      widget.entry ?? JournalEntry.draft();
-  late final TextEditingController _noteController =
-      TextEditingController(text: _original.note);
+  late final JournalEntry _original = widget.entry ?? JournalEntry.draft();
+  late final TextEditingController _noteController = TextEditingController(
+    text: _original.note,
+  );
 
-  late Mood _mood = _original.mood;
+  late Mood? _mood = _original.mood;
   late final Set<String> _tags = _original.tags.toSet();
   late DateTime _createdAt = _original.createdAt;
   bool _saving = false;
@@ -66,11 +67,11 @@ class _EditorScreenState extends State<EditorScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(_isEditing ? 'Sửa dòng nhật ký' : 'Hôm nay thế nào?'),
+          title: Text(_isEditing ? 'Edit entry' : 'How was today?'),
           actions: [
             if (_isEditing)
               IconButton(
-                tooltip: 'Xoá',
+                tooltip: 'Delete',
                 icon: const Icon(Icons.delete_outline),
                 onPressed: _confirmDelete,
               ),
@@ -85,7 +86,7 @@ class _EditorScreenState extends State<EditorScreen> {
                 onChanged: (mood) => setState(() => _mood = mood),
               ),
               Gap.l,
-              ReflectionCard(mood: _mood),
+              if (_mood case final mood?) ReflectionCard(mood: mood),
               Gap.m,
               TextField(
                 controller: _noteController,
@@ -94,12 +95,13 @@ class _EditorScreenState extends State<EditorScreen> {
                 textCapitalization: TextCapitalization.sentences,
                 onChanged: (_) => setState(() {}),
                 decoration: const InputDecoration(
-                  hintText: 'Viết vài dòng… (có thể để trống)',
+                  labelText: 'Journal note',
+                  hintText: 'Write a few lines… (you can leave this empty)',
                 ),
               ),
               Gap.l,
               Text(
-                'Liên quan đến',
+                'Related to',
                 style: theme.textTheme.labelLarge?.copyWith(
                   color: scheme.onSurfaceVariant,
                 ),
@@ -131,7 +133,7 @@ class _EditorScreenState extends State<EditorScreen> {
               Gap.xl,
               FilledButton(
                 onPressed: _saving ? null : _save,
-                child: Text(_isEditing ? 'Lưu thay đổi' : 'Lưu lại'),
+                child: Text(_isEditing ? 'Save changes' : 'Save'),
               ),
             ],
           ),
@@ -165,7 +167,8 @@ class _EditorScreenState extends State<EditorScreen> {
       if (!mounted) return;
       setState(() => _saving = false);
       messenger.showSnackBar(
-        SnackBar(content: Text('Lưu không thành công: $e')),
+        SnackBar(content: Text('Could not save: $e')),
+        snackBarAnimationStyle: AppMotion.style(context),
       );
     }
   }
@@ -173,17 +176,18 @@ class _EditorScreenState extends State<EditorScreen> {
   Future<bool> _confirmDiscard() async {
     final result = await showDialog<bool>(
       context: context,
+      animationStyle: AppMotion.style(context),
       builder: (context) => AlertDialog(
-        title: const Text('Bỏ những gì vừa viết?'),
-        content: const Text('Nội dung chưa lưu sẽ mất.'),
+        title: const Text('Discard what you wrote?'),
+        content: const Text('Anything unsaved will be lost.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Viết tiếp'),
+            child: const Text('Keep writing'),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Bỏ'),
+            child: const Text('Discard'),
           ),
         ],
       ),
@@ -196,17 +200,18 @@ class _EditorScreenState extends State<EditorScreen> {
     if (id == null) return;
     final confirmed = await showDialog<bool>(
       context: context,
+      animationStyle: AppMotion.style(context),
       builder: (context) => AlertDialog(
-        title: const Text('Xoá dòng này?'),
-        content: const Text('Không khôi phục lại được.'),
+        title: const Text('Delete this entry?'),
+        content: const Text('This cannot be undone.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Huỷ'),
+            child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Xoá'),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -242,7 +247,7 @@ class _DateTimeRow extends StatelessWidget {
         Gap.s,
         Expanded(
           child: Text(
-            DateFormat('EEEE, d/M/y • HH:mm', 'vi').format(value),
+            DateFormat('EEEE, d MMM y • HH:mm', 'en').format(value),
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -250,7 +255,7 @@ class _DateTimeRow extends StatelessWidget {
         ),
         TextButton(
           onPressed: () => _pick(context),
-          child: const Text('Đổi'),
+          child: const Text('Change'),
         ),
       ],
     );
@@ -263,7 +268,7 @@ class _DateTimeRow extends StatelessWidget {
       initialDate: value,
       firstDate: DateTime(now.year - 5),
       lastDate: now,
-      locale: const Locale('vi'),
+      locale: const Locale('en'),
     );
     if (date == null || !context.mounted) return;
 

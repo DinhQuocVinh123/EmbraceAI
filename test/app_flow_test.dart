@@ -6,7 +6,9 @@ import 'package:embrace_ai/state/journal_store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:embrace_ai/state/settings_store.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 
 import 'support/fake_repository.dart';
@@ -42,14 +44,23 @@ Future<void> _tapAfterScroll(WidgetTester tester, Finder finder) async {
   await tester.pumpAndSettle();
 }
 
-/// Dựng đúng cây widget như app thật, chỉ thay SQLite bằng repository giả.
+/// Mở tab Journal — tab đầu tiên giờ là màn hình buổi thiền.
+Future<void> _openJournal(WidgetTester tester) async {
+  await tester.tap(find.text('Journal'));
+  await tester.pumpAndSettle();
+}
+
+/// Dựng đúng cây widget như app thật, chỉ thay kho lưu trữ bằng bản giả.
 Widget _app(JournalStore store) {
-  return ChangeNotifierProvider.value(
-    value: store,
+  return MultiProvider(
+    providers: [
+      ChangeNotifierProvider.value(value: store),
+      ChangeNotifierProvider(create: (_) => SettingsStore()),
+    ],
     child: MaterialApp(
       theme: AppTheme.light,
-      locale: const Locale('vi'),
-      supportedLocales: const [Locale('vi'), Locale('en')],
+      locale: const Locale('en'),
+      supportedLocales: const [Locale('en')],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
@@ -61,117 +72,124 @@ Widget _app(JournalStore store) {
 }
 
 void main() {
-  setUpAll(() async => initializeDateFormatting('vi'));
+  setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
+    await initializeDateFormatting('en');
+  });
 
-  testWidgets('nhật ký trống mời người dùng ghi dòng đầu tiên',
+  testWidgets('empty journal invites the first entry',
       (tester) async {
     final store = await _loadedStore();
     await tester.pumpWidget(_app(store));
     await tester.pumpAndSettle();
+    await _openJournal(tester);
 
-    expect(find.text('Chưa có dòng nào'), findsOneWidget);
-    expect(find.text('Ghi dòng đầu tiên'), findsOneWidget);
+    expect(find.text('Nothing here yet'), findsOneWidget);
+    expect(find.text('Write the first line'), findsOneWidget);
   });
 
-  testWidgets('ghi một dòng mới rồi thấy nó trong danh sách', (tester) async {
+  testWidgets('writing an entry shows it in the list', (tester) async {
     final store = await _loadedStore();
     await tester.pumpWidget(_app(store));
     await tester.pumpAndSettle();
+    await _openJournal(tester);
 
-    await tester.tap(find.text('Ghi dòng đầu tiên'));
+    await tester.tap(find.text('Write the first line'));
     await tester.pumpAndSettle();
-    expect(find.text('Hôm nay thế nào?'), findsOneWidget);
+    expect(find.text('How was today?'), findsOneWidget);
 
     await tester.tap(find.text(Mood.great.label));
     await tester.pumpAndSettle();
 
-    await tester.enterText(find.byType(TextField), 'Một ngày dễ thở.');
+    await tester.enterText(find.byType(TextField), 'An easier day.');
     await tester.pumpAndSettle();
 
-    await _tapAfterScroll(tester, find.text('Công việc'));
-    await _tapAfterScroll(tester, find.text('Lưu lại'));
+    await _tapAfterScroll(tester, find.text('Work'));
+    await _tapAfterScroll(tester, find.text('Save'));
 
     // Đã quay về danh sách, dòng vừa ghi hiện lên dưới nhóm "Hôm nay".
-    expect(find.text('Hôm nay'), findsOneWidget);
-    expect(find.text('Một ngày dễ thở.'), findsOneWidget);
+    expect(find.text('Today'), findsOneWidget);
+    expect(find.text('An easier day.'), findsOneWidget);
     expect(store.entries, hasLength(1));
     expect(store.entries.first.mood, Mood.great);
-    expect(store.entries.first.tags, ['Công việc']);
+    expect(store.entries.first.tags, ['Work']);
   });
 
-  testWidgets('mở một dòng cũ rồi sửa tâm trạng', (tester) async {
+  testWidgets('opening an old entry and changing its mood', (tester) async {
     final store = await _loadedStore([
-      fakeEntry(id: 1, daysAgo: 0, mood: Mood.low, note: 'Mệt quá.'),
+      fakeEntry(id: 1, daysAgo: 0, mood: Mood.low, note: 'So tired.'),
     ]);
     await tester.pumpWidget(_app(store));
     await tester.pumpAndSettle();
+    await _openJournal(tester);
 
-    await tester.tap(find.text('Mệt quá.'));
+    await tester.tap(find.text('So tired.'));
     await tester.pumpAndSettle();
-    expect(find.text('Mệt quá.'), findsOneWidget);
+    expect(find.text('So tired.'), findsOneWidget);
 
     await tester.tap(find.byIcon(Icons.edit_outlined));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text(Mood.good.label));
     await tester.pumpAndSettle();
-    await _tapAfterScroll(tester, find.text('Lưu thay đổi'));
+    await _tapAfterScroll(tester, find.text('Save changes'));
 
     expect(store.entries.single.mood, Mood.good);
   });
 
-  testWidgets('xoá một dòng đưa người dùng về danh sách trống',
+  testWidgets('deleting an entry returns to the empty list',
       (tester) async {
     final store = await _loadedStore([
-      fakeEntry(id: 1, daysAgo: 0, note: 'Bỏ đi.'),
+      fakeEntry(id: 1, daysAgo: 0, note: 'Drop this.'),
     ]);
     await tester.pumpWidget(_app(store));
     await tester.pumpAndSettle();
+    await _openJournal(tester);
 
-    await tester.tap(find.text('Bỏ đi.'));
+    await tester.tap(find.text('Drop this.'));
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.edit_outlined));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.delete_outline));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Xoá'));
+    await tester.tap(find.text('Delete'));
     await tester.pumpAndSettle();
 
     expect(store.entries, isEmpty);
-    expect(find.text('Chưa có dòng nào'), findsOneWidget);
+    expect(find.text('Nothing here yet'), findsOneWidget);
   });
 
-  testWidgets('tab Thống kê dựng được với dữ liệu thật', (tester) async {
+  testWidgets('insights tab builds with real data', (tester) async {
     final store = await _loadedStore([
-      fakeEntry(id: 1, daysAgo: 0, mood: Mood.great, tags: ['Công việc']),
-      fakeEntry(id: 2, daysAgo: 1, mood: Mood.neutral, tags: ['Công việc']),
+      fakeEntry(id: 1, daysAgo: 0, mood: Mood.great, tags: ['Work']),
+      fakeEntry(id: 2, daysAgo: 1, mood: Mood.neutral, tags: ['Work']),
       fakeEntry(id: 3, daysAgo: 2, mood: Mood.low),
     ]);
     await tester.pumpWidget(_app(store));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Thống kê'));
+    await tester.tap(find.text('Insights'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Chuỗi liên tiếp'), findsOneWidget);
-    expect(find.text('Tâm trạng 14 ngày qua'), findsOneWidget);
-    expect(find.text('Bạn thường ở mức nào'), findsOneWidget);
+    expect(find.text('Current streak'), findsOneWidget);
+    expect(find.text('Mood over 14 days'), findsOneWidget);
+    expect(find.text('Where you usually sit'), findsOneWidget);
     // 3 dòng, trung bình (5 + 3 + 2) / 3 = 3.3
     expect(find.text('3.3'), findsOneWidget);
-    await _scrollTo(tester, find.text('Nhắc tới nhiều nhất'));
-    expect(find.text('Công việc  ·  2'), findsOneWidget);
+    await _scrollTo(tester, find.text('Mentioned most'));
+    expect(find.text('Work  ·  2'), findsOneWidget);
   });
 
-  testWidgets('tab Thống kê khi chưa có dữ liệu không dựng biểu đồ rỗng',
+  testWidgets('insights tab with no data does not draw an empty chart',
       (tester) async {
     final store = await _loadedStore();
     await tester.pumpWidget(_app(store));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Thống kê'));
+    await tester.tap(find.text('Insights'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Chưa có gì để xem'), findsOneWidget);
+    expect(find.text('Nothing to show yet'), findsOneWidget);
   });
 }

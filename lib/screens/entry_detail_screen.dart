@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../core/theme.dart';
+import '../core/motion.dart';
 import '../models/journal_entry.dart';
 import '../state/journal_store.dart';
 import 'editor_screen.dart';
@@ -17,7 +18,10 @@ class EntryDetailScreen extends StatelessWidget {
     final id = entry.id;
     if (id == null) return Future.value();
     return Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => EntryDetailScreen(entryId: id)),
+      AppMotion.pageRoute(
+        context,
+        builder: (_) => EntryDetailScreen(entryId: id),
+      ),
     );
   }
 
@@ -38,13 +42,14 @@ class EntryDetailScreen extends StatelessWidget {
       });
       return const Scaffold(body: SizedBox.shrink());
     }
+    final mood = entry.mood;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(DateFormat('d MMMM, y', 'vi').format(entry.createdAt)),
+        title: Text(DateFormat('d MMMM y', 'en').format(entry.createdAt)),
         actions: [
           IconButton(
-            tooltip: 'Sửa',
+            tooltip: 'Edit',
             icon: const Icon(Icons.edit_outlined),
             onPressed: () => EditorScreen.open(context, entry),
           ),
@@ -61,11 +66,15 @@ class EntryDetailScreen extends StatelessWidget {
                   height: 56,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: entry.mood.color.withValues(alpha: 0.22),
+                    color: mood == null
+                        ? scheme.surfaceContainerHighest
+                        : mood
+                              .colorOn(theme.brightness)
+                              .withValues(alpha: 0.22),
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    entry.mood.emoji,
+                    mood?.emoji ?? '—',
                     style: const TextStyle(fontSize: 28),
                   ),
                 ),
@@ -74,7 +83,7 @@ class EntryDetailScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      entry.mood.label,
+                      mood?.label ?? 'Mood not recorded',
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -92,7 +101,7 @@ class EntryDetailScreen extends StatelessWidget {
             Gap.l,
             if (entry.note.trim().isEmpty)
               Text(
-                'Hôm đó bạn chỉ ghi lại tâm trạng, không viết gì thêm.',
+                'That day you only logged a mood, with nothing written.',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: scheme.onSurfaceVariant,
                   fontStyle: FontStyle.italic,
@@ -116,7 +125,7 @@ class EntryDetailScreen extends StatelessWidget {
             if (entry.updatedAt.difference(entry.createdAt).inMinutes > 1) ...[
               Gap.l,
               Text(
-                'Sửa lần cuối '
+                'Last edited '
                 '${DateFormat('d/M/y HH:mm').format(entry.updatedAt)}',
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: scheme.onSurfaceVariant,

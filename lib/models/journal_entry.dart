@@ -12,24 +12,18 @@ class JournalEntry {
   });
 
   final int? id;
-  final Mood mood;
+
+  /// Null khi người dùng bỏ qua đánh giá mood cuối buổi.
+  final Mood? mood;
   final String note;
   final List<String> tags;
   final DateTime createdAt;
   final DateTime updatedAt;
 
   /// Bản ghi mới, chưa có id cho tới khi DB cấp.
-  factory JournalEntry.draft({
-    Mood mood = Mood.neutral,
-    DateTime? at,
-  }) {
+  factory JournalEntry.draft({Mood? mood = Mood.neutral, DateTime? at}) {
     final now = at ?? DateTime.now();
-    return JournalEntry(
-      mood: mood,
-      note: '',
-      createdAt: now,
-      updatedAt: now,
-    );
+    return JournalEntry(mood: mood, note: '', createdAt: now, updatedAt: now);
   }
 
   JournalEntry copyWith({
@@ -54,20 +48,23 @@ class JournalEntry {
   DateTime get day => DateTime(createdAt.year, createdAt.month, createdAt.day);
 
   Map<String, Object?> toMap() => {
-        if (id != null) 'id': id,
-        'mood': mood.score,
-        'note': note,
-        // Thẻ nối bằng '|' vì bản thân thẻ không cho chứa ký tự này.
-        'tags': tags.join('|'),
-        'created_at': createdAt.millisecondsSinceEpoch,
-        'updated_at': updatedAt.millisecondsSinceEpoch,
-      };
+    if (id != null) 'id': id,
+    'mood': mood?.score,
+    'note': note,
+    // Thẻ nối bằng '|' vì bản thân thẻ không cho chứa ký tự này.
+    'tags': tags.join('|'),
+    'created_at': createdAt.millisecondsSinceEpoch,
+    'updated_at': updatedAt.millisecondsSinceEpoch,
+  };
 
   factory JournalEntry.fromMap(Map<String, Object?> map) {
     final rawTags = (map['tags'] as String?) ?? '';
     return JournalEntry(
       id: map['id'] as int?,
-      mood: Mood.fromScore((map['mood'] as int?) ?? 3),
+      mood: switch (map['mood']) {
+        final int score => Mood.fromScore(score),
+        _ => null,
+      },
       note: (map['note'] as String?) ?? '',
       tags: rawTags.isEmpty ? const [] : rawTags.split('|'),
       createdAt: DateTime.fromMillisecondsSinceEpoch(map['created_at'] as int),

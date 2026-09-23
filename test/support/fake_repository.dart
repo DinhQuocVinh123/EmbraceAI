@@ -34,13 +34,17 @@ class FakeRepository implements JournalRepository {
 JournalEntry fakeEntry({
   required int id,
   required int daysAgo,
-  Mood mood = Mood.neutral,
+  Mood? mood = Mood.neutral,
   List<String> tags = const [],
   String? note,
 }) {
   final now = DateTime.now();
-  final date = DateTime(now.year, now.month, now.day, 12)
-      .subtract(Duration(days: daysAgo));
+  final date = DateTime(
+    now.year,
+    now.month,
+    now.day,
+    12,
+  ).subtract(Duration(days: daysAgo));
   return JournalEntry(
     id: id,
     mood: mood,

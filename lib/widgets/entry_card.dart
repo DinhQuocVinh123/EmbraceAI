@@ -15,77 +15,99 @@ class EntryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final time = DateFormat.Hm('vi').format(entry.createdAt);
+    final time = DateFormat.Hm('en').format(entry.createdAt);
+    final mood = entry.mood;
 
-    return Card(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: entry.mood.color.withValues(alpha: 0.22),
-                ),
-                alignment: Alignment.center,
-                child: Text(entry.mood.emoji,
-                    style: const TextStyle(fontSize: 22)),
-              ),
-              Gap.m,
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+    final semanticsLabel = [
+      mood?.label ?? 'Mood not recorded',
+      time,
+      if (entry.note.trim().isNotEmpty) entry.note.trim(),
+      if (entry.tags.isNotEmpty) 'Tags: ${entry.tags.join(', ')}',
+    ].join('. ');
+
+    return Semantics(
+      container: true,
+      button: onTap != null,
+      label: semanticsLabel,
+      onTap: onTap,
+      child: ExcludeSemantics(
+        child: Card(
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(20),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: mood == null
+                          ? scheme.surfaceContainerHighest
+                          : mood
+                                .colorOn(theme.brightness)
+                                .withValues(alpha: 0.22),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      mood?.emoji ?? '—',
+                      style: const TextStyle(fontSize: 22),
+                    ),
+                  ),
+                  Gap.m,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          entry.mood.label,
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                        Row(
+                          children: [
+                            Text(
+                              mood?.label ?? 'Mood not recorded',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const Spacer(),
+                            Text(
+                              time,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: scheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
                         ),
-                        const Spacer(),
-                        Text(
-                          time,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: scheme.onSurfaceVariant,
+                        if (entry.note.trim().isNotEmpty) ...[
+                          Gap.xs,
+                          Text(
+                            entry.note.trim(),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                              height: 1.4,
+                            ),
                           ),
-                        ),
+                        ],
+                        if (entry.tags.isNotEmpty) ...[
+                          Gap.s,
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: [
+                              for (final tag in entry.tags)
+                                _TagPill(label: tag),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
-                    if (entry.note.trim().isNotEmpty) ...[
-                      Gap.xs,
-                      Text(
-                        entry.note.trim(),
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                          height: 1.4,
-                        ),
-                      ),
-                    ],
-                    if (entry.tags.isNotEmpty) ...[
-                      Gap.s,
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: [
-                          for (final tag in entry.tags)
-                            _TagPill(label: tag),
-                        ],
-                      ),
-                    ],
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

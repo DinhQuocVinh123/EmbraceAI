@@ -3,20 +3,26 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 
 import 'app.dart';
-import 'data/app_database.dart';
-import 'data/journal_repository.dart';
+import 'data/prefs_journal_repository.dart';
 import 'state/journal_store.dart';
+import 'state/settings_store.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Nạp dữ liệu định dạng ngày tiếng Việt trước khi dựng giao diện.
-  await initializeDateFormatting('vi');
+  // Nạp dữ liệu định dạng ngày trước khi dựng giao diện.
+  await initializeDateFormatting('en');
 
-  final repository = JournalRepository(AppDatabase());
+  final settings = SettingsStore();
+  await settings.load();
 
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => JournalStore(repository)..load(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: settings),
+        ChangeNotifierProvider(
+          create: (_) => JournalStore(PrefsJournalRepository())..load(),
+        ),
+      ],
       child: const EmbraceApp(),
     ),
   );

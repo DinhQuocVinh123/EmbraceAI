@@ -36,6 +36,17 @@ void main() {
       expect(JournalEntry.fromMap(entry.toMap()).tags, isEmpty);
     });
 
+    test('mood bỏ qua được lưu và đọc lại là null', () {
+      final entry = JournalEntry(
+        mood: null,
+        note: 'Session completed without a mood rating.',
+        createdAt: at,
+        updatedAt: at,
+      );
+
+      expect(JournalEntry.fromMap(entry.toMap()).mood, isNull);
+    });
+
     test('toMap bỏ id khi chưa lưu, để SQLite tự cấp', () {
       final draft = JournalEntry.draft(at: at);
       expect(draft.toMap().containsKey('id'), isFalse);

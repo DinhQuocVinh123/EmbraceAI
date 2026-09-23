@@ -12,7 +12,9 @@ import 'entry_detail_screen.dart';
 
 /// Danh sách nhật ký, gom theo ngày, mới nhất lên đầu.
 class JournalScreen extends StatelessWidget {
-  const JournalScreen({super.key});
+  const JournalScreen({super.key, this.now});
+
+  final DateTime? now;
 
   @override
   Widget build(BuildContext context) {
@@ -25,11 +27,11 @@ class JournalScreen extends StatelessWidget {
     if (store.error != null) {
       return EmptyState(
         icon: Icons.error_outline,
-        title: 'Không mở được nhật ký',
+        title: 'Could not open your journal',
         message: '${store.error}',
         action: FilledButton.tonal(
           onPressed: store.load,
-          child: const Text('Thử lại'),
+          child: const Text('Try again'),
         ),
       );
     }
@@ -37,12 +39,13 @@ class JournalScreen extends StatelessWidget {
     if (store.isEmpty) {
       return EmptyState(
         icon: Icons.favorite_outline,
-        title: 'Chưa có dòng nào',
-        message: 'Ghi lại một dòng về hôm nay. Chỉ cần một câu cũng được — '
-            'mục đích là để nhìn lại, không phải để viết hay.',
+        title: 'Nothing here yet',
+        message:
+            'Write a line about today. One sentence is enough — this '
+            'is for looking back, not for writing well.',
         action: FilledButton(
           onPressed: () => EditorScreen.open(context),
-          child: const Text('Ghi dòng đầu tiên'),
+          child: const Text('Write the first line'),
         ),
       );
     }
@@ -54,7 +57,9 @@ class JournalScreen extends StatelessWidget {
         onRefresh: store.load,
         child: CustomScrollView(
           slivers: [
-            SliverToBoxAdapter(child: _Header(store: store)),
+            SliverToBoxAdapter(
+              child: _Header(store: store, now: now),
+            ),
             SliverPadding(
               // Chừa đáy cho nút nổi khỏi che dòng cuối.
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
@@ -65,11 +70,14 @@ class JournalScreen extends StatelessWidget {
                 itemBuilder: (context, index) {
                   final item = items[index];
                   return switch (item) {
-                    _DayHeaderItem(:final date) => _DayHeader(date: date),
+                    _DayHeaderItem(:final date) => _DayHeader(
+                      date: date,
+                      now: now,
+                    ),
                     _EntryItem(:final entry) => EntryCard(
-                        entry: entry,
-                        onTap: () => EntryDetailScreen.open(context, entry),
-                      ),
+                      entry: entry,
+                      onTap: () => EntryDetailScreen.open(context, entry),
+                    ),
                   };
                 },
               ),
@@ -107,9 +115,10 @@ class _EntryItem extends _Item {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.store});
+  const _Header({required this.store, this.now});
 
   final JournalStore store;
+  final DateTime? now;
 
   @override
   Widget build(BuildContext context) {
@@ -123,7 +132,7 @@ class _Header extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            _greeting(),
+            _greeting(now ?? DateTime.now()),
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.w600,
             ),
@@ -131,8 +140,10 @@ class _Header extends StatelessWidget {
           Gap.xs,
           Text(
             store.hasCheckedInToday
-                ? 'Hôm nay bạn đã ghi ${store.todayEntries.length} dòng.'
-                : 'Hôm nay bạn thấy thế nào?',
+                ? 'You have written ${store.todayEntries.length} '
+                      '${store.todayEntries.length == 1 ? "entry" : "entries"} '
+                      'today.'
+                : 'How are you feeling today?',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: scheme.onSurfaceVariant,
             ),
@@ -155,7 +166,7 @@ class _Header extends StatelessWidget {
                   ),
                   Gap.xs,
                   Text(
-                    '$streak ngày liên tiếp',
+                    '$streak days in a row',
                     style: theme.textTheme.labelLarge?.copyWith(
                       color: scheme.onPrimaryContainer,
                     ),
@@ -169,19 +180,20 @@ class _Header extends StatelessWidget {
     );
   }
 
-  String _greeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 11) return 'Chào buổi sáng';
-    if (hour < 14) return 'Chào buổi trưa';
-    if (hour < 18) return 'Chào buổi chiều';
-    return 'Chào buổi tối';
+  String _greeting(DateTime currentTime) {
+    final hour = currentTime.hour;
+    if (hour < 11) return 'Good morning';
+    if (hour < 14) return 'Good afternoon';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
   }
 }
 
 class _DayHeader extends StatelessWidget {
-  const _DayHeader({required this.date});
+  const _DayHeader({required this.date, this.now});
 
   final DateTime date;
+  final DateTime? now;
 
   @override
   Widget build(BuildContext context) {
@@ -189,7 +201,7 @@ class _DayHeader extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8, left: 4),
       child: Text(
-        _label(date),
+        _label(date, now ?? DateTime.now()),
         style: theme.textTheme.labelLarge?.copyWith(
           color: theme.colorScheme.onSurfaceVariant,
           fontWeight: FontWeight.w600,
@@ -198,13 +210,16 @@ class _DayHeader extends StatelessWidget {
     );
   }
 
-  String _label(DateTime date) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
+  String _label(DateTime date, DateTime currentTime) {
+    final today = DateTime(
+      currentTime.year,
+      currentTime.month,
+      currentTime.day,
+    );
     final diff = today.difference(date).inDays;
-    if (diff == 0) return 'Hôm nay';
-    if (diff == 1) return 'Hôm qua';
-    if (diff < 7) return DateFormat('EEEE', 'vi').format(date);
-    return DateFormat('d MMMM, y', 'vi').format(date);
+    if (diff == 0) return 'Today';
+    if (diff == 1) return 'Yesterday';
+    if (diff < 7) return DateFormat('EEEE', 'en').format(date);
+    return DateFormat('d MMMM y', 'en').format(date);
   }
 }

@@ -24,9 +24,9 @@ class InsightsScreen extends StatelessWidget {
     if (store.entries.isEmpty) {
       return const EmptyState(
         icon: Icons.insights_outlined,
-        title: 'Chưa có gì để xem',
-        message: 'Ghi vài ngày rồi quay lại — lúc đó xu hướng mới nói lên '
-            'được điều gì đó.',
+        title: 'Nothing to show yet',
+        message: 'Come back after a few days — a trend only means '
+            'something once there is a little history.',
       );
     }
 
@@ -38,7 +38,7 @@ class InsightsScreen extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
           Text(
-            'Thống kê',
+            'Insights',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -49,16 +49,16 @@ class InsightsScreen extends StatelessWidget {
               Expanded(
                 child: StatTile(
                   value: '${store.streak}',
-                  suffix: 'ngày',
-                  label: 'Chuỗi liên tiếp',
+                  suffix: 'days',
+                  label: 'Current streak',
                 ),
               ),
               Gap.s,
               Expanded(
                 child: StatTile(
                   value: '${store.entries.length}',
-                  suffix: 'dòng',
-                  label: 'Tổng đã ghi',
+                  suffix: 'entries',
+                  label: 'Written so far',
                 ),
               ),
               Gap.s,
@@ -66,29 +66,32 @@ class InsightsScreen extends StatelessWidget {
                 child: StatTile(
                   value: average == null ? '—' : average.toStringAsFixed(1),
                   suffix: average == null ? null : '/5',
-                  label: 'TB 30 ngày',
+                  label: '30-day average',
                   accent:
-                      average == null ? null : Mood.colorForAverage(average),
+                      average == null
+                          ? null
+                          : Mood.colorForAverage(
+                              average, Theme.of(context).brightness),
                 ),
               ),
             ],
           ),
           Gap.m,
           _Section(
-            title: 'Tâm trạng 14 ngày qua',
-            subtitle: 'Chạm vào biểu đồ để xem từng ngày. '
-                'Ngày không ghi để trống.',
+            title: 'Mood over 14 days',
+            subtitle: 'Tap the chart to read a single day. Days with no '
+                'entry are left blank.',
             child: MoodTrendChart(data: store.dailyAverages(days: 14)),
           ),
           Gap.m,
           _Section(
-            title: 'Bạn thường ở mức nào',
+            title: 'Where you usually sit',
             child: MoodDistribution(counts: store.moodDistribution),
           ),
           if (tags.isNotEmpty) ...[
             Gap.m,
             _Section(
-              title: 'Nhắc tới nhiều nhất',
+              title: 'Mentioned most',
               child: Wrap(
                 spacing: 8,
                 runSpacing: 8,
