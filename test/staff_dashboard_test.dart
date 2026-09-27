@@ -1,0 +1,157 @@
+import 'package:embrace_ai/core/theme.dart';
+import 'package:embrace_ai/models/participant_record.dart';
+import 'package:embrace_ai/screens/staff_dashboard_screen.dart';
+import 'package:embrace_ai/services/staff_portal_service.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'support/screenshot_harness.dart';
+
+void main() {
+  setUpAll(ScreenshotHarness.loadFonts);
+
+  final participants = [
+    ParticipantRecord(
+      code: 'EA23AB89XY',
+      studyId: 'CARDIAC-MIND-01',
+      group: 'Intervention',
+      status: ParticipantStatus.active,
+      consentStatus: ConsentStatus.accepted,
+      sessionCount: 3,
+      createdAt: DateTime(2026, 9, 20),
+      lastActivityAt: DateTime(2026, 9, 27),
+      expiresAt: DateTime(2026, 12, 20),
+    ),
+    ParticipantRecord(
+      code: 'EA98CD76WV',
+      studyId: 'CARDIAC-MIND-01',
+      group: 'Control',
+      status: ParticipantStatus.invited,
+      consentStatus: ConsentStatus.pending,
+      sessionCount: 0,
+      createdAt: DateTime(2026, 9, 26),
+      expiresAt: DateTime(2026, 12, 26),
+    ),
+  ];
+
+  Future<void> pumpPortal(
+    WidgetTester tester, {
+    required Size size,
+    double textScale = 1,
+  }) async {
+    tester.view.physicalSize = size;
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final baseTheme = AppTheme.light;
+    await tester.pumpWidget(
+      Provider<StaffPortalService>.value(
+        value: _FakeStaffPortalService(participants),
+        child: MaterialApp(
+          theme: baseTheme.copyWith(
+            textTheme: baseTheme.textTheme.apply(
+              fontFamily: 'Segoe UI',
+              fontFamilyFallback: const ['Segoe UI'],
+            ),
+            appBarTheme: baseTheme.appBarTheme.copyWith(
+              titleTextStyle: baseTheme.appBarTheme.titleTextStyle?.copyWith(
+                fontFamily: 'Segoe UI',
+              ),
+            ),
+            chipTheme: baseTheme.chipTheme.copyWith(
+              labelStyle: baseTheme.chipTheme.labelStyle?.copyWith(
+                fontFamily: 'Segoe UI',
+              ),
+              secondaryLabelStyle: baseTheme.chipTheme.secondaryLabelStyle
+                  ?.copyWith(fontFamily: 'Segoe UI'),
+            ),
+          ),
+          home: MediaQuery(
+            data: MediaQueryData(
+              size: size,
+              textScaler: TextScaler.linear(textScale),
+            ),
+            child: const StaffDashboardScreen(),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets(
+    'desktop portal supports navigation, filtering and detail panel',
+    (tester) async {
+      await pumpPortal(tester, size: const Size(1440, 900));
+
+      expect(find.text('Study overview'), findsOneWidget);
+      expect(find.text('2'), findsWidgets);
+      expect(tester.takeException(), isNull);
+      await expectLater(
+        find.byType(StaffDashboardScreen),
+        matchesGoldenFile('goldens/staff_dashboard_desktop.png'),
+      );
+
+      await tester.tap(find.text('Participants').first);
+      await tester.pumpAndSettle();
+      expect(find.text('Search ID, study, or group'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField), 'EA-23AB-89XY');
+      await tester.pump();
+      expect(find.text('1 of 2 participants'), findsOneWidget);
+
+      await tester.tap(find.text('EA-23AB-89XY').last);
+      await tester.pumpAndSettle();
+      expect(find.text('Participant details'), findsOneWidget);
+      expect(find.text('Reissue sign-in QR'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('mobile portal uses the compact navigation and layout', (
+    tester,
+  ) async {
+    await pumpPortal(tester, size: const Size(400, 869));
+
+    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.text('Study overview'), findsOneWidget);
+    expect(find.text('New participant'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await expectLater(
+      find.byType(StaffDashboardScreen),
+      matchesGoldenFile('goldens/staff_dashboard_mobile.png'),
+    );
+  });
+
+  testWidgets('mobile portal remains usable at 200 percent text', (
+    tester,
+  ) async {
+    await pumpPortal(tester, size: const Size(400, 869), textScale: 2);
+
+    expect(find.text('Study overview'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+}
+
+class _FakeStaffPortalService extends StaffPortalService {
+  _FakeStaffPortalService(this.participants)
+    : super(
+        client: SupabaseClient(
+          'https://example.supabase.co',
+          'test-key',
+          authOptions: const AuthClientOptions(autoRefreshToken: false),
+        ),
+      );
+
+  final List<ParticipantRecord> participants;
+
+  @override
+  Stream<List<ParticipantRecord>> watchParticipants() =>
+      Stream.value(participants);
+
+  @override
+  Stream<List<ParticipantSessionRecord>> watchSessions(String code) =>
+      Stream.value(const []);
+}

@@ -76,14 +76,13 @@ class SessionController extends ChangeNotifier {
     if (_phase != SessionPhase.practice || _current.id != 'breathing') {
       return null;
     }
-    final elapsedMs = sourcePosition.inMilliseconds - _current.start.inMilliseconds;
+    final elapsedMs =
+        sourcePosition.inMilliseconds - _current.start.inMilliseconds;
     if (elapsedMs < 0 || sourcePosition >= _current.end) return null;
     const phaseMs = 5000;
     final phaseIndex = elapsedMs ~/ phaseMs;
     return BreathingCue(
-      phase: phaseIndex.isEven
-          ? BreathingPhase.inhale
-          : BreathingPhase.exhale,
+      phase: phaseIndex.isEven ? BreathingPhase.inhale : BreathingPhase.exhale,
       progress: (elapsedMs % phaseMs) / phaseMs,
     );
   }

@@ -1,0 +1,23 @@
+project_id = "embrace-ai"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 17
+
+[auth]
+enabled = true
+site_url = "https://embrace-ai-prototype-2026.web.app"
+enable_signup = false
+
+[functions.create-participant]
+verify_jwt = true
+
+[functions.reissue-participant-access]
+verify_jwt = true

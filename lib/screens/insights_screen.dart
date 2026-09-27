@@ -25,7 +25,8 @@ class InsightsScreen extends StatelessWidget {
       return const EmptyState(
         icon: Icons.insights_outlined,
         title: 'Nothing to show yet',
-        message: 'Come back after a few days — a trend only means '
+        message:
+            'Come back after a few days — a trend only means '
             'something once there is a little history.',
       );
     }
@@ -39,9 +40,9 @@ class InsightsScreen extends StatelessWidget {
         children: [
           Text(
             'Insights',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
           ),
           Gap.m,
           Row(
@@ -67,11 +68,12 @@ class InsightsScreen extends StatelessWidget {
                   value: average == null ? '—' : average.toStringAsFixed(1),
                   suffix: average == null ? null : '/5',
                   label: '30-day average',
-                  accent:
-                      average == null
-                          ? null
-                          : Mood.colorForAverage(
-                              average, Theme.of(context).brightness),
+                  accent: average == null
+                      ? null
+                      : Mood.colorForAverage(
+                          average,
+                          Theme.of(context).brightness,
+                        ),
                 ),
               ),
             ],
@@ -79,7 +81,8 @@ class InsightsScreen extends StatelessWidget {
           Gap.m,
           _Section(
             title: 'Mood over 14 days',
-            subtitle: 'Tap the chart to read a single day. Days with no '
+            subtitle:
+                'Tap the chart to read a single day. Days with no '
                 'entry are left blank.',
             child: MoodTrendChart(data: store.dailyAverages(days: 14)),
           ),
@@ -97,9 +100,7 @@ class InsightsScreen extends StatelessWidget {
                 runSpacing: 8,
                 children: [
                   for (final tag in tags)
-                    Chip(
-                      label: Text('${tag.key}  ·  ${tag.value}'),
-                    ),
+                    Chip(label: Text('${tag.key}  ·  ${tag.value}')),
                 ],
               ),
             ),
@@ -111,11 +112,7 @@ class InsightsScreen extends StatelessWidget {
 }
 
 class _Section extends StatelessWidget {
-  const _Section({
-    required this.title,
-    required this.child,
-    this.subtitle,
-  });
+  const _Section({required this.title, required this.child, this.subtitle});
 
   final String title;
   final String? subtitle;

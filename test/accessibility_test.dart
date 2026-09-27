@@ -182,10 +182,7 @@ void main() {
       const MaterialApp(
         home: Scaffold(
           body: BreathingGuide(
-            cue: BreathingCue(
-              phase: BreathingPhase.inhale,
-              progress: 0.5,
-            ),
+            cue: BreathingCue(phase: BreathingPhase.inhale, progress: 0.5),
             reduceMotion: true,
           ),
         ),

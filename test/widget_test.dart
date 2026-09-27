@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('MoodPicker hiện đủ năm mức và báo về mức được chọn',
-      (tester) async {
+  testWidgets('MoodPicker hiện đủ năm mức và báo về mức được chọn', (
+    tester,
+  ) async {
     Mood? picked;
 
     await tester.pumpWidget(

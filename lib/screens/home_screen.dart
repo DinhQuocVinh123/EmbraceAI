@@ -11,7 +11,10 @@ import 'welcome_screen.dart';
 /// Buổi tập đứng đầu vì đó là việc người dùng mở app để làm; nhật ký và
 /// thống kê là thứ họ xem lại sau.
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, this.participantCode, this.onSignOut});
+
+  final String? participantCode;
+  final Future<void> Function()? onSignOut;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -25,6 +28,30 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: widget.onSignOut == null
+          ? null
+          : AppBar(
+              title: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.verified_user_outlined, size: 20),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      _displayCode(widget.participantCode),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                IconButton(
+                  tooltip: 'Sign out',
+                  onPressed: widget.onSignOut,
+                  icon: const Icon(Icons.logout),
+                ),
+              ],
+            ),
       // IndexedStack để mỗi tab giữ nguyên vị trí cuộn khi quay lại.
       body: MotionIndexedStack(
         index: _index,
@@ -63,5 +90,14 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
+  }
+
+  static String _displayCode(String? code) {
+    if (code == null) return 'EmbraceAI';
+    if (code.length == 10 && code.startsWith('EA')) {
+      return '${code.substring(0, 2)}-${code.substring(2, 6)}-'
+          '${code.substring(6)}';
+    }
+    return code;
   }
 }

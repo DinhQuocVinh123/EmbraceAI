@@ -48,8 +48,11 @@ class ScreenshotHarness {
     await emoji.load();
     // Thiếu font này thì mọi icon đều ra ô vuông.
     final icons = FontLoader('MaterialIcons')
-      ..addFont(_fontBytes(
-          'C:/flutter/bin/cache/artifacts/material_fonts/materialicons-regular.otf'));
+      ..addFont(
+        _fontBytes(
+          'C:/flutter/bin/cache/artifacts/material_fonts/materialicons-regular.otf',
+        ),
+      );
     await icons.load();
   }
 
@@ -95,8 +98,9 @@ class ScreenshotHarness {
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         theme: base.copyWith(
-          textTheme: base.textTheme
-              .apply(fontFamilyFallback: const ['Segoe UI', 'Segoe UI Emoji']),
+          textTheme: base.textTheme.apply(
+            fontFamilyFallback: const ['Segoe UI', 'Segoe UI Emoji'],
+          ),
           // Style mặc định của Chip trỏ tới một họ font không đăng ký được
           // trong môi trường test nên nhãn ra ô vuông. Chỉ định thẳng ở đây;
           // trên máy thật app vẫn dùng font hệ thống như bình thường.
@@ -134,8 +138,10 @@ class ScreenshotHarness {
   }
 
   static void sizePhone(WidgetTester tester) {
-    tester.view.physicalSize =
-        Size(phone.width * pixelRatio, phone.height * pixelRatio);
+    tester.view.physicalSize = Size(
+      phone.width * pixelRatio,
+      phone.height * pixelRatio,
+    );
     tester.view.devicePixelRatio = pixelRatio;
     addTearDown(tester.view.reset);
   }

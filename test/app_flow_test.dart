@@ -20,7 +20,6 @@ Future<JournalStore> _loadedStore([List<JournalEntry> seed = const []]) async {
   return store;
 }
 
-
 /// Viewport trong test nhỏ hơn màn hình thật, và ListView chỉ dựng phần đang
 /// nhìn thấy — nên widget dưới đáy phải cuộn tới mới tồn tại trong cây.
 Future<void> _scrollTo(WidgetTester tester, Finder finder) async {
@@ -77,8 +76,7 @@ void main() {
     await initializeDateFormatting('en');
   });
 
-  testWidgets('empty journal invites the first entry',
-      (tester) async {
+  testWidgets('empty journal invites the first entry', (tester) async {
     final store = await _loadedStore();
     await tester.pumpWidget(_app(store));
     await tester.pumpAndSettle();
@@ -137,8 +135,7 @@ void main() {
     expect(store.entries.single.mood, Mood.good);
   });
 
-  testWidgets('deleting an entry returns to the empty list',
-      (tester) async {
+  testWidgets('deleting an entry returns to the empty list', (tester) async {
     final store = await _loadedStore([
       fakeEntry(id: 1, daysAgo: 0, note: 'Drop this.'),
     ]);
@@ -181,8 +178,9 @@ void main() {
     expect(find.text('Work  ·  2'), findsOneWidget);
   });
 
-  testWidgets('insights tab with no data does not draw an empty chart',
-      (tester) async {
+  testWidgets('insights tab with no data does not draw an empty chart', (
+    tester,
+  ) async {
     final store = await _loadedStore();
     await tester.pumpWidget(_app(store));
     await tester.pumpAndSettle();

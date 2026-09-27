@@ -18,7 +18,9 @@ import 'package:flutter_test/flutter_test.dart';
 /// hình khối mang thông tin.
 void main() {
   for (final brightness in Brightness.values) {
-    final theme = brightness == Brightness.dark ? AppTheme.dark : AppTheme.light;
+    final theme = brightness == Brightness.dark
+        ? AppTheme.dark
+        : AppTheme.light;
     final s = theme.colorScheme;
     final name = brightness == Brightness.dark ? 'nền tối' : 'nền sáng';
 
@@ -39,16 +41,27 @@ void main() {
       text('Chữ nhỏ trong thẻ', s.onSurfaceVariant, s.surfaceContainerLow);
       text('Nhãn nút chính', s.onPrimary, s.primary);
       text('Nhãn thẻ chọn đang chọn', s.onPrimaryContainer, s.primaryContainer);
-      text('Nhãn thẻ chọn chưa chọn', s.onSurfaceVariant,
-          s.surfaceContainerHighest);
+      text(
+        'Nhãn thẻ chọn chưa chọn',
+        s.onSurfaceVariant,
+        s.surfaceContainerHighest,
+      );
       text('Nhãn ô bối cảnh đang chọn', s.onSurface, s.primaryContainer);
-      text('Mô tả ô bối cảnh đang chọn', s.onSurfaceVariant,
-          s.primaryContainer);
+      text(
+        'Mô tả ô bối cảnh đang chọn',
+        s.onSurfaceVariant,
+        s.primaryContainer,
+      );
       text('Nhãn báo lỗi', s.error, s.surface);
       text('Chữ trong thanh thông báo', s.onInverseSurface, s.inverseSurface);
-      text('Chữ trong ô nhập',
-          s.onSurface, Color.alphaBlend(
-              s.surfaceContainerHighest.withValues(alpha: 0.5), s.surface));
+      text(
+        'Chữ trong ô nhập',
+        s.onSurface,
+        Color.alphaBlend(
+          s.surfaceContainerHighest.withValues(alpha: 0.5),
+          s.surface,
+        ),
+      );
 
       ui('Biểu tượng nhấn mạnh', s.primary, s.surface);
       ui('Biểu tượng trong thẻ', s.primary, s.surfaceContainerLow);
@@ -91,19 +104,31 @@ void main() {
     });
 
     test('tấm nền phụ đề đủ dày cho cả trường hợp nền trắng — SC 1.4.3', () {
-      expectRatio(Colors.white, _over(Colors.white, SessionScrim.captionPlate),
-          4.5, 'phụ đề trên tấm nền');
+      expectRatio(
+        Colors.white,
+        _over(Colors.white, SessionScrim.captionPlate),
+        4.5,
+        'phụ đề trên tấm nền',
+      );
     });
 
     test('lớp phủ hai thanh đủ dày cho chữ nhỏ — SC 1.4.3', () {
-      expectRatio(Colors.white, _over(Colors.white, SessionScrim.bar), 4.5,
-          'nhãn phần và đồng hồ trên lớp phủ');
+      expectRatio(
+        Colors.white,
+        _over(Colors.white, SessionScrim.bar),
+        4.5,
+        'nhãn phần và đồng hồ trên lớp phủ',
+      );
     });
 
     test('rãnh thanh tiến độ vẫn thấy được — SC 1.4.11', () {
       final bg = _over(Colors.white, SessionScrim.bar);
-      expectRatio(Color.alphaBlend(Colors.white54, bg), bg, 3.0,
-          'rãnh thanh tiến độ');
+      expectRatio(
+        Color.alphaBlend(Colors.white54, bg),
+        bg,
+        3.0,
+        'rãnh thanh tiến độ',
+      );
     });
 
     test('vùng phủ đều của thanh che hết chỗ có chữ', () {
@@ -116,8 +141,11 @@ void main() {
   group('Màu tâm trạng', () {
     test('mỗi mức có hai sắc, không dùng chung một màu cho cả hai nền', () {
       for (final mood in Mood.values) {
-        expect(mood.onLight, isNot(mood.onDark),
-            reason: '${mood.label} chưa tách sắc cho nền sáng');
+        expect(
+          mood.onLight,
+          isNot(mood.onDark),
+          reason: '${mood.label} chưa tách sắc cho nền sáng',
+        );
       }
     });
 
@@ -126,10 +154,12 @@ void main() {
         final colors = Mood.values.map((m) => m.colorOn(brightness)).toList();
         for (var i = 0; i < colors.length; i++) {
           for (var j = i + 1; j < colors.length; j++) {
-            expect(_ratio(colors[i], colors[j]) > 1.2 ||
-                    _hueGap(colors[i], colors[j]) > 25,
-                isTrue,
-                reason: 'hai mức cạnh nhau nhìn ra cùng một màu');
+            expect(
+              _ratio(colors[i], colors[j]) > 1.2 ||
+                  _hueGap(colors[i], colors[j]) > 25,
+              isTrue,
+              reason: 'hai mức cạnh nhau nhìn ra cùng một màu',
+            );
           }
         }
       }
@@ -140,7 +170,10 @@ void main() {
         final mid = Mood.colorForAverage(3.5, brightness);
         final a = Mood.neutral.colorOn(brightness);
         final b = Mood.good.colorOn(brightness);
-        expect(_lum(mid), greaterThanOrEqualTo(math.min(_lum(a), _lum(b)) - 0.01));
+        expect(
+          _lum(mid),
+          greaterThanOrEqualTo(math.min(_lum(a), _lum(b)) - 0.01),
+        );
         expect(_lum(mid), lessThanOrEqualTo(math.max(_lum(a), _lum(b)) + 0.01));
       }
     });
@@ -153,9 +186,13 @@ Color _over(Color bg, double alpha) =>
 
 void expectRatio(Color fg, Color bg, double need, String what) {
   final got = _ratio(fg, bg);
-  expect(got, greaterThanOrEqualTo(need),
-      reason: '$what: ${got.toStringAsFixed(2)}:1, cần $need:1 '
-          '(${_hex(fg)} trên ${_hex(bg)})');
+  expect(
+    got,
+    greaterThanOrEqualTo(need),
+    reason:
+        '$what: ${got.toStringAsFixed(2)}:1, cần $need:1 '
+        '(${_hex(fg)} trên ${_hex(bg)})',
+  );
 }
 
 double _channel(double v) =>

@@ -63,7 +63,10 @@ Implemented exactly as Prof. Annie Chang described it.
 |---|---|
 | Check-in | "How are you feeling right now?" — Calm / Stressed / Tired / Upset / Distracted, then a 0–10 stress scale. These are states for tailoring, not scores. |
 | Tailoring | At 7 or above the wording changes to "Let's take this a little slower". The user chooses **Grounding** or **Follow the breath** |
-| Practice | The choice changes playback. "Follow the breath" skips the grounding section and jumps straight to the breathing practice |
+| Practice | The choice changes playbac
+
+
+k. "Follow the breath" skips the grounding section and jumps straight to the breathing practice |
 | Reflection | Five-level post-practice mood (Really hard to Really good), stress after practice, then "What did you notice during the practice?" |
 | Follow-up | "Your stress went from 8 down to 4. Next time, a short body scan may suit you." |
 
@@ -326,5 +329,7 @@ the picture instead of being pinned to the bottom of the screen.
   shorter on a phone held upright than the beach setting's 16:9.
 - The full script was recovered from the video by optical character recognition
   and checked by hand. If an authoritative script exists, it should replace it.
-- Session data stays on the device. There is no export, no synchronisation and
-  no clinician view.
+- Journal text stays on the device. The Supabase CRM synchronises only session
+  time, post-session mood, a reflection-present flag, and aggregate counts for
+  the staff view. Production access still requires the research team's free
+  Supabase project and approved data-governance configuration.

@@ -9,7 +9,9 @@ import 'screens/home_screen.dart';
 import 'state/settings_store.dart';
 
 class EmbraceApp extends StatelessWidget {
-  const EmbraceApp({super.key});
+  const EmbraceApp({super.key, this.home});
+
+  final Widget? home;
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +46,7 @@ class EmbraceApp extends StatelessWidget {
           child: child ?? const SizedBox.shrink(),
         );
       },
-      home: const HomeScreen(),
+      home: home ?? const HomeScreen(),
     );
   }
 }
