@@ -37,8 +37,9 @@ class _ReflectionCardState extends State<ReflectionCard> {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
       decoration: BoxDecoration(
-        color: scheme.primaryContainer.withValues(alpha: 0.45),
-        borderRadius: BorderRadius.circular(16),
+        color: scheme.primaryContainer.withValues(alpha: 0.35),
+        borderRadius: AppRadius.lg,
+        border: Border.all(color: scheme.primary.withValues(alpha: 0.25)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

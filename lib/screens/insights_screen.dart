@@ -45,38 +45,42 @@ class InsightsScreen extends StatelessWidget {
             ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
           ),
           Gap.m,
-          Row(
-            children: [
-              Expanded(
-                child: StatTile(
-                  value: '${store.streak}',
-                  suffix: 'days',
-                  label: 'Current streak',
+          // Ba ô cao bằng nhau kể cả khi một nhãn xuống hai dòng.
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: StatTile(
+                    value: '${store.streak}',
+                    suffix: 'days',
+                    label: 'Current streak',
+                  ),
                 ),
-              ),
-              Gap.s,
-              Expanded(
-                child: StatTile(
-                  value: '${store.entries.length}',
-                  suffix: 'entries',
-                  label: 'Written so far',
+                Gap.s,
+                Expanded(
+                  child: StatTile(
+                    value: '${store.entries.length}',
+                    suffix: 'entries',
+                    label: 'Written so far',
+                  ),
                 ),
-              ),
-              Gap.s,
-              Expanded(
-                child: StatTile(
-                  value: average == null ? '—' : average.toStringAsFixed(1),
-                  suffix: average == null ? null : '/5',
-                  label: '30-day average',
-                  accent: average == null
-                      ? null
-                      : Mood.colorForAverage(
-                          average,
-                          Theme.of(context).brightness,
-                        ),
+                Gap.s,
+                Expanded(
+                  child: StatTile(
+                    value: average == null ? '—' : average.toStringAsFixed(1),
+                    suffix: average == null ? null : '/5',
+                    label: '30-day average',
+                    accent: average == null
+                        ? null
+                        : Mood.colorForAverage(
+                            average,
+                            Theme.of(context).brightness,
+                          ),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           Gap.m,
           _Section(

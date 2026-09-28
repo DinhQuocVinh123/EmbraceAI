@@ -292,18 +292,24 @@ class _SceneOption extends StatelessWidget {
         child: AnimatedContainer(
           duration: AppMotion.duration(context, AppMotion.fast),
           curve: Curves.easeOutCubic,
+          // Ô đang chọn: viền nhấn và nền nhấn nhạt; ô chưa chọn: nền trang và
+          // viền mảnh — khác nhau cả về viền lẫn dấu tích, không chỉ màu nền.
           decoration: BoxDecoration(
             color: selected
-                ? scheme.primaryContainer
-                : scheme.surfaceContainerHighest.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(16),
+                ? scheme.primaryContainer.withValues(alpha: 0.4)
+                : scheme.surface,
+            borderRadius: AppRadius.lg,
+            border: Border.all(
+              color: selected ? scheme.primary : scheme.outlineVariant,
+              width: selected ? 1.5 : 1,
+            ),
           ),
           child: Material(
             color: Colors.transparent,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: AppRadius.lg,
             child: InkWell(
               onTap: onTap,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: AppRadius.lg,
               child: Container(
                 constraints: const BoxConstraints(minHeight: 64),
                 padding: const EdgeInsets.all(12),
@@ -313,7 +319,7 @@ class _SceneOption extends StatelessWidget {
                       width: 56,
                       height: 40,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: AppRadius.md,
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,

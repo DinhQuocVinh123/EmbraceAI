@@ -34,7 +34,7 @@ class EntryCard extends StatelessWidget {
         child: Card(
           child: InkWell(
             onTap: onTap,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: AppRadius.lg,
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
@@ -127,7 +127,8 @@ class _TagPill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: AppRadius.sm,
+        border: Border.all(color: theme.colorScheme.outlineVariant),
       ),
       child: Text(
         label,

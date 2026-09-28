@@ -402,9 +402,7 @@ class _PortalSidebar extends StatelessWidget {
                   leading: const Icon(Icons.logout),
                   title: const Text('Sign out'),
                   onTap: onSignOut,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: AppRadius.md),
                 ),
               ],
             ),
@@ -433,21 +431,22 @@ class _SidebarDestination extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    // Mục đang chọn dùng nền xám nhạt kiểu shadcn thay cho mảng màu nhấn;
+    // chữ đậm hơn và biểu tượng đặc để không chỉ dựa vào màu nền.
     return Material(
-      color: selected ? scheme.primaryContainer : Colors.transparent,
-      borderRadius: BorderRadius.circular(8),
+      color: selected ? scheme.secondaryContainer : Colors.transparent,
+      borderRadius: AppRadius.md,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: AppRadius.md,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Row(
             children: [
               Icon(
                 selected ? selectedIcon : icon,
-                color: selected
-                    ? scheme.onPrimaryContainer
-                    : scheme.onSurfaceVariant,
+                size: 20,
+                color: selected ? scheme.onSurface : scheme.onSurfaceVariant,
               ),
               Gap.m,
               Expanded(
@@ -457,9 +456,9 @@ class _SidebarDestination extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: selected
-                        ? scheme.onPrimaryContainer
-                        : scheme.onSurface,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                        ? scheme.onSurface
+                        : scheme.onSurfaceVariant,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                   ),
                 ),
               ),
@@ -668,9 +667,7 @@ class _PageHeader extends StatelessWidget {
           label: const Text('New participant'),
           style: FilledButton.styleFrom(
             minimumSize: const Size(0, 44),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: AppRadius.md),
           ),
         );
         if (constraints.maxWidth < 560) {
@@ -712,7 +709,7 @@ class _MetricTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: scheme.surfaceContainerLowest,
         border: Border.all(color: scheme.outlineVariant),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: AppRadius.md,
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -760,21 +757,25 @@ class _AttentionBand extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return DecoratedBox(
+      // Kiểu "Alert" của shadcn: nền trang, viền mảnh, chỉ biểu tượng mang màu.
       decoration: BoxDecoration(
-        color: scheme.tertiaryContainer.withValues(alpha: 0.45),
-        border: Border.all(color: scheme.tertiary.withValues(alpha: 0.5)),
-        borderRadius: BorderRadius.circular(8),
+        color: scheme.surface,
+        border: Border.all(color: scheme.outlineVariant),
+        borderRadius: AppRadius.lg,
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Row(
           children: [
-            Icon(Icons.info_outline, color: scheme.onTertiaryContainer),
+            Icon(Icons.info_outline, size: 20, color: scheme.tertiary),
             Gap.s,
             Expanded(
               child: Text(
                 '$count participant${count == 1 ? '' : 's'} awaiting consent review',
-                style: TextStyle(color: scheme.onTertiaryContainer),
+                style: TextStyle(
+                  color: scheme.onSurface,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
             TextButton(onPressed: onReview, child: const Text('Review')),
@@ -969,14 +970,8 @@ class _ParticipantFilters extends StatelessWidget {
   final ValueChanged<ConsentStatus?> onConsentChanged;
   final VoidCallback onClear;
 
-  InputDecoration _decoration(String label, IconData icon) => InputDecoration(
-    labelText: label,
-    prefixIcon: Icon(icon),
-    isDense: true,
-    filled: false,
-    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-  );
+  InputDecoration _decoration(String label, IconData icon) =>
+      InputDecoration(labelText: label, prefixIcon: Icon(icon), isDense: true);
 
   @override
   Widget build(BuildContext context) {
@@ -1079,10 +1074,10 @@ class _ParticipantTable extends StatelessWidget {
       builder: (context, constraints) => DecoratedBox(
         decoration: BoxDecoration(
           border: Border.all(color: scheme.outlineVariant),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: AppRadius.md,
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: AppRadius.md,
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: ConstrainedBox(
@@ -1162,10 +1157,10 @@ class _ParticipantList extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         border: Border.all(color: scheme.outlineVariant),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: AppRadius.md,
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: AppRadius.md,
         child: Column(
           children: [
             for (var index = 0; index < participants.length; index++) ...[
@@ -1342,7 +1337,6 @@ class _CreateParticipantDialogState extends State<_CreateParticipantDialog> {
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(leadingIcon),
-        border: const OutlineInputBorder(),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<T>(
@@ -1373,7 +1367,6 @@ class _CreateParticipantDialogState extends State<_CreateParticipantDialog> {
                 decoration: const InputDecoration(
                   labelText: 'Study ID',
                   prefixIcon: Icon(Icons.science_outlined),
-                  border: OutlineInputBorder(),
                 ),
                 validator: (value) => value == null || value.trim().isEmpty
                     ? 'Enter a study ID'
@@ -1680,12 +1673,6 @@ class _ParticipantDetailPanel extends StatelessWidget {
                         labelText: 'Consent status',
                         prefixIcon: const Icon(Icons.fact_check_outlined),
                         filled: false,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
                       ),
                       items: [
                         for (final status in ConsentStatus.values)
@@ -1847,7 +1834,7 @@ class _MeasureStatusRow extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: scheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: AppRadius.md,
         border: Border.all(color: scheme.outlineVariant),
       ),
       child: Row(
@@ -2026,7 +2013,7 @@ class _DetailMetric extends StatelessWidget {
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: scheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: AppRadius.md,
         ),
         child: Padding(
           padding: const EdgeInsets.all(12),

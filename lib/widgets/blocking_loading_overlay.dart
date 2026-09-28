@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../core/theme.dart';
+
 class BlockingLoadingOverlay extends StatelessWidget {
   const BlockingLoadingOverlay({super.key, required this.message});
 
@@ -21,8 +23,11 @@ class BlockingLoadingOverlay extends StatelessWidget {
             label: message,
             child: Material(
               color: scheme.surface,
-              elevation: 8,
-              borderRadius: BorderRadius.circular(8),
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: AppRadius.lg,
+                side: BorderSide(color: scheme.outlineVariant),
+              ),
               child: Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
