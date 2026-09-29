@@ -9,9 +9,8 @@ import '../services/credential_codec.dart';
 class AuthStore extends ChangeNotifier {
   AuthStore({SupabaseClient? client, Uri? initialUri})
     : _client = client ?? Supabase.instance.client,
-      _expectedParticipantCode = participantCodeFromUri(
-        initialUri ?? Uri.base,
-      ) {
+      _expectedParticipantCode = participantCodeFromUri(initialUri ?? Uri.base),
+      _signInTokenHash = signInTokenFromUri(initialUri ?? Uri.base) {
     _subscription = _client.auth.onAuthStateChange.listen((event) {
       if (!_manualFlow) unawaited(_handleAuthChange(event.session?.user));
     });
@@ -20,6 +19,11 @@ class AuthStore extends ChangeNotifier {
 
   final SupabaseClient _client;
   final String? _expectedParticipantCode;
+
+  /// Mã đăng nhập một lần trong link `?signin=...` mà nhân viên gửi cho người
+  /// tham gia. Link nằm trên tên miền của app để người nhận đọc được; app tự
+  /// xác thực mã với Supabase thay cho trang xác thực của Supabase.
+  final String? _signInTokenHash;
   late final StreamSubscription<AuthState> _subscription;
 
   AccountSession? _session;
@@ -34,6 +38,28 @@ class AuthStore extends ChangeNotifier {
   String? get error => _error;
 
   Future<void> _restoreSession() async {
+    final tokenHash = _signInTokenHash;
+    if (tokenHash != null) {
+      // Tự xử lý sự kiện đăng nhập ở dưới, tránh chạy _handleAuthChange hai lần.
+      _manualFlow = true;
+      try {
+        await _client.auth.verifyOTP(
+          type: OtpType.magiclink,
+          tokenHash: tokenHash,
+        );
+      } on AuthException {
+        // Tải lại trang sau khi đã đăng nhập bằng link sẽ dùng lại mã cũ; lúc
+        // đó phiên vẫn còn nên không báo lỗi.
+        if (_client.auth.currentUser == null) {
+          _error =
+              'This sign-in link has expired or has already been used. Sign '
+              'in with your Participant ID and access key, or ask the '
+              'research team for a new link.';
+        }
+      } finally {
+        _manualFlow = false;
+      }
+    }
     await _handleAuthChange(_client.auth.currentUser);
   }
 
@@ -236,6 +262,13 @@ class AuthStore extends ChangeNotifier {
     if (raw == null) return null;
     final code = CredentialCodec.normalizeCode(raw);
     return RegExp(r'^EA[A-Z0-9]{8}$').hasMatch(code) ? code : null;
+  }
+
+  @visibleForTesting
+  static String? signInTokenFromUri(Uri uri) {
+    final raw = uri.queryParameters['signin']?.trim().toLowerCase();
+    if (raw == null) return null;
+    return RegExp(r'^[0-9a-f]{20,128}$').hasMatch(raw) ? raw : null;
   }
 
   bool _matchesQrParticipant(AccountSession session) {

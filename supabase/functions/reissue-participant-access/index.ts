@@ -13,6 +13,15 @@ function participantRedirect(publicAppUrl: string, code: string): string {
   return redirect.toString();
 }
 
+// Link gửi cho người tham gia nằm trên chính tên miền của app, không phải
+// link xác thực thô của Supabase (tên miền lạ, chuỗi chuyển hướng mã hoá).
+// App đọc `signin` và tự xác thực mã với Supabase khi được mở.
+function appSignInUrl(publicAppUrl: string, tokenHash: string): string {
+  const url = new URL(publicAppUrl);
+  url.searchParams.set('signin', tokenHash);
+  return url.toString();
+}
+
 function json(status: number, body: Record<string, unknown>): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -94,7 +103,8 @@ Deno.serve(async (request) => {
       email,
       options: { redirectTo: participantRedirect(publicAppUrl, code) },
     });
-  const loginUrl = linkData?.properties?.action_link;
+  const tokenHash = linkData?.properties?.hashed_token;
+  const loginUrl = tokenHash ? appSignInUrl(publicAppUrl, tokenHash) : null;
   if (linkError || !loginUrl) {
     return json(500, { error: 'Could not create QR access' });
   }
