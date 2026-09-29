@@ -31,6 +31,7 @@ class FakeVideoPlayerPlatform extends VideoPlayerPlatform {
 
   /// Các file đã được mở, để kiểm mỗi bối cảnh dùng đúng video của nó.
   final List<String> opened = [];
+  final List<String> played = [];
   final List<bool> mixWithOthersValues = [];
 
   _FakePlayerState get _primary => _players[1]!;
@@ -86,6 +87,7 @@ class FakeVideoPlayerPlatform extends VideoPlayerPlatform {
 
   @override
   Future<void> play(int playerId) async {
+    played.add(_players[playerId]!.source);
     _players[playerId]!.playing = true;
   }
 

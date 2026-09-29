@@ -11,7 +11,15 @@ import '../models/session_audio.dart';
 import '../models/session_answers.dart';
 import '../models/session_scene.dart';
 
-enum SessionPhase { safety, checkIn, practice, feedback, question, summary }
+enum SessionPhase {
+  disclaimer,
+  safety,
+  checkIn,
+  practice,
+  feedback,
+  question,
+  summary,
+}
 
 /// Questions surround the practice; only practice segments play in the video.
 class SessionController extends ChangeNotifier {
@@ -29,7 +37,7 @@ class SessionController extends ChangeNotifier {
   VideoPlayerController? get video => _video;
   VideoPlayerController? _background;
   BackgroundSound backgroundSound;
-  SessionPhase _phase = SessionPhase.safety;
+  SessionPhase _phase = SessionPhase.disclaimer;
   SessionPhase get phase => _phase;
   Beat _current = SessionScript.beats.first;
   Beat get currentBeat => _current;
@@ -163,6 +171,12 @@ class SessionController extends ChangeNotifier {
     _notify();
   }
 
+  void acceptDisclaimer() {
+    if (_phase != SessionPhase.disclaimer) return;
+    _phase = SessionPhase.safety;
+    _notify();
+  }
+
   Future<void> answerCheckIn({
     required CheckInFeeling feeling,
     required int stress,
@@ -217,6 +231,8 @@ class SessionController extends ChangeNotifier {
 
   Future<void> skipQuestion() async {
     switch (_phase) {
+      case SessionPhase.disclaimer:
+        return;
       case SessionPhase.safety:
         _phase = SessionPhase.checkIn;
       case SessionPhase.checkIn:
@@ -274,12 +290,16 @@ class SessionController extends ChangeNotifier {
   Future<void> _playMedia() async {
     final video = _video;
     if (video == null) return;
+    // Narration is the primary audio. Start it first so mobile WebViews grant
+    // their user-gesture playback permission to the guided voice, not the
+    // optional ambience controller.
+    await video.setVolume(_voiceVolume);
+    await video.play();
     final background = _background;
     if (background != null) {
       await background.seekTo(video.value.position);
       await background.play();
     }
-    await video.play();
   }
 
   Future<void> _pauseMedia() async {

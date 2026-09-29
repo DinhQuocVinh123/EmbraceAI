@@ -76,7 +76,9 @@ class JournalScreen extends StatelessWidget {
                     ),
                     _EntryItem(:final entry) => EntryCard(
                       entry: entry,
-                      onTap: () => EntryDetailScreen.open(context, entry),
+                      onTap: entry.isRemoteSummary
+                          ? null
+                          : () => EntryDetailScreen.open(context, entry),
                     ),
                   };
                 },
@@ -140,7 +142,7 @@ class _Header extends StatelessWidget {
           Gap.xs,
           Text(
             store.hasCheckedInToday
-                ? 'You have written ${store.todayEntries.length} '
+                ? 'You have ${store.todayEntries.length} journal '
                       '${store.todayEntries.length == 1 ? "entry" : "entries"} '
                       'today.'
                 : 'How are you feeling today?',

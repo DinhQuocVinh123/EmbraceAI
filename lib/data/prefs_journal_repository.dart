@@ -12,10 +12,14 @@ import 'journal_repository.dart';
 /// chục KB nên đọc/ghi cả mảng một lần là đủ nhanh; nếu sau này dữ liệu lớn
 /// hoặc cần đồng bộ nhiều máy thì thay bằng một lớp khác, interface giữ nguyên.
 class PrefsJournalRepository implements JournalRepository {
-  PrefsJournalRepository({SharedPreferences? prefs}) : _prefs = prefs;
+  PrefsJournalRepository({SharedPreferences? prefs, String namespace = 'local'})
+    : _prefs = prefs,
+      _namespace = namespace;
 
-  static const _entriesKey = 'journal.entries';
-  static const _nextIdKey = 'journal.nextId';
+  final String _namespace;
+
+  String get _entriesKey => 'journal.$_namespace.entries';
+  String get _nextIdKey => 'journal.$_namespace.nextId';
 
   SharedPreferences? _prefs;
 

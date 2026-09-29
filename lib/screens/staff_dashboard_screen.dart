@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/theme.dart';
 import '../models/participant_record.dart';
+import '../models/study_assessment.dart';
 import '../services/staff_portal_service.dart';
 import '../state/auth_store.dart';
 
@@ -23,10 +24,21 @@ class StaffDashboardScreen extends StatefulWidget {
 
 class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
   _StaffSection _section = _StaffSection.overview;
+  StaffPortalService? _service;
+  Stream<List<ParticipantRecord>>? _participantsStream;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final service = context.read<StaffPortalService>();
+    if (identical(service, _service)) return;
+    _service = service;
+    _participantsStream = service.watchParticipants();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final service = context.read<StaffPortalService>();
+    final service = _service!;
     return LayoutBuilder(
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 900;
@@ -72,7 +84,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
                 ),
               Expanded(
                 child: StreamBuilder<List<ParticipantRecord>>(
-                  stream: service.watchParticipants(),
+                  stream: _participantsStream,
                   builder: (context, snapshot) {
                     if (snapshot.hasError) {
                       return _PortalError(error: snapshot.error);
@@ -167,12 +179,17 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
         child: _ParticipantDetailPanel(
           record: record,
           sessions: service.watchSessions(record.code),
+          studyResponses: service.loadStudyResponses(record.code),
           onClose: () => Navigator.pop(dialogContext),
           onConsentChanged: (status) =>
               service.updateConsent(record.code, status),
           onReissueAccess: () {
             Navigator.pop(dialogContext);
             _reissueAccess(context, service, record);
+          },
+          onOpenFinalAssessment: () {
+            Navigator.pop(dialogContext);
+            _openFinalAssessment(context, service, record);
           },
         ),
       ),
@@ -184,6 +201,31 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
         child: child,
       ),
     );
+  }
+
+  Future<void> _openFinalAssessment(
+    BuildContext context,
+    StaffPortalService service,
+    ParticipantRecord record,
+  ) async {
+    try {
+      await service.openFinalAssessment(record.code);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Final questionnaire opened for ${_displayCode(record.code)}.',
+          ),
+        ),
+      );
+    } on PostgrestException catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Could not open questionnaire: ${error.message}'),
+        ),
+      );
+    }
   }
 
   Future<void> _reissueAccess(
@@ -417,6 +459,18 @@ class _OverviewView extends StatelessWidget {
     final pendingConsent = participants
         .where((item) => item.consentStatus == ConsentStatus.pending)
         .length;
+    final baselinePending = participants
+        .where(
+          (item) => item.demographicsStatus != FormCompletionStatus.submitted,
+        )
+        .length;
+    final finalDue = participants
+        .where(
+          (item) =>
+              item.finalAssessmentStatus == FinalAssessmentStatus.due ||
+              item.finalAssessmentStatus == FinalAssessmentStatus.inProgress,
+        )
+        .length;
     final recent = participants.take(5).toList(growable: false);
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -460,7 +514,7 @@ class _OverviewView extends StatelessWidget {
                       ),
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      itemCount: 4,
+                      itemCount: 6,
                       itemBuilder: (_, index) => <Widget>[
                         _MetricTile(
                           icon: Icons.people_outline,
@@ -482,6 +536,17 @@ class _OverviewView extends StatelessWidget {
                           icon: Icons.fact_check_outlined,
                           value: pendingConsent.toString(),
                           label: 'Consent pending',
+                          accent: Theme.of(context).colorScheme.tertiary,
+                        ),
+                        _MetricTile(
+                          icon: Icons.badge_outlined,
+                          value: baselinePending.toString(),
+                          label: 'Baseline pending',
+                        ),
+                        _MetricTile(
+                          icon: Icons.assignment_outlined,
+                          value: finalDue.toString(),
+                          label: 'Final assessment due',
                           accent: Theme.of(context).colorScheme.tertiary,
                         ),
                       ][index],
@@ -1414,16 +1479,20 @@ class _ParticipantDetailPanel extends StatelessWidget {
   const _ParticipantDetailPanel({
     required this.record,
     required this.sessions,
+    required this.studyResponses,
     required this.onClose,
     required this.onConsentChanged,
     required this.onReissueAccess,
+    required this.onOpenFinalAssessment,
   });
 
   final ParticipantRecord record;
   final Stream<List<ParticipantSessionRecord>> sessions;
+  final Future<StudyResponseSummary> studyResponses;
   final VoidCallback onClose;
   final ValueChanged<ConsentStatus> onConsentChanged;
   final VoidCallback onReissueAccess;
+  final VoidCallback onOpenFinalAssessment;
 
   @override
   Widget build(BuildContext context) {
@@ -1436,12 +1505,11 @@ class _ParticipantDetailPanel extends StatelessWidget {
         child: SizedBox(
           width: width,
           height: double.infinity,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 16, 12, 0),
+                child: Row(
                   children: [
                     Expanded(
                       child: Text(
@@ -1458,137 +1526,385 @@ class _ParticipantDetailPanel extends StatelessWidget {
                     ),
                   ],
                 ),
-                Gap.l,
-                Text(
-                  _displayCode(record.code),
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                Gap.s,
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 8,
-                  crossAxisAlignment: WrapCrossAlignment.center,
+              ),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
                   children: [
-                    _StatusChip(status: record.status),
                     Text(
-                      '${record.studyId}  |  ${record.group}',
-                      style: TextStyle(color: scheme.onSurfaceVariant),
+                      _displayCode(record.code),
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w700),
                     ),
-                  ],
-                ),
-                Gap.l,
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    _DetailMetric(
-                      label: 'Sessions',
-                      value: record.sessionCount.toString(),
+                    Gap.s,
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        _StatusChip(status: record.status),
+                        Text(
+                          '${record.studyId}  |  ${record.group}',
+                          style: TextStyle(color: scheme.onSurfaceVariant),
+                        ),
+                      ],
                     ),
-                    _DetailMetric(
-                      label: 'Last activity',
-                      value: _date(record.lastActivityAt),
+                    Gap.l,
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: [
+                        _DetailMetric(
+                          label: 'Sessions',
+                          value: record.sessionCount.toString(),
+                        ),
+                        _DetailMetric(
+                          label: 'Last activity',
+                          value: _date(record.lastActivityAt),
+                        ),
+                        _DetailMetric(
+                          label: 'Account expires',
+                          value: _date(record.expiresAt),
+                        ),
+                      ],
                     ),
-                    _DetailMetric(
-                      label: 'Account expires',
-                      value: _date(record.expiresAt),
-                    ),
-                  ],
-                ),
-                Gap.l,
-                DropdownButtonFormField<ConsentStatus>(
-                  initialValue: record.consentStatus,
-                  decoration: InputDecoration(
-                    labelText: 'Consent status',
-                    prefixIcon: const Icon(Icons.fact_check_outlined),
-                    filled: false,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  items: [
-                    for (final status in ConsentStatus.values)
-                      DropdownMenuItem(
-                        value: status,
-                        child: Text(_label(status.name)),
+                    Gap.l,
+                    DropdownButtonFormField<ConsentStatus>(
+                      initialValue: record.consentStatus,
+                      decoration: InputDecoration(
+                        labelText: 'Consent status',
+                        prefixIcon: const Icon(Icons.fact_check_outlined),
+                        filled: false,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
-                  ],
-                  onChanged: (value) {
-                    if (value != null) onConsentChanged(value);
-                  },
-                ),
-                Gap.m,
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed:
-                        record.status == ParticipantStatus.invited ||
-                            record.status == ParticipantStatus.active
-                        ? onReissueAccess
-                        : null,
-                    icon: const Icon(Icons.qr_code_2),
-                    label: const Text('Reissue sign-in QR'),
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(0, 44),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                      items: [
+                        for (final status in ConsentStatus.values)
+                          DropdownMenuItem(
+                            value: status,
+                            child: Text(_label(status.name)),
+                          ),
+                      ],
+                      onChanged: (value) {
+                        if (value != null) onConsentChanged(value);
+                      },
+                    ),
+                    if (record.consentRecordedAt != null) ...[
+                      Gap.s,
+                      Text(
+                        'Recorded ${DateFormat.yMMMd().add_jm().format(record.consentRecordedAt!)}'
+                        '${record.consentSource == null ? '' : ' via ${record.consentSource}'}'
+                        '${record.consentVersion == null ? '' : ' | ${record.consentVersion}'}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                    Gap.xl,
+                    Text(
+                      'Study measures',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                  ),
+                    Gap.s,
+                    _MeasureStatusRow(
+                      label: 'Appendix A: Demographics',
+                      status: _labelFormStatus(record.demographicsStatus),
+                      complete:
+                          record.demographicsStatus ==
+                          FormCompletionStatus.submitted,
+                    ),
+                    Gap.s,
+                    _MeasureStatusRow(
+                      label: 'Appendices B-D: Final questionnaire',
+                      status: _labelFinalStatus(record.finalAssessmentStatus),
+                      complete:
+                          record.finalAssessmentStatus ==
+                          FinalAssessmentStatus.submitted,
+                    ),
+                    Gap.m,
+                    if (record.finalAssessmentStatus !=
+                        FinalAssessmentStatus.submitted)
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: record.status == ParticipantStatus.active
+                              ? onOpenFinalAssessment
+                              : null,
+                          icon: const Icon(Icons.assignment_add),
+                          label: Text(
+                            record.finalAssessmentStatus ==
+                                        FinalAssessmentStatus.due ||
+                                    record.finalAssessmentStatus ==
+                                        FinalAssessmentStatus.inProgress
+                                ? 'Keep final questionnaire open'
+                                : 'Open final questionnaire',
+                          ),
+                        ),
+                      ),
+                    Gap.m,
+                    FutureBuilder<StudyResponseSummary>(
+                      future: studyResponses,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const LinearProgressIndicator();
+                        }
+                        if (!snapshot.hasData) return const SizedBox.shrink();
+                        return _StudyResponseBlock(summary: snapshot.data!);
+                      },
+                    ),
+                    Gap.xl,
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed:
+                            record.status == ParticipantStatus.invited ||
+                                record.status == ParticipantStatus.active
+                            ? onReissueAccess
+                            : null,
+                        icon: const Icon(Icons.qr_code_2),
+                        label: const Text('Reissue sign-in QR'),
+                      ),
+                    ),
+                    Gap.xl,
+                    Text(
+                      'Recent sessions',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Gap.s,
+                    StreamBuilder<List<ParticipantSessionRecord>>(
+                      stream: sessions,
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData) {
+                          return const LinearProgressIndicator();
+                        }
+                        final rows = snapshot.data!;
+                        if (rows.isEmpty) return const _NoSessions();
+                        return ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: rows.length,
+                          separatorBuilder: (_, _) => const Divider(height: 1),
+                          itemBuilder: (_, index) {
+                            final session = rows[index];
+                            final date = DateFormat.yMMMd().add_jm().format(
+                              session.occurredAt,
+                            );
+                            final mood = session.moodAfter;
+                            return ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: const Icon(Icons.self_improvement),
+                              title: Text(date),
+                              subtitle: Text(
+                                mood != null
+                                    ? 'Mood score: $mood/5'
+                                    : 'Mood skipped',
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ],
                 ),
-                Gap.l,
-                Text(
-                  'Recent sessions',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                Gap.s,
-                Expanded(
-                  child: StreamBuilder<List<ParticipantSessionRecord>>(
-                    stream: sessions,
-                    builder: (context, snapshot) {
-                      if (!snapshot.hasData) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      final rows = snapshot.data!;
-                      if (rows.isEmpty) return const _NoSessions();
-                      return ListView.separated(
-                        itemCount: rows.length,
-                        separatorBuilder: (_, _) => const Divider(height: 1),
-                        itemBuilder: (_, index) {
-                          final session = rows[index];
-                          final date = DateFormat.yMMMd().add_jm().format(
-                            session.occurredAt,
-                          );
-                          final mood = session.moodAfter;
-                          return ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            leading: const Icon(Icons.self_improvement),
-                            title: Text(date),
-                            subtitle: Text(
-                              mood != null
-                                  ? 'Mood score: $mood/5'
-                                  : 'Mood skipped',
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
+}
+
+class _MeasureStatusRow extends StatelessWidget {
+  const _MeasureStatusRow({
+    required this.label,
+    required this.status,
+    required this.complete,
+  });
+
+  final String label;
+  final String status;
+  final bool complete;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: scheme.outlineVariant),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            complete ? Icons.check_circle_outline : Icons.schedule_outlined,
+            color: complete ? scheme.primary : scheme.onSurfaceVariant,
+          ),
+          Gap.s,
+          Expanded(child: Text(label)),
+          Gap.s,
+          Text(
+            status,
+            style: TextStyle(
+              color: complete ? scheme.primary : scheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StudyResponseBlock extends StatelessWidget {
+  const _StudyResponseBlock({required this.summary});
+
+  final StudyResponseSummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    final demographics = summary.demographics;
+    final assessment = summary.finalAssessment;
+    if (demographics == null && assessment == null) {
+      return const SizedBox.shrink();
+    }
+    final premValues =
+        assessment?.premResponses.whereType<int>().toList() ?? const <int>[];
+    final premAverage = premValues.isEmpty
+        ? null
+        : premValues.reduce((a, b) => a + b) / premValues.length;
+    final openAnswers =
+        assessment?.openResponses
+            .where((answer) => answer.trim().isNotEmpty)
+            .toList() ??
+        const <String>[];
+    return ExpansionTile(
+      tilePadding: EdgeInsets.zero,
+      childrenPadding: const EdgeInsets.only(bottom: 8),
+      title: const Text('View collected responses'),
+      leading: const Icon(Icons.visibility_outlined),
+      children: [
+        if (demographics != null) ...[
+          _ResponseLine(
+            'Age',
+            demographics.ageYears?.toString() ?? 'Not answered',
+          ),
+          _ResponseLine('Gender', _answerLabel(demographics.gender)),
+          _ResponseLine(
+            'Ethnic background',
+            demographics.ethnicBackground == 'other'
+                ? demographics.ethnicOther ?? 'Other'
+                : _answerLabel(demographics.ethnicBackground),
+          ),
+          _ResponseLine(
+            'Country of birth',
+            demographics.countryOfBirth ?? 'Not answered',
+          ),
+          _ResponseLine(
+            'Cardiovascular diagnosis',
+            demographics.cardiovascularDiagnosis ?? 'Not answered',
+          ),
+        ],
+        if (assessment != null) ...[
+          const Divider(height: 24),
+          _ResponseLine(
+            'GAD-2',
+            assessment.gad2Score == null
+                ? 'Incomplete'
+                : '${assessment.gad2Score}/6',
+          ),
+          _ResponseLine(
+            'GAD-7',
+            assessment.gad7Score == null
+                ? 'Incomplete'
+                : '${assessment.gad7Score}/21',
+          ),
+          _ResponseLine(
+            'Emotional well-being',
+            assessment.emotionalWellbeing == null
+                ? 'Not answered'
+                : '${assessment.emotionalWellbeing}/5',
+          ),
+          _ResponseLine(
+            'PREM average',
+            premAverage == null
+                ? 'Not answered'
+                : '${premAverage.toStringAsFixed(1)}/5',
+          ),
+          _ResponseLine(
+            'Written responses',
+            '${openAnswers.length} of 4 answered',
+          ),
+          for (var index = 0; index < openAnswers.length; index++)
+            _ResponseLine('Feedback ${index + 1}', openAnswers[index]),
+        ],
+      ],
+    );
+  }
+}
+
+class _ResponseLine extends StatelessWidget {
+  const _ResponseLine(this.label, this.value);
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 150,
+            child: Text(
+              label,
+              style: TextStyle(color: scheme.onSurfaceVariant),
+            ),
+          ),
+          Gap.s,
+          Expanded(child: Text(value)),
+        ],
+      ),
+    );
+  }
+}
+
+String _labelFormStatus(FormCompletionStatus status) => switch (status) {
+  FormCompletionStatus.notStarted => 'Not started',
+  FormCompletionStatus.draft => 'Draft',
+  FormCompletionStatus.submitted => 'Completed',
+};
+
+String _labelFinalStatus(FinalAssessmentStatus status) => switch (status) {
+  FinalAssessmentStatus.notDue => 'Not due',
+  FinalAssessmentStatus.due => 'Due',
+  FinalAssessmentStatus.inProgress => 'In progress',
+  FinalAssessmentStatus.submitted => 'Completed',
+};
+
+String _answerLabel(String? value) {
+  if (value == null || value.isEmpty) return 'Not answered';
+  return value
+      .split('_')
+      .map(
+        (word) => word.isEmpty
+            ? word
+            : '${word[0].toUpperCase()}${word.substring(1)}',
+      )
+      .join(' ');
 }
 
 class _DetailMetric extends StatelessWidget {

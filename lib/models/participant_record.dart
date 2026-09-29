@@ -1,6 +1,9 @@
-enum ParticipantStatus { invited, active, suspended, completed }
+import 'consent.dart';
+import 'study_assessment.dart';
 
-enum ConsentStatus { pending, accepted, withdrawn }
+export 'consent.dart';
+
+enum ParticipantStatus { invited, active, suspended, completed }
 
 class ParticipantRecord {
   const ParticipantRecord({
@@ -11,9 +14,15 @@ class ParticipantRecord {
     required this.consentStatus,
     required this.sessionCount,
     required this.createdAt,
+    this.demographicsStatus = FormCompletionStatus.notStarted,
+    this.finalAssessmentStatus = FinalAssessmentStatus.notDue,
     this.lastActivityAt,
     this.activatedAt,
     this.expiresAt,
+    this.finalAssessmentOpenedAt,
+    this.consentVersion,
+    this.consentRecordedAt,
+    this.consentSource,
   });
 
   final String code;
@@ -23,9 +32,15 @@ class ParticipantRecord {
   final ConsentStatus consentStatus;
   final int sessionCount;
   final DateTime createdAt;
+  final FormCompletionStatus demographicsStatus;
+  final FinalAssessmentStatus finalAssessmentStatus;
   final DateTime? lastActivityAt;
   final DateTime? activatedAt;
   final DateTime? expiresAt;
+  final DateTime? finalAssessmentOpenedAt;
+  final String? consentVersion;
+  final DateTime? consentRecordedAt;
+  final String? consentSource;
 
   bool get isActive => status == ParticipantStatus.active;
 
@@ -44,9 +59,24 @@ class ParticipantRecord {
       ),
       sessionCount: (data['session_count'] as num?)?.toInt() ?? 0,
       createdAt: _date(data['created_at']) ?? DateTime.now(),
+      demographicsStatus: switch (data['demographics_status']) {
+        'draft' => FormCompletionStatus.draft,
+        'submitted' => FormCompletionStatus.submitted,
+        _ => FormCompletionStatus.notStarted,
+      },
+      finalAssessmentStatus: switch (data['final_assessment_status']) {
+        'due' => FinalAssessmentStatus.due,
+        'in_progress' => FinalAssessmentStatus.inProgress,
+        'submitted' => FinalAssessmentStatus.submitted,
+        _ => FinalAssessmentStatus.notDue,
+      },
       lastActivityAt: _date(data['last_activity_at']),
       activatedAt: _date(data['activated_at']),
       expiresAt: _date(data['expires_at']),
+      finalAssessmentOpenedAt: _date(data['final_assessment_opened_at']),
+      consentVersion: data['consent_version'] as String?,
+      consentRecordedAt: _date(data['consent_recorded_at']),
+      consentSource: data['consent_source'] as String?,
     );
   }
 

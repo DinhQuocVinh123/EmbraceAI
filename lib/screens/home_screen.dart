@@ -11,10 +11,18 @@ import 'welcome_screen.dart';
 /// Buổi tập đứng đầu vì đó là việc người dùng mở app để làm; nhật ký và
 /// thống kê là thứ họ xem lại sau.
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key, this.participantCode, this.onSignOut});
+  const HomeScreen({
+    super.key,
+    this.participantCode,
+    this.onSignOut,
+    this.finalAssessmentDue = false,
+    this.onOpenFinalAssessment,
+  });
 
   final String? participantCode;
   final Future<void> Function()? onSignOut;
+  final bool finalAssessmentDue;
+  final VoidCallback? onOpenFinalAssessment;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -53,9 +61,21 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
       // IndexedStack để mỗi tab giữ nguyên vị trí cuộn khi quay lại.
-      body: MotionIndexedStack(
-        index: _index,
-        children: const [WelcomeScreen(), JournalScreen(), InsightsScreen()],
+      body: Column(
+        children: [
+          if (widget.finalAssessmentDue)
+            _AssessmentBanner(onOpen: widget.onOpenFinalAssessment),
+          Expanded(
+            child: MotionIndexedStack(
+              index: _index,
+              children: const [
+                WelcomeScreen(),
+                JournalScreen(),
+                InsightsScreen(),
+              ],
+            ),
+          ),
+        ],
       ),
       floatingActionButton: _index == _journalTab
           ? FloatingActionButton.extended(
@@ -99,5 +119,39 @@ class _HomeScreenState extends State<HomeScreen> {
           '${code.substring(6)}';
     }
     return code;
+  }
+}
+
+class _AssessmentBanner extends StatelessWidget {
+  const _AssessmentBanner({required this.onOpen});
+
+  final VoidCallback? onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.tertiaryContainer,
+      child: SafeArea(
+        top: false,
+        child: ListTile(
+          leading: Icon(
+            Icons.assignment_turned_in_outlined,
+            color: scheme.onTertiaryContainer,
+          ),
+          title: Text(
+            'Final questionnaire is ready',
+            style: TextStyle(
+              color: scheme.onTertiaryContainer,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          trailing: TextButton(
+            onPressed: onOpen,
+            child: const Text('Open'),
+          ),
+        ),
+      ),
+    );
   }
 }

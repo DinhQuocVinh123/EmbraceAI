@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../data/prefs_journal_repository.dart';
+import '../data/session_sync_journal_repository.dart';
 import '../services/staff_portal_service.dart';
 import '../state/auth_store.dart';
-import 'home_screen.dart';
+import '../state/journal_store.dart';
 import 'participant_login_screen.dart';
+import 'participant_study_gate.dart';
 import 'staff_dashboard_screen.dart';
 import 'staff_login_screen.dart';
 
@@ -31,9 +34,18 @@ class _AccessGateState extends State<AccessGate> {
       );
     }
     if (session != null) {
-      return HomeScreen(
-        participantCode: session.participantCode,
-        onSignOut: auth.signOut,
+      return ChangeNotifierProvider(
+        key: ValueKey('journal-${session.uid}'),
+        create: (_) => JournalStore(
+          SessionSyncJournalRepository(
+            local: PrefsJournalRepository(namespace: session.uid),
+            legacy: PrefsJournalRepository(),
+          ),
+        )..load(),
+        child: ParticipantStudyGate(
+          participantCode: session.participantCode!,
+          onSignOut: auth.signOut,
+        ),
       );
     }
     if (_staffMode) {

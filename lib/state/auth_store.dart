@@ -7,8 +7,11 @@ import '../models/account_session.dart';
 import '../services/credential_codec.dart';
 
 class AuthStore extends ChangeNotifier {
-  AuthStore({SupabaseClient? client})
-    : _client = client ?? Supabase.instance.client {
+  AuthStore({SupabaseClient? client, Uri? initialUri})
+    : _client = client ?? Supabase.instance.client,
+      _expectedParticipantCode = participantCodeFromUri(
+        initialUri ?? Uri.base,
+      ) {
     _subscription = _client.auth.onAuthStateChange.listen((event) {
       if (!_manualFlow) unawaited(_handleAuthChange(event.session?.user));
     });
@@ -16,6 +19,7 @@ class AuthStore extends ChangeNotifier {
   }
 
   final SupabaseClient _client;
+  final String? _expectedParticipantCode;
   late final StreamSubscription<AuthState> _subscription;
 
   AccountSession? _session;
@@ -40,14 +44,24 @@ class AuthStore extends ChangeNotifier {
       if (user == null) {
         _session = null;
       } else {
-        _session = await _loadSession(user);
-        if (_session == null) {
+        var loaded = await _loadSession(user);
+        if (loaded == null) {
           await _activateParticipantFromLink();
-          _session = await _loadSession(user);
+          loaded = await _loadSession(user);
         }
-        if (_session == null) {
+        if (loaded == null) {
           _error = 'This account is not active for EmbraceAI.';
           await _client.auth.signOut();
+        } else if (!_matchesQrParticipant(loaded)) {
+          _session = null;
+          _error =
+              'This QR code is for ${_displayExpectedParticipant()}. '
+              'A different saved account was signed out. Scan the QR code '
+              'again to continue safely.';
+          await _client.auth.signOut();
+        } else {
+          _session = loaded;
+          _error = null;
         }
       }
     } on PostgrestException {
@@ -77,6 +91,13 @@ class AuthStore extends ChangeNotifier {
       _setError('Check the Participant ID and access key, then try again.');
       return;
     }
+    if (_expectedParticipantCode case final expected? when code != expected) {
+      _setError(
+        'This page was opened for ${_displayExpectedParticipant()}. '
+        'Use that Participant ID or open the main app address again.',
+      );
+      return;
+    }
 
     await _runManual(() async {
       await _client.auth.signOut();
@@ -94,6 +115,13 @@ class AuthStore extends ChangeNotifier {
         await _client.auth.signOut();
         throw const AuthFlowException(
           'This participant account is expired or inactive.',
+        );
+      }
+      if (!_matchesQrParticipant(loaded)) {
+        await _client.auth.signOut();
+        throw AuthFlowException(
+          'This QR code is for ${_displayExpectedParticipant()}. '
+          'The other account was not opened.',
         );
       }
       _session = loaded;
@@ -201,6 +229,27 @@ class AuthStore extends ChangeNotifier {
     'invalid_credentials' => 'The access details are invalid.',
     _ => 'The credentials could not be verified.',
   };
+
+  @visibleForTesting
+  static String? participantCodeFromUri(Uri uri) {
+    final raw = uri.queryParameters['participant'];
+    if (raw == null) return null;
+    final code = CredentialCodec.normalizeCode(raw);
+    return RegExp(r'^EA[A-Z0-9]{8}$').hasMatch(code) ? code : null;
+  }
+
+  bool _matchesQrParticipant(AccountSession session) {
+    final expected = _expectedParticipantCode;
+    return expected == null ||
+        (!session.isStaff && session.participantCode == expected);
+  }
+
+  String _displayExpectedParticipant() {
+    final code = _expectedParticipantCode;
+    if (code == null || code.length != 10) return 'this participant';
+    return '${code.substring(0, 2)}-${code.substring(2, 6)}-'
+        '${code.substring(6)}';
+  }
 
   @override
   void dispose() {

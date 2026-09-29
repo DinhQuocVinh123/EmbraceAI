@@ -1,5 +1,6 @@
 import 'package:embrace_ai/core/theme.dart';
 import 'package:embrace_ai/models/participant_record.dart';
+import 'package:embrace_ai/models/study_assessment.dart';
 import 'package:embrace_ai/screens/staff_dashboard_screen.dart';
 import 'package:embrace_ai/services/staff_portal_service.dart';
 import 'package:flutter/material.dart';
@@ -154,4 +155,8 @@ class _FakeStaffPortalService extends StaffPortalService {
   @override
   Stream<List<ParticipantSessionRecord>> watchSessions(String code) =>
       Stream.value(const []);
+
+  @override
+  Future<StudyResponseSummary> loadStudyResponses(String code) async =>
+      const StudyResponseSummary();
 }

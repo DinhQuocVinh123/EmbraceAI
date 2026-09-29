@@ -190,6 +190,75 @@ class ChoiceButton extends StatelessWidget {
 }
 
 /// Beat 2 — kiểm tra người dùng có đang ở chỗ tiếp tục được không.
+class MedicalDisclaimerPrompt extends StatelessWidget {
+  const MedicalDisclaimerPrompt({
+    super.key,
+    required this.onAccept,
+    required this.onLeave,
+  });
+
+  final VoidCallback onAccept;
+  final VoidCallback onLeave;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return PromptCard(
+      title: 'Medical disclaimer',
+      subtitle: 'Please read this before every practice.',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: scheme.errorContainer,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.medical_information_outlined,
+                    color: scheme.onErrorContainer,
+                  ),
+                  Gap.m,
+                  Expanded(
+                    child: Text(
+                      'This is not a medical intervention. If you experience '
+                      'any discomfort, please stop immediately and seek help '
+                      'from your medical team.',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: scheme.onErrorContainer,
+                        height: 1.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Gap.l,
+          FilledButton.icon(
+            onPressed: onAccept,
+            icon: const Icon(Icons.check_circle_outline),
+            label: const Text('I understand, continue'),
+          ),
+          Gap.s,
+          TextButton.icon(
+            onPressed: onLeave,
+            icon: const Icon(Icons.close),
+            label: const Text('Leave session'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class SafetyPrompt extends StatelessWidget {
   const SafetyPrompt({super.key, required this.onAnswer, this.onSkip});
 

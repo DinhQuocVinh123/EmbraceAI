@@ -47,6 +47,7 @@ void main() {
     PracticeChoice practice = PracticeChoice.grounding,
     PracticeLength practiceLength = PracticeLength.full,
   ]) async {
+    c.acceptDisclaimer();
     await c.answerSafety(SafetyAnswer.yes);
     await c.answerCheckIn(
       feeling: CheckInFeeling.stressed,
@@ -58,6 +59,11 @@ void main() {
 
   testWidgets('preparation is silent and precedes playback', (tester) async {
     await withSession(tester, (c) async {
+      expect(c.phase, SessionPhase.disclaimer);
+      expect(fake.isPlaying, isFalse);
+      await c.skipQuestion();
+      expect(c.phase, SessionPhase.disclaimer);
+      c.acceptDisclaimer();
       expect(c.phase, SessionPhase.safety);
       expect(fake.isPlaying, isFalse);
       await c.answerSafety(SafetyAnswer.yes);
@@ -77,6 +83,7 @@ void main() {
 
   testWidgets('declining safety never starts the video', (tester) async {
     await withSession(tester, (c) async {
+      c.acceptDisclaimer();
       await c.answerSafety(SafetyAnswer.no);
       expect(c.isFinished, isTrue);
       expect(fake.isPlaying, isFalse);
@@ -173,6 +180,7 @@ void main() {
     tester,
   ) async {
     await withSession(tester, (c) async {
+      c.acceptDisclaimer();
       await c.skipQuestion();
       await c.skipQuestion();
       expect(c.phase, SessionPhase.practice);

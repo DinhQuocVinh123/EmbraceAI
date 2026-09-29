@@ -9,6 +9,7 @@ void main() {
     test('toMap/fromMap giữ nguyên nội dung', () {
       final entry = JournalEntry(
         id: 7,
+        syncId: '5b5f8c32-7a35-4d81-9dc5-0829c25d87f7',
         mood: Mood.good,
         note: 'Hôm nay ổn.',
         tags: const ['Công việc', 'Bạn bè'],
@@ -19,6 +20,7 @@ void main() {
       final restored = JournalEntry.fromMap(entry.toMap());
 
       expect(restored.id, 7);
+      expect(restored.syncId, '5b5f8c32-7a35-4d81-9dc5-0829c25d87f7');
       expect(restored.mood, Mood.good);
       expect(restored.note, 'Hôm nay ổn.');
       expect(restored.tags, ['Công việc', 'Bạn bè']);

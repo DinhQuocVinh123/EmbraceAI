@@ -81,7 +81,8 @@ class _SessionScreenState extends State<SessionScreen> {
               content = Scaffold(
                 appBar: AppBar(
                   title: Text(
-                    c.phase == SessionPhase.safety ||
+                    c.phase == SessionPhase.disclaimer ||
+                            c.phase == SessionPhase.safety ||
                             c.phase == SessionPhase.checkIn
                         ? 'Before you begin'
                         : 'After your practice',
@@ -220,6 +221,10 @@ class _PromptFor extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return switch (controller.phase) {
+      SessionPhase.disclaimer => MedicalDisclaimerPrompt(
+        onAccept: controller.acceptDisclaimer,
+        onLeave: () => Navigator.of(context).pop(),
+      ),
       SessionPhase.safety => SafetyPrompt(
         onAnswer: controller.answerSafety,
         onSkip: controller.skipQuestion,

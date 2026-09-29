@@ -6,12 +6,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app.dart';
 import 'core/backend_config.dart';
-import 'data/prefs_journal_repository.dart';
-import 'data/session_sync_journal_repository.dart';
 import 'screens/access_gate.dart';
 import 'screens/backend_setup_screen.dart';
+import 'services/study_assessment_service.dart';
 import 'state/auth_store.dart';
-import 'state/journal_store.dart';
 import 'state/settings_store.dart';
 
 Future<void> main() async {
@@ -28,16 +26,12 @@ Future<void> main() async {
   final settings = SettingsStore();
   await settings.load();
 
-  final journalRepository = BackendConfig.isConfigured
-      ? SessionSyncJournalRepository(local: PrefsJournalRepository())
-      : PrefsJournalRepository();
   final providers = <SingleChildWidget>[
     ChangeNotifierProvider.value(value: settings),
-    ChangeNotifierProvider(
-      create: (_) => JournalStore(journalRepository)..load(),
-    ),
     if (BackendConfig.isConfigured)
       ChangeNotifierProvider(create: (_) => AuthStore()),
+    if (BackendConfig.isConfigured)
+      Provider(create: (_) => StudyAssessmentService()),
   ];
 
   runApp(

@@ -4,6 +4,8 @@ import 'mood.dart';
 class JournalEntry {
   const JournalEntry({
     this.id,
+    this.syncId,
+    this.isRemoteSummary = false,
     required this.mood,
     required this.note,
     required this.createdAt,
@@ -12,6 +14,13 @@ class JournalEntry {
   });
 
   final int? id;
+
+  /// Stable cross-device identifier for guided sessions. Manual journal
+  /// entries remain device-only and do not receive one.
+  final String? syncId;
+
+  /// A server-backed session summary with no private note on this device.
+  final bool isRemoteSummary;
 
   /// Null khi người dùng bỏ qua đánh giá mood cuối buổi.
   final Mood? mood;
@@ -28,6 +37,8 @@ class JournalEntry {
 
   JournalEntry copyWith({
     int? id,
+    String? syncId,
+    bool? isRemoteSummary,
     Mood? mood,
     String? note,
     List<String>? tags,
@@ -36,6 +47,8 @@ class JournalEntry {
   }) {
     return JournalEntry(
       id: id ?? this.id,
+      syncId: syncId ?? this.syncId,
+      isRemoteSummary: isRemoteSummary ?? this.isRemoteSummary,
       mood: mood ?? this.mood,
       note: note ?? this.note,
       tags: tags ?? this.tags,
@@ -49,6 +62,7 @@ class JournalEntry {
 
   Map<String, Object?> toMap() => {
     if (id != null) 'id': id,
+    if (syncId != null) 'sync_id': syncId,
     'mood': mood?.score,
     'note': note,
     // Thẻ nối bằng '|' vì bản thân thẻ không cho chứa ký tự này.
@@ -61,6 +75,7 @@ class JournalEntry {
     final rawTags = (map['tags'] as String?) ?? '';
     return JournalEntry(
       id: map['id'] as int?,
+      syncId: map['sync_id'] as String?,
       mood: switch (map['mood']) {
         final int score => Mood.fromScore(score),
         _ => null,

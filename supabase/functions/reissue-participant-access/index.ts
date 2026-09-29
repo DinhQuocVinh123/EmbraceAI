@@ -6,6 +6,13 @@ function displayCode(code: string): string {
   return `${code.slice(0, 2)}-${code.slice(2, 6)}-${code.slice(6)}`;
 }
 
+function participantRedirect(publicAppUrl: string, code: string): string {
+  const redirect = new URL(publicAppUrl);
+  redirect.searchParams.set('participant', displayCode(code));
+  redirect.searchParams.set('access', 'qr');
+  return redirect.toString();
+}
+
 function json(status: number, body: Record<string, unknown>): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -85,7 +92,7 @@ Deno.serve(async (request) => {
     await admin.auth.admin.generateLink({
       type: 'magiclink',
       email,
-      options: { redirectTo: publicAppUrl },
+      options: { redirectTo: participantRedirect(publicAppUrl, code) },
     });
   const loginUrl = linkData?.properties?.action_link;
   if (linkError || !loginUrl) {

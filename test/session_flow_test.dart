@@ -43,7 +43,11 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  Future<void> open(WidgetTester tester, {double scale = 1}) async {
+  Future<void> open(
+    WidgetTester tester, {
+    double scale = 1,
+    bool acceptDisclaimer = true,
+  }) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -82,6 +86,9 @@ void main() {
       ),
     );
     await tap(tester, 'Open session');
+    if (acceptDisclaimer) {
+      await tap(tester, 'I understand, continue');
+    }
     addTearDown(() async {
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump();
@@ -97,6 +104,23 @@ void main() {
     await tap(tester, 'Full practice');
   }
 
+  testWidgets('medical disclaimer is required before session preparation', (
+    tester,
+  ) async {
+    await open(tester, acceptDisclaimer: false);
+    expect(find.text('Medical disclaimer'), findsOneWidget);
+    expect(
+      find.textContaining('This is not a medical intervention'),
+      findsOneWidget,
+    );
+    expect(fake.isPlaying, isFalse);
+    await tap(tester, 'I understand, continue');
+    expect(
+      find.text('Are you feeling comfortable enough to continue?'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('short duration is selected before playback', (tester) async {
     await open(tester);
     await tap(tester, 'Yes, I can sit quietly');
@@ -107,6 +131,11 @@ void main() {
     await tap(tester, 'Short practice');
     expect(find.byTooltip('Help'), findsOneWidget);
     expect(fake.isPlaying, isTrue);
+    expect(fake.played.first, SessionScene.countryside.asset);
+    expect(
+      fake.played[1],
+      BackgroundSound.countryside.assetFor(SessionScene.countryside),
+    );
   });
 
   testWidgets('complete session shows feedback and saves reflection', (

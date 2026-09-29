@@ -70,6 +70,28 @@ Widget _app(JournalStore store) {
   );
 }
 
+/// Mirrors production, where participant-specific state is created inside the
+/// app's root navigator after authentication.
+Widget _appWithJournalBelowNavigator(JournalStore store) {
+  return ChangeNotifierProvider(
+    create: (_) => SettingsStore(),
+    child: MaterialApp(
+      theme: AppTheme.light,
+      locale: const Locale('en'),
+      supportedLocales: const [Locale('en')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      home: ChangeNotifierProvider.value(
+        value: store,
+        child: const HomeScreen(),
+      ),
+    ),
+  );
+}
+
 void main() {
   setUpAll(() async {
     SharedPreferences.setMockInitialValues({});
@@ -133,6 +155,31 @@ void main() {
     await _tapAfterScroll(tester, find.text('Save changes'));
 
     expect(store.entries.single.mood, Mood.good);
+  });
+
+  testWidgets('journal routes keep participant store below the navigator', (
+    tester,
+  ) async {
+    final syncedEntry = JournalEntry(
+      id: 7,
+      syncId: '4cb179fe-880b-4bed-ac9b-79953476ad64',
+      mood: Mood.neutral,
+      note: 'Guided relaxation session completed.',
+      tags: const ['Session'],
+      createdAt: DateTime(2026, 9, 28, 15, 6),
+      updatedAt: DateTime(2026, 9, 28, 15, 7),
+    );
+    final store = await _loadedStore([syncedEntry]);
+
+    await tester.pumpWidget(_appWithJournalBelowNavigator(store));
+    await tester.pumpAndSettle();
+    await _openJournal(tester);
+    await tester.tap(find.text('Guided relaxation session completed.'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Guided relaxation session completed.'), findsOneWidget);
+    expect(find.byIcon(Icons.edit_outlined), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('deleting an entry returns to the empty list', (tester) async {

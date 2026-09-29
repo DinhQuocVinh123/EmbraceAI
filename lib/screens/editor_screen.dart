@@ -18,9 +18,16 @@ class EditorScreen extends StatefulWidget {
   /// Null nghĩa là tạo mới.
   final JournalEntry? entry;
 
-  static Future<void> open(BuildContext context, [JournalEntry? entry]) {
+  static Future<bool?> open(BuildContext context, [JournalEntry? entry]) {
+    final store = context.read<JournalStore>();
     return Navigator.of(context).push(
-      AppMotion.pageRoute(context, builder: (_) => EditorScreen(entry: entry)),
+      AppMotion.pageRoute(
+        context,
+        builder: (_) => ChangeNotifierProvider.value(
+          value: store,
+          child: EditorScreen(entry: entry),
+        ),
+      ),
     );
   }
 
@@ -162,7 +169,7 @@ class _EditorScreenState extends State<EditorScreen> {
           createdAt: _createdAt,
         ),
       );
-      navigator.pop();
+      navigator.pop(false);
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
@@ -220,7 +227,7 @@ class _EditorScreenState extends State<EditorScreen> {
     await context.read<JournalStore>().delete(id);
     if (!mounted) return;
     // Pop cả màn sửa lẫn màn chi tiết phía dưới nó.
-    Navigator.of(context).pop();
+    Navigator.of(context).pop(true);
   }
 
   static bool _sameTags(Set<String> a, Set<String> b) =>

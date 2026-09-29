@@ -10,17 +10,19 @@ import 'editor_screen.dart';
 
 /// Xem đầy đủ một dòng nhật ký.
 class EntryDetailScreen extends StatelessWidget {
-  const EntryDetailScreen({super.key, required this.entryId});
+  const EntryDetailScreen({super.key, required this.initialEntry});
 
-  final int entryId;
+  final JournalEntry initialEntry;
 
   static Future<void> open(BuildContext context, JournalEntry entry) {
-    final id = entry.id;
-    if (id == null) return Future.value();
+    final store = context.read<JournalStore>();
     return Navigator.of(context).push(
       AppMotion.pageRoute(
         context,
-        builder: (_) => EntryDetailScreen(entryId: id),
+        builder: (_) => ChangeNotifierProvider.value(
+          value: store,
+          child: EntryDetailScreen(initialEntry: entry),
+        ),
       ),
     );
   }
@@ -31,17 +33,12 @@ class EntryDetailScreen extends StatelessWidget {
     final scheme = theme.colorScheme;
 
     // Đọc lại từ store theo id để màn hình tự cập nhật sau khi sửa.
-    final entry = context.select<JournalStore, JournalEntry?>(
-      (store) => store.entries.where((e) => e.id == entryId).firstOrNull,
+    final currentEntry = context.select<JournalStore, JournalEntry?>(
+      (store) => store.entries.where(_matchesInitialEntry).firstOrNull,
     );
 
     // Entry vừa bị xoá ở màn sửa — đóng luôn thay vì hiện dữ liệu cũ.
-    if (entry == null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (context.mounted) Navigator.of(context).maybePop();
-      });
-      return const Scaffold(body: SizedBox.shrink());
-    }
+    final entry = currentEntry ?? initialEntry;
     final mood = entry.mood;
 
     return Scaffold(
@@ -51,7 +48,17 @@ class EntryDetailScreen extends StatelessWidget {
           IconButton(
             tooltip: 'Edit',
             icon: const Icon(Icons.edit_outlined),
-            onPressed: () => EditorScreen.open(context, entry),
+            onPressed: currentEntry?.id == null
+                ? null
+                : () async {
+                    final deleted = await EditorScreen.open(
+                      context,
+                      currentEntry,
+                    );
+                    if (deleted == true && context.mounted) {
+                      Navigator.of(context).pop();
+                    }
+                  },
           ),
         ],
       ),
@@ -136,5 +143,11 @@ class EntryDetailScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  bool _matchesInitialEntry(JournalEntry entry) {
+    final syncId = initialEntry.syncId;
+    if (syncId != null) return entry.syncId == syncId;
+    return initialEntry.id != null && entry.id == initialEntry.id;
   }
 }

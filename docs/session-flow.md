@@ -5,7 +5,7 @@ in-video question timing described in the earlier prototype specification.
 
 1. Welcome: choose scenery, sound level, text size, clearer picture, captions
    and reduced motion.
-2. Before playback: safety check, a five-state check-in (Calm, Stressed,
+2. Before playback: a mandatory medical disclaimer, safety check, a five-state check-in (Calm, Stressed,
    Tired, Upset or Distracted), stress rating, practice choice and a short
    (3:20) or full (5:05-6:05) duration choice. The state supports tailoring;
    it is not converted into a mood score.
@@ -17,8 +17,36 @@ in-video question timing described in the earlier prototype specification.
 5. Optional question to take to the care team.
 6. Summary: save to the journal or leave without saving.
 
-Each question stage can be skipped. Declining the safety check never starts
-playback. Finishing playback does not skip feedback. Opening Help pauses the
+## Study forms
+
+After the first participant sign-in, the participant must review the study
+information and actively confirm four informed-consent statements. The consent
+record stores its content version, timestamp and whether it was recorded by the
+participant or by staff. This prototype wording must be replaced or approved by
+the research ethics team before research data collection.
+
+After consent, Appendix A is shown before the program home screen. It is
+collected once and uses the study-issued Participant ID; the form does not
+request a participant name or personal contact details.
+
+Appendices B, C and D are a separate final assessment. They are available only
+after an authorised staff member opens them from the CRM participant detail
+panel. The participant can complete them immediately or choose Later and use
+the program; a home-screen reminder remains until submission.
+
+The final assessment contains seven GAD items, one emotional well-being item,
+eight PREM items and four open-ended questions. Every final-assessment response
+is optional. Missing answers remain null. The app calculates GAD-2 from the
+first two anxiety items and GAD-7 from all seven only when the required items
+are complete; it does not present either score as a diagnosis.
+
+Both forms use questionnaire version `2026-04-16-v1`. The database supports
+timepoints, but the baseline PROM is intentionally disabled until the research
+team approves a before-and-after design.
+
+The medical disclaimer cannot be skipped and is shown again before every
+session. Each question stage can be skipped. Declining the safety check never
+starts playback. Finishing playback does not skip feedback. Opening Help pauses the
 video; closing it restores the previous playing/paused state. Help includes
 view settings and an option to end practice and proceed to feedback.
 
@@ -110,3 +138,16 @@ The controller and widget tests cover preparation, all four practice/duration
 playlists, source caption alignment, completion, optional feedback, early
 stopping, Help pause restoration, saved answers and large-text interaction.
 Tailoring remains rule-based; no conversational AI was added by this change.
+
+## Participant data isolation
+
+Each authenticated participant has a separate on-device Journal namespace.
+Changing accounts on the same browser cannot expose the previous participant's
+entries. Guided-session date and mood are also merged from Supabase, using a
+cross-device UUID, so the same account can see its session history and Insights
+on another device without session-ID collisions.
+
+Free-text reflections and manual Journal entries are not uploaded. A session
+created elsewhere is shown as a read-only synced summary; its private text stays
+on the original device. Older unscoped browser data is quarantined rather than
+being assigned to whichever participant signs in first.

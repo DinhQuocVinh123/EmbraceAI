@@ -1,33 +1,51 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/participant_record.dart';
+import '../models/study_assessment.dart';
 
 class StaffPortalService {
-  StaffPortalService({SupabaseClient? client})
-    : _client = client ?? Supabase.instance.client;
+  StaffPortalService({
+    SupabaseClient? client,
+    Duration pollInterval = const Duration(seconds: 10),
+  }) : _client = client ?? Supabase.instance.client,
+       _pollInterval = pollInterval;
 
   final SupabaseClient _client;
+  final Duration _pollInterval;
 
-  Stream<List<ParticipantRecord>> watchParticipants() => _client
-      .from('participants')
-      .stream(primaryKey: ['id'])
-      .order('created_at', ascending: false)
-      .map(
-        (rows) =>
-            rows.map(ParticipantRecord.fromSupabase).toList(growable: false),
-      );
+  Stream<List<ParticipantRecord>> watchParticipants() async* {
+    while (true) {
+      yield await loadParticipants();
+      await Future<void>.delayed(_pollInterval);
+    }
+  }
 
-  Stream<List<ParticipantSessionRecord>> watchSessions(String code) => _client
-      .from('sessions')
-      .stream(primaryKey: ['id'])
-      .eq('participant_code', code)
-      .order('occurred_at', ascending: false)
-      .limit(30)
-      .map(
-        (rows) => rows
-            .map(ParticipantSessionRecord.fromSupabase)
-            .toList(growable: false),
-      );
+  Future<List<ParticipantRecord>> loadParticipants() async {
+    final rows = await _client
+        .from('participants')
+        .select()
+        .order('created_at', ascending: false);
+    return rows.map(ParticipantRecord.fromSupabase).toList(growable: false);
+  }
+
+  Stream<List<ParticipantSessionRecord>> watchSessions(String code) async* {
+    while (true) {
+      yield await loadSessions(code);
+      await Future<void>.delayed(_pollInterval);
+    }
+  }
+
+  Future<List<ParticipantSessionRecord>> loadSessions(String code) async {
+    final rows = await _client
+        .from('sessions')
+        .select()
+        .eq('participant_code', code)
+        .order('occurred_at', ascending: false)
+        .limit(30);
+    return rows
+        .map(ParticipantSessionRecord.fromSupabase)
+        .toList(growable: false);
+  }
 
   Future<ParticipantAccessCard> createParticipant({
     required String studyId,
@@ -75,6 +93,41 @@ class StaffPortalService {
     await _client.rpc(
       'set_consent_status',
       params: {'target_code': code, 'new_status': status.name},
+    );
+  }
+
+  Future<void> openFinalAssessment(String code) async {
+    await _client.rpc('open_final_assessment', params: {'target_code': code});
+  }
+
+  Future<StudyResponseSummary> loadStudyResponses(String code) async {
+    final responses = await Future.wait([
+      _client
+          .from('participant_demographics')
+          .select()
+          .eq('participant_code', code)
+          .maybeSingle(),
+      _client
+          .from('program_assessments')
+          .select()
+          .eq('participant_code', code)
+          .eq('timepoint', 'final')
+          .maybeSingle(),
+    ]);
+    final demographics = responses[0];
+    final assessment = responses[1];
+    return StudyResponseSummary(
+      demographics: demographics == null
+          ? null
+          : DemographicAnswers.fromSupabase(demographics),
+      finalAssessment: assessment == null
+          ? null
+          : ProgramAssessmentAnswers.fromSupabase(assessment),
+      finalSubmittedAt: assessment == null
+          ? null
+          : DateTime.tryParse(
+              assessment['submitted_at'] as String? ?? '',
+            )?.toLocal(),
     );
   }
 }
