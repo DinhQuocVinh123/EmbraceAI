@@ -62,8 +62,8 @@ app.*.map.json
 # Chỉ đưa vào git đúng những file app đang phát. Các bản render cũ (v1, v2,
 # v3...) nằm lại trên máy. Khi đổi sang video mới, sửa dòng "!" tương ứng.
 /assets/video/*
-!/assets/video/meditation_narration_8min_v4.mp4
-!/assets/video/beach_narration_8min_v3.mp4
+!/assets/video/countryside_8min_final_v4.mp4
+!/assets/video/ocean_8min_final_v5.mp4
 
 # --- Sản phẩm phụ của test ---
 # Ảnh so sánh Flutter sinh ra mỗi khi test ảnh chụp thất bại.
