@@ -21,8 +21,11 @@ identify a participant.
   the participant changes device. The manual ID and access key remain a
   fallback.
 - Staff accounts are created by a project administrator.
-- Journal text remains on the participant device. The backend receives only
-  session time, post-session mood score, a reflection-present flag, and counts.
+- Every completed session is recorded with its time, post-session mood score
+  and a reflection-present flag. When the participant saves the session to the
+  journal, its note (reflection, question for the care team, stress before and
+  after) is also stored, readable only by that participant. Journal entries
+  written with New entry stay in the participant's browser.
 - Postgres RLS isolates participant records and staff roles. Privileged actions
   are checked again in SQL functions or the Edge Function.
 
@@ -118,15 +121,17 @@ coordinators can create participants or change account and consent status.
 - On-device Journal storage is namespaced by the authenticated Supabase user.
   Signing out removes that Journal store from the widget tree, and signing in as
   another participant opens a different local store.
-- Guided-session summaries are fetched from Supabase and merged with the local
-  Journal. This lets the same participant see session date and mood in Journal
-  and Insights on another device.
+- Sessions saved to the journal are synced to Supabase with their note
+  (`sync_session_journal`) and merged with the local Journal, so the same
+  participant sees them, note included, on another device.
+- A session the participant chooses not to save is still recorded
+  (`record_session`, `local_entry_id` 0) for the session count and last
+  activity. It carries no note and is hidden from the Journal on every device.
 - Cross-device sessions use a UUID, not a device-local incrementing number, so
   a phone session cannot overwrite a desktop session.
-- Free-text reflections and manually created Journal entries remain only on the
-  device where they were written. A remote session therefore appears as a
-  read-only summary and explains that its private reflection is on the original
-  device.
+- Manually created Journal entries remain only in the browser where they were
+  written. A session from another device that has no synced note appears as a
+  read-only summary with its date and mood.
 - Journal entries written by older builds used an unscoped browser key. They
   are deliberately not assigned automatically to the next account that signs
   in, because ownership cannot be established safely.

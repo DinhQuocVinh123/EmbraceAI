@@ -74,11 +74,16 @@ without being signed out of the portal.
 - Participants are identified only by a random Participant ID.
 - **Stored in Supabase:**
   - consent;
-  - questionnaire responses;
-  - session summaries: time, mood score, and counts.
-- **Kept only on the device where they were written:**
-  - free-text journal entries;
-  - session reflections.
+  - questionnaire responses, including their free-text answers;
+  - every completed session: time, mood after, and whether a reflection was
+    written;
+  - the note of each session saved to the journal (reflection, question for
+    the care team, stress before and after). Row Level Security lets only the
+    participant read it, and the staff portal does not show it, but Supabase
+    project administrators can see it.
+- **Kept only in the participant's browser:**
+  - journal entries written with **New entry**;
+  - settings.
 - Firebase serves static files only. It does not store study data.
 - Never commit `config/supabase.json` or any service-role key. The file is
   listed in `.gitignore`.
