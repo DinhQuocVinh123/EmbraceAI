@@ -24,8 +24,10 @@ without being signed out of the portal.
 ### Participant app
 
 - **Sign-in.** Participants sign in with a study-issued Participant ID and
-  access key, or with a single-use QR link. The app never asks for a name,
-  phone number, email address or medical record number.
+  access key, or with a one-time link or QR code. The link is on the app's own
+  address (`…web.app/?signin=…`), and the app explains when a link has expired
+  or was already used. The app never asks for a name, phone number, email
+  address or medical record number.
 - **Consent.** Participants give informed consent before first use. The consent
   screen includes the medical disclaimer.
 - **Baseline questionnaire (Appendix A).** Participants complete it before
@@ -56,8 +58,13 @@ without being signed out of the portal.
 
 - **Roles.** There are three roles: `admin`, `coordinator` and `researcher`.
   The database enforces them through Row Level Security.
-- **Participant accounts.** Staff create pseudonymous participants and can
-  reissue their access.
+- **Participant accounts.** Staff create pseudonymous participants. Each
+  receives a Participant ID, an access key and a one-time sign-in QR code.
+  "Copy invitation" produces a ready-to-send message with all three.
+- **Reissuing access.** Access keys are stored only as hashes and cannot be
+  shown again. Reissuing therefore creates a new QR code **and a new access
+  key**; the previous key stops working, and devices already signed in stay
+  signed in.
 - **Study tracking.** Staff track consent, baseline and final-assessment
   status, and session counts, and open the final questionnaire.
 - **Audit log.** Privileged actions are recorded.
@@ -83,7 +90,9 @@ See [docs/CRM_SETUP.md](docs/CRM_SETUP.md) for the full access model.
 - **App:** Flutter 3.41 (Dart 3.11), `provider`, `video_player`
 - **Backend:** Supabase: Auth, Postgres with Row Level Security, and Edge
   Functions
-- **Hosting:** Firebase Hosting (static web build)
+- **Hosting:** Firebase Hosting, two static sites built from the same code
+- **Design:** a shadcn-style theme in `lib/core/theme.dart` (neutral surfaces,
+  one teal accent, flat bordered cards)
 - **Media:** videos and audio stored with Git LFS
 
 ## Getting started
@@ -117,6 +126,8 @@ flutter pub get
 flutter run -d chrome --dart-define-from-file=config/supabase.json
 ```
 
+To run the staff portal instead, add `--dart-define=APP_SURFACE=staff`.
+
 ### 4. Check
 
 ```bash
@@ -136,6 +147,16 @@ app only, use `--only hosting:participant` or `--only hosting:staff`. The
 surface is chosen at build time with `--dart-define=APP_SURFACE=staff`; the
 default is the participant app. The staff build leaves out the session videos.
 
+### 6. Deploy database and Edge Function changes
+
+```bash
+npx supabase db push
+npx supabase functions deploy create-participant reissue-participant-access --use-api
+```
+
+Deploy the Edge Functions and the web apps together when a change touches
+both, such as the sign-in link format.
+
 ## Project structure
 
 ```
@@ -154,6 +175,7 @@ assets/         # Session videos (8 min each) and ambient audio
 tools/          # Voice, video and accessibility scripts, web build helper
 test/           # Unit, widget and golden (screenshot) tests
 docs/           # Specifications and guides (see below)
+.claude/skills/ # UI rules for AI coding assistants (embrace-ui)
 ```
 
 ## Documentation
@@ -174,8 +196,11 @@ docs/           # Specifications and guides (see below)
 `flutter test` runs:
 
 - unit tests for models, stores and the session controller;
-- widget tests for the session flow, study forms and staff portal;
+- widget tests for the session flow, study forms, staff portal, and the
+  separation of the two sites, including phone-size layouts;
 - WCAG 2.2 contrast checks for light and dark themes;
+- design-system rules (`test/design_system_test.dart`): screens take colours
+  and corner radii from the theme instead of hard-coding them;
 - golden screenshot tests.
 
 The golden images are rendered with Windows system fonts. Regenerate them on
