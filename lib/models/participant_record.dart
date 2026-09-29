@@ -109,10 +109,14 @@ class ParticipantAccessCard {
     required this.loginUrl,
     required this.expiresAt,
     this.accessKey,
+    this.reissued = false,
   });
 
   final String code;
   final String loginUrl;
   final String? accessKey;
   final DateTime expiresAt;
+
+  /// Cấp lại cho người tham gia đã có: key mới thay key cũ.
+  final bool reissued;
 }

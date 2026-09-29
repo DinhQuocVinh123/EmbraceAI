@@ -224,6 +224,29 @@ void main() {
     expect(invitation, isNot(contains('Manual access key')));
   });
 
+  test(
+    'reissued invitation carries the new key and says it replaces the old one',
+    () {
+      final invitation = buildParticipantInvitation(
+        ParticipantAccessCard(
+          code: 'EA-AKFR-D82N',
+          accessKey: 'WXYZ-2345-6789-ABCD',
+          loginUrl: 'https://embrace-ai-prototype-2026.web.app/?signin=abc123',
+          expiresAt: DateTime(2026, 12, 28),
+          reissued: true,
+        ),
+      );
+
+      expect(invitation, contains('Your new EMBRACE-AI sign-in details'));
+      expect(invitation, contains('Manual access key: WXYZ-2345-6789-ABCD'));
+      expect(invitation, contains('replaces any key you received before'));
+      expect(
+        invitation,
+        contains('sign in at https://embrace-ai-prototype-2026.web.app'),
+      );
+    },
+  );
+
   testWidgets('mobile portal remains usable at 200 percent text', (
     tester,
   ) async {

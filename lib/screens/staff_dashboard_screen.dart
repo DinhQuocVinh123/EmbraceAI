@@ -1449,7 +1449,9 @@ class _AccessCardDialog extends StatelessWidget {
     final invitation = buildParticipantInvitation(card);
     return AlertDialog(
       icon: const Icon(Icons.verified_user_outlined),
-      title: const Text('Participant access created'),
+      title: Text(
+        card.reissued ? 'New sign-in details' : 'Participant access created',
+      ),
       content: SizedBox(
         width: 460,
         child: Column(
@@ -1461,6 +1463,16 @@ class _AccessCardDialog extends StatelessWidget {
               'The sign-in link is single use and should be shared privately.',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
+            if (card.reissued && accessKey != null) ...[
+              Gap.s,
+              Text(
+                'A new access key was issued. The previous key no longer '
+                'works; devices already signed in stay signed in.',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+              ),
+            ],
             Gap.l,
             Center(
               child: Semantics(
@@ -1543,17 +1555,26 @@ class _AccessCardDialog extends StatelessWidget {
 
 String buildParticipantInvitation(ParticipantAccessCard card) {
   final accessKey = card.accessKey;
+  // Trang đăng nhập là gốc của link, nên không phải viết cứng địa chỉ app.
+  final appAddress = Uri.tryParse(card.loginUrl)?.origin;
   return [
-    'Your EMBRACE-AI access is ready.',
+    card.reissued
+        ? 'Your new EMBRACE-AI sign-in details are ready.'
+        : 'Your EMBRACE-AI access is ready.',
     '',
     'Participant ID: ${card.code}',
     if (accessKey != null) 'Manual access key: $accessKey',
+    if (card.reissued && accessKey != null)
+      'This access key replaces any key you received before.',
     '',
     'To sign in, tap the secure link below:',
     card.loginUrl,
     '',
     'This sign-in link can only be used once. Please do not share it with '
         'anyone else.',
+    if (accessKey != null && appAddress != null)
+      'You can also sign in at $appAddress by entering your Participant ID '
+          'and access key.',
     'If the link has expired or has already been opened, contact the research '
         'team for a new invitation.',
   ].join('\n');

@@ -77,8 +77,10 @@ class StaffPortalService {
     final data = Map<String, dynamic>.from(response.data as Map);
     return ParticipantAccessCard(
       code: data['participantCode'] as String,
+      accessKey: data['accessKey'] as String?,
       loginUrl: data['loginUrl'] as String,
       expiresAt: DateTime.parse(data['expiresAt'] as String).toLocal(),
+      reissued: true,
     );
   }
 

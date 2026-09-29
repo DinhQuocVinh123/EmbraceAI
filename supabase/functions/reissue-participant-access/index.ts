@@ -2,6 +2,17 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 
 import { corsHeaders } from '../_shared/cors.ts';
 
+const alphabet = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+
+function randomBlock(length: number): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(length));
+  return Array.from(bytes, (value) => alphabet[value % alphabet.length]).join('');
+}
+
+function displayKey(key: string): string {
+  return key.match(/.{1,4}/g)?.join('-') ?? key;
+}
+
 function displayCode(code: string): string {
   return `${code.slice(0, 2)}-${code.slice(2, 6)}-${code.slice(6)}`;
 }
@@ -97,6 +108,18 @@ Deno.serve(async (request) => {
     return json(500, { error: 'Participant access could not be loaded' });
   }
 
+  // Access key chỉ được lưu dạng băm nên không lấy lại được key cũ. Cấp lại
+  // quyền truy cập vì thế luôn kèm một key mới; key cũ hết hiệu lực ngay, còn
+  // các thiết bị đang đăng nhập vẫn giữ phiên.
+  const accessKey = randomBlock(16);
+  const { error: keyError } = await admin.auth.admin.updateUserById(
+    participant.auth_user_id,
+    { password: accessKey },
+  );
+  if (keyError) {
+    return json(500, { error: 'Could not issue a new access key' });
+  }
+
   const { data: linkData, error: linkError } =
     await admin.auth.admin.generateLink({
       type: 'magiclink',
@@ -113,10 +136,12 @@ Deno.serve(async (request) => {
     actor_user_id: authData.user.id,
     action: 'participant.access_link_issued',
     participant_code: code,
+    detail: { access_key_reset: true },
   });
 
   return json(200, {
     participantCode: displayCode(code),
+    accessKey: displayKey(accessKey),
     loginUrl,
     expiresAt: participant.expires_at,
   });
