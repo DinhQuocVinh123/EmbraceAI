@@ -14,7 +14,7 @@ class FinalAssessmentScreen extends StatefulWidget {
   });
 
   final StudyAssessmentService service;
-  final VoidCallback onSubmitted;
+  final Future<void> Function() onSubmitted;
   final VoidCallback onDefer;
   final Future<void> Function() onSignOut;
 
@@ -304,7 +304,7 @@ class _FinalAssessmentScreenState extends State<FinalAssessmentScreen> {
         if (mounted) setState(() => _step++);
       } else {
         await widget.service.saveAssessment(_answers, submit: true);
-        widget.onSubmitted();
+        await widget.onSubmitted();
       }
     } catch (_) {
       if (!mounted) return;

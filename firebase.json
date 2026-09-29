@@ -35,6 +35,15 @@
         ]
       },
       {
+        "source": "**/*.@(js|json)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      },
+      {
         "source": "**/*.@(mp4|mp3|m4a|wav|ogg)",
         "headers": [
           {

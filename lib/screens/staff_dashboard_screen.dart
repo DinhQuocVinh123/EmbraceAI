@@ -12,6 +12,7 @@ import '../models/participant_record.dart';
 import '../models/study_assessment.dart';
 import '../services/staff_portal_service.dart';
 import '../state/auth_store.dart';
+import '../widgets/blocking_loading_overlay.dart';
 
 enum _StaffSection { overview, participants }
 
@@ -26,6 +27,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
   _StaffSection _section = _StaffSection.overview;
   StaffPortalService? _service;
   Stream<List<ParticipantRecord>>? _participantsStream;
+  String? _busyMessage;
 
   @override
   void didChangeDependencies() {
@@ -42,86 +44,110 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 900;
-        return Scaffold(
-          appBar: compact
-              ? AppBar(
-                  title: const Text('EmbraceAI Study Portal'),
-                  actions: [
-                    IconButton(
-                      tooltip: 'Sign out',
-                      onPressed: () => context.read<AuthStore>().signOut(),
-                      icon: const Icon(Icons.logout),
-                    ),
-                  ],
-                )
-              : null,
-          bottomNavigationBar: compact
-              ? NavigationBar(
-                  selectedIndex: _section.index,
-                  onDestinationSelected: (index) =>
-                      setState(() => _section = _StaffSection.values[index]),
-                  destinations: const [
-                    NavigationDestination(
-                      icon: Icon(Icons.dashboard_outlined),
-                      selectedIcon: Icon(Icons.dashboard),
-                      label: 'Overview',
-                    ),
-                    NavigationDestination(
-                      icon: Icon(Icons.people_outline),
-                      selectedIcon: Icon(Icons.people),
-                      label: 'Participants',
-                    ),
-                  ],
-                )
-              : null,
-          body: Row(
-            children: [
-              if (!compact)
-                _PortalSidebar(
-                  selected: _section,
-                  onSelected: (section) => setState(() => _section = section),
-                  onSignOut: () => context.read<AuthStore>().signOut(),
-                ),
-              Expanded(
-                child: StreamBuilder<List<ParticipantRecord>>(
-                  stream: _participantsStream,
-                  builder: (context, snapshot) {
-                    if (snapshot.hasError) {
-                      return _PortalError(error: snapshot.error);
-                    }
-                    if (!snapshot.hasData) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                    final participants = snapshot.data!;
-                    return switch (_section) {
-                      _StaffSection.overview => _OverviewView(
-                        participants: participants,
-                        onCreate: () => _createParticipant(context, service),
-                        onOpen: (record) =>
-                            _openParticipant(context, service, record),
-                        onViewAll: () => setState(
-                          () => _section = _StaffSection.participants,
+        return Stack(
+          children: [
+            Scaffold(
+              appBar: compact
+                  ? AppBar(
+                      title: const Text('EmbraceAI Study Portal'),
+                      actions: [
+                        IconButton(
+                          tooltip: 'Sign out',
+                          onPressed: () => context.read<AuthStore>().signOut(),
+                          icon: const Icon(Icons.logout),
                         ),
-                        onStatusChanged: (record, status) =>
-                            _changeStatus(context, service, record, status),
+                      ],
+                    )
+                  : null,
+              bottomNavigationBar: compact
+                  ? NavigationBar(
+                      selectedIndex: _section.index,
+                      onDestinationSelected: (index) => setState(
+                        () => _section = _StaffSection.values[index],
                       ),
-                      _StaffSection.participants => _ParticipantsView(
-                        participants: participants,
-                        onCreate: () => _createParticipant(context, service),
-                        onOpen: (record) =>
-                            _openParticipant(context, service, record),
-                        onStatusChanged: (record, status) =>
-                            _changeStatus(context, service, record, status),
-                      ),
-                    };
-                  },
-                ),
+                      destinations: const [
+                        NavigationDestination(
+                          icon: Icon(Icons.dashboard_outlined),
+                          selectedIcon: Icon(Icons.dashboard),
+                          label: 'Overview',
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Icons.people_outline),
+                          selectedIcon: Icon(Icons.people),
+                          label: 'Participants',
+                        ),
+                      ],
+                    )
+                  : null,
+              body: Row(
+                children: [
+                  if (!compact)
+                    _PortalSidebar(
+                      selected: _section,
+                      onSelected: (section) =>
+                          setState(() => _section = section),
+                      onSignOut: () => context.read<AuthStore>().signOut(),
+                    ),
+                  Expanded(
+                    child: StreamBuilder<List<ParticipantRecord>>(
+                      stream: _participantsStream,
+                      builder: (context, snapshot) {
+                        if (snapshot.hasError) {
+                          return _PortalError(error: snapshot.error);
+                        }
+                        if (!snapshot.hasData) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
+                        final participants = snapshot.data!;
+                        return switch (_section) {
+                          _StaffSection.overview => _OverviewView(
+                            participants: participants,
+                            onCreate: () =>
+                                _createParticipant(context, service),
+                            onOpen: (record) =>
+                                _openParticipant(context, service, record),
+                            onViewAll: () => setState(
+                              () => _section = _StaffSection.participants,
+                            ),
+                            onStatusChanged: (record, status) =>
+                                _changeStatus(context, service, record, status),
+                          ),
+                          _StaffSection.participants => _ParticipantsView(
+                            participants: participants,
+                            onCreate: () =>
+                                _createParticipant(context, service),
+                            onOpen: (record) =>
+                                _openParticipant(context, service, record),
+                            onStatusChanged: (record, status) =>
+                                _changeStatus(context, service, record, status),
+                          ),
+                        };
+                      },
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+            if (_busyMessage case final message?)
+              BlockingLoadingOverlay(message: message),
+          ],
         );
       },
     );
+  }
+
+  Future<T> _whileLoading<T>(
+    String message,
+    Future<T> Function() action,
+  ) async {
+    setState(() => _busyMessage = message);
+    try {
+      return await action();
+    } finally {
+      if (mounted) setState(() => _busyMessage = null);
+    }
   }
 
   Future<void> _createParticipant(
@@ -134,10 +160,13 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
     );
     if (request == null || !context.mounted) return;
     try {
-      final card = await service.createParticipant(
-        studyId: request.studyId,
-        group: request.group,
-        validForDays: request.validForDays,
+      final card = await _whileLoading(
+        'Creating participant...',
+        () => service.createParticipant(
+          studyId: request.studyId,
+          group: request.group,
+          validForDays: request.validForDays,
+        ),
       );
       if (!context.mounted) return;
       await showDialog<void>(
@@ -209,7 +238,10 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
     ParticipantRecord record,
   ) async {
     try {
-      await service.openFinalAssessment(record.code);
+      await _whileLoading(
+        'Opening final questionnaire...',
+        () => service.openFinalAssessment(record.code),
+      );
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -234,7 +266,10 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
     ParticipantRecord record,
   ) async {
     try {
-      final card = await service.reissueParticipantAccess(record.code);
+      final card = await _whileLoading(
+        'Generating a new sign-in link...',
+        () => service.reissueParticipantAccess(record.code),
+      );
       if (!context.mounted) return;
       await showDialog<void>(
         context: context,
@@ -283,7 +318,10 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
       );
       if (confirmed != true || !context.mounted) return;
     }
-    await service.updateStatus(record.code, status);
+    await _whileLoading(
+      'Updating participant status...',
+      () => service.updateStatus(record.code, status),
+    );
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -1284,14 +1322,39 @@ class _CreateParticipantDialog extends StatefulWidget {
 class _CreateParticipantDialogState extends State<_CreateParticipantDialog> {
   final _formKey = GlobalKey<FormState>();
   final _studyController = TextEditingController(text: 'CARDIAC-MIND-01');
-  final _groupController = TextEditingController(text: 'Unassigned');
+  String _group = 'Unassigned';
   int _validDays = 90;
 
   @override
   void dispose() {
     _studyController.dispose();
-    _groupController.dispose();
     super.dispose();
+  }
+
+  Widget _dropdownField<T>({
+    required String label,
+    required IconData leadingIcon,
+    required T value,
+    required List<DropdownMenuItem<T>> items,
+    required ValueChanged<T?> onChanged,
+  }) {
+    return InputDecorator(
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(leadingIcon),
+        border: const OutlineInputBorder(),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<T>(
+          value: value,
+          isExpanded: true,
+          isDense: true,
+          icon: const Icon(Icons.keyboard_arrow_down),
+          items: items,
+          onChanged: onChanged,
+        ),
+      ),
+    );
   }
 
   @override
@@ -1317,22 +1380,29 @@ class _CreateParticipantDialogState extends State<_CreateParticipantDialog> {
                     : null,
               ),
               Gap.m,
-              TextFormField(
-                controller: _groupController,
-                decoration: const InputDecoration(
-                  labelText: 'Study group',
-                  prefixIcon: Icon(Icons.group_outlined),
-                  border: OutlineInputBorder(),
-                ),
+              _dropdownField<String>(
+                label: 'Study group',
+                leadingIcon: Icons.group_outlined,
+                value: _group,
+                items: const [
+                  DropdownMenuItem(
+                    value: 'Unassigned',
+                    child: Text('Unassigned'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'Intervention',
+                    child: Text('Intervention'),
+                  ),
+                  DropdownMenuItem(value: 'Control', child: Text('Control')),
+                ],
+                onChanged: (value) =>
+                    setState(() => _group = value ?? 'Unassigned'),
               ),
               Gap.m,
-              DropdownButtonFormField<int>(
-                initialValue: _validDays,
-                decoration: const InputDecoration(
-                  labelText: 'Invitation validity',
-                  prefixIcon: Icon(Icons.event_outlined),
-                  border: OutlineInputBorder(),
-                ),
+              _dropdownField<int>(
+                label: 'Invitation validity',
+                leadingIcon: Icons.event_outlined,
+                value: _validDays,
                 items: const [
                   DropdownMenuItem(value: 30, child: Text('30 days')),
                   DropdownMenuItem(value: 90, child: Text('90 days')),
@@ -1356,7 +1426,7 @@ class _CreateParticipantDialogState extends State<_CreateParticipantDialog> {
               context,
               _ParticipantRequest(
                 studyId: _studyController.text,
-                group: _groupController.text,
+                group: _group,
                 validForDays: _validDays,
               ),
             );
@@ -1376,11 +1446,7 @@ class _AccessCardDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accessKey = card.accessKey;
-    final credentials = [
-      'Participant ID: ${card.code}',
-      if (accessKey != null) 'Access key: $accessKey',
-      'One-time sign-in link: ${card.loginUrl}',
-    ].join('\n');
+    final invitation = buildParticipantInvitation(card);
     return AlertDialog(
       icon: const Icon(Icons.verified_user_outlined),
       title: const Text('Participant access created'),
@@ -1457,14 +1523,14 @@ class _AccessCardDialog extends StatelessWidget {
       actions: [
         OutlinedButton.icon(
           onPressed: () async {
-            await Clipboard.setData(ClipboardData(text: credentials));
+            await Clipboard.setData(ClipboardData(text: invitation));
             if (!context.mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Access details copied')),
+              const SnackBar(content: Text('Participant invitation copied')),
             );
           },
           icon: const Icon(Icons.copy),
-          label: const Text('Copy'),
+          label: const Text('Copy invitation'),
         ),
         FilledButton(
           onPressed: () => Navigator.pop(context),
@@ -1473,6 +1539,24 @@ class _AccessCardDialog extends StatelessWidget {
       ],
     );
   }
+}
+
+String buildParticipantInvitation(ParticipantAccessCard card) {
+  final accessKey = card.accessKey;
+  return [
+    'Your EMBRACE-AI access is ready.',
+    '',
+    'Participant ID: ${card.code}',
+    if (accessKey != null) 'Manual access key: $accessKey',
+    '',
+    'To sign in, tap the secure link below:',
+    card.loginUrl,
+    '',
+    'This sign-in link can only be used once. Please do not share it with '
+        'anyone else.',
+    'If the link has expired or has already been opened, contact the research '
+        'team for a new invitation.',
+  ].join('\n');
 }
 
 class _ParticipantDetailPanel extends StatelessWidget {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:embrace_ai/core/theme.dart';
 import 'package:embrace_ai/models/participant_record.dart';
 import 'package:embrace_ai/models/study_assessment.dart';
@@ -41,6 +43,7 @@ void main() {
     WidgetTester tester, {
     required Size size,
     double textScale = 1,
+    StaffPortalService? service,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
@@ -49,7 +52,7 @@ void main() {
     final baseTheme = AppTheme.light;
     await tester.pumpWidget(
       Provider<StaffPortalService>.value(
-        value: _FakeStaffPortalService(participants),
+        value: service ?? _FakeStaffPortalService(participants),
         child: MaterialApp(
           theme: baseTheme.copyWith(
             textTheme: baseTheme.textTheme.apply(
@@ -126,6 +129,101 @@ void main() {
     );
   });
 
+  testWidgets('new participant uses controlled study group options', (
+    tester,
+  ) async {
+    await pumpPortal(tester, size: const Size(1440, 900));
+
+    await tester.tap(find.text('New participant'));
+    await tester.pumpAndSettle();
+    final finder = find.byWidgetPredicate(
+      (widget) => widget is DropdownButton<String>,
+    );
+    expect(finder, findsOneWidget);
+    expect(find.byIcon(Icons.keyboard_arrow_down), findsNWidgets(2));
+    expect(find.text('Unassigned'), findsOneWidget);
+    await tester.tap(find.text('Unassigned'));
+    await tester.pumpAndSettle();
+    expect(find.text('Intervention'), findsWidgets);
+    expect(find.text('Control'), findsWidgets);
+    await tester.tap(find.text('Control').last);
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('Control'),
+      ),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('90 days'));
+    await tester.pumpAndSettle();
+    expect(find.text('30 days'), findsWidgets);
+    expect(find.text('180 days'), findsWidgets);
+    await tester.tap(find.text('180 days').last);
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('180 days'),
+      ),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('creating a participant shows a blocking progress indicator', (
+    tester,
+  ) async {
+    final service = _DelayedCreateStaffPortalService(participants);
+    await pumpPortal(tester, size: const Size(1440, 900), service: service);
+
+    await tester.tap(find.text('New participant'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Generate access'));
+    await tester.pump();
+
+    expect(find.text('Creating participant...'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+    service.completeCreate();
+    await tester.pumpAndSettle();
+    expect(find.text('Creating participant...'), findsNothing);
+    expect(find.text('Participant access created'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  test('participant invitation gives clear sign-in instructions', () {
+    final invitation = buildParticipantInvitation(
+      ParticipantAccessCard(
+        code: 'EA-AKFR-D82N',
+        accessKey: 'ABCD-EFGH-IJKL-MNPQ',
+        loginUrl: 'https://example.test/secure-sign-in',
+        expiresAt: DateTime(2026, 12, 28),
+      ),
+    );
+
+    expect(invitation, contains('Your EMBRACE-AI access is ready.'));
+    expect(invitation, contains('Participant ID: EA-AKFR-D82N'));
+    expect(invitation, contains('Manual access key: ABCD-EFGH-IJKL-MNPQ'));
+    expect(invitation, contains('To sign in, tap the secure link below:'));
+    expect(invitation, contains('https://example.test/secure-sign-in'));
+    expect(invitation, contains('can only be used once'));
+    expect(invitation, contains('contact the research team'));
+    expect(invitation, isNot(contains('One-time sign-in link:')));
+  });
+
+  test('reissued invitation does not mention a missing manual key', () {
+    final invitation = buildParticipantInvitation(
+      ParticipantAccessCard(
+        code: 'EA-AKFR-D82N',
+        loginUrl: 'https://example.test/secure-sign-in',
+        expiresAt: DateTime(2026, 12, 28),
+      ),
+    );
+
+    expect(invitation, isNot(contains('Manual access key')));
+  });
+
   testWidgets('mobile portal remains usable at 200 percent text', (
     tester,
   ) async {
@@ -159,4 +257,28 @@ class _FakeStaffPortalService extends StaffPortalService {
   @override
   Future<StudyResponseSummary> loadStudyResponses(String code) async =>
       const StudyResponseSummary();
+}
+
+class _DelayedCreateStaffPortalService extends _FakeStaffPortalService {
+  _DelayedCreateStaffPortalService(super.participants);
+
+  final _createCompleter = Completer<ParticipantAccessCard>();
+
+  @override
+  Future<ParticipantAccessCard> createParticipant({
+    required String studyId,
+    required String group,
+    int validForDays = 90,
+  }) => _createCompleter.future;
+
+  void completeCreate() {
+    _createCompleter.complete(
+      ParticipantAccessCard(
+        code: 'EA12CD34EF',
+        accessKey: 'test-access-key',
+        loginUrl: 'https://example.test/sign-in',
+        expiresAt: DateTime(2026, 12, 28),
+      ),
+    );
+  }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../core/theme.dart';
+import '../data/countries.dart';
 import '../models/study_assessment.dart';
 import '../services/study_assessment_service.dart';
 
@@ -14,7 +15,7 @@ class DemographicsScreen extends StatefulWidget {
   });
 
   final StudyAssessmentService service;
-  final VoidCallback onSubmitted;
+  final Future<void> Function() onSubmitted;
   final Future<void> Function() onSignOut;
 
   @override
@@ -25,12 +26,12 @@ class _DemographicsScreenState extends State<DemographicsScreen> {
   final _formKey = GlobalKey<FormState>();
   final _age = TextEditingController();
   final _ethnicOther = TextEditingController();
-  final _country = TextEditingController();
   final _diagnosis = TextEditingController();
   final _comorbidities = TextEditingController();
 
   String? _gender;
   String? _ethnicity;
+  String? _country;
   String? _relationship;
   bool _loading = true;
   bool _saving = false;
@@ -49,7 +50,7 @@ class _DemographicsScreenState extends State<DemographicsScreen> {
         _gender = draft.gender;
         _ethnicity = draft.ethnicBackground;
         _ethnicOther.text = draft.ethnicOther ?? '';
-        _country.text = draft.countryOfBirth ?? '';
+        _country = _countryValue(draft.countryOfBirth);
         _relationship = draft.relationshipStatus;
         _diagnosis.text = draft.cardiovascularDiagnosis ?? '';
         _comorbidities.text = draft.comorbidities ?? '';
@@ -63,7 +64,6 @@ class _DemographicsScreenState extends State<DemographicsScreen> {
   void dispose() {
     _age.dispose();
     _ethnicOther.dispose();
-    _country.dispose();
     _diagnosis.dispose();
     _comorbidities.dispose();
     super.dispose();
@@ -148,21 +148,16 @@ class _DemographicsScreenState extends State<DemographicsScreen> {
                         decoration: const InputDecoration(
                           labelText: 'Please specify',
                         ),
-                        validator: (value) => value == null || value.trim().isEmpty
+                        validator: (value) =>
+                            value == null || value.trim().isEmpty
                             ? 'Please describe your background.'
                             : null,
                       ),
                     ],
                     Gap.m,
-                    TextFormField(
-                      controller: _country,
-                      textCapitalization: TextCapitalization.words,
-                      maxLength: 120,
-                      decoration: const InputDecoration(
-                        labelText: 'Country of birth',
-                        prefixIcon: Icon(Icons.public),
-                      ),
-                      validator: _required,
+                    _CountryField(
+                      value: _country,
+                      onChanged: (value) => setState(() => _country = value),
                     ),
                     Gap.m,
                     _SelectField(
@@ -232,14 +227,14 @@ class _DemographicsScreenState extends State<DemographicsScreen> {
           gender: _gender,
           ethnicBackground: _ethnicity,
           ethnicOther: _ethnicOther.text,
-          countryOfBirth: _country.text,
+          countryOfBirth: _country,
           relationshipStatus: _relationship,
           cardiovascularDiagnosis: _diagnosis.text,
           comorbidities: _comorbidities.text,
         ),
         submit: true,
       );
-      widget.onSubmitted();
+      await widget.onSubmitted();
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -254,6 +249,56 @@ class _DemographicsScreenState extends State<DemographicsScreen> {
 
   static String? _required(String? value) =>
       value == null || value.trim().isEmpty ? 'This answer is required.' : null;
+
+  static String? _countryValue(String? value) {
+    final country = value?.trim();
+    if (country == null || country.isEmpty) return null;
+    for (final option in countries) {
+      if (option.toLowerCase() == country.toLowerCase()) return option;
+    }
+    return country;
+  }
+}
+
+class _CountryField extends StatelessWidget {
+  const _CountryField({required this.value, required this.onChanged});
+
+  final String? value;
+  final ValueChanged<String?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final entries = <DropdownMenuEntry<String>>[
+      if (value != null && !countries.contains(value))
+        DropdownMenuEntry(value: value!, label: value!),
+      for (final country in countries)
+        DropdownMenuEntry(value: country, label: country),
+    ];
+    return FormField<String>(
+      key: ValueKey('country-$value'),
+      initialValue: value,
+      validator: (selected) => selected == null ? 'Select a country.' : null,
+      builder: (field) => DropdownMenu<String>(
+        initialSelection: field.value,
+        expandedInsets: EdgeInsets.zero,
+        menuHeight: 360,
+        enableFilter: true,
+        enableSearch: true,
+        requestFocusOnTap: true,
+        label: const Text('Country of birth'),
+        hintText: 'Search or select a country',
+        leadingIcon: const Icon(Icons.public),
+        trailingIcon: const Icon(Icons.arrow_drop_down),
+        selectedTrailingIcon: const Icon(Icons.arrow_drop_up),
+        errorText: field.errorText,
+        dropdownMenuEntries: entries,
+        onSelected: (selected) {
+          field.didChange(selected);
+          onChanged(selected);
+        },
+      ),
+    );
+  }
 }
 
 class _SelectField extends StatelessWidget {

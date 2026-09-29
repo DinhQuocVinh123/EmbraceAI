@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/theme.dart';
 import '../models/consent.dart';
 import '../services/study_assessment_service.dart';
+import '../widgets/blocking_loading_overlay.dart';
 
 class ParticipantConsentScreen extends StatefulWidget {
   const ParticipantConsentScreen({
@@ -13,7 +14,7 @@ class ParticipantConsentScreen extends StatefulWidget {
   });
 
   final StudyAssessmentService service;
-  final VoidCallback onAccepted;
+  final Future<void> Function() onAccepted;
   final Future<void> Function() onSignOut;
 
   @override
@@ -30,131 +31,136 @@ class _ParticipantConsentScreenState extends State<ParticipantConsentScreen> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Study information and consent'),
-        actions: [
-          IconButton(
-            tooltip: 'Sign out',
-            onPressed: _saving ? null : widget.onSignOut,
-            icon: const Icon(Icons.logout),
+    return Stack(
+      children: [
+        Scaffold(
+          appBar: AppBar(
+            title: const Text('Study information and consent'),
+            actions: [
+              IconButton(
+                tooltip: 'Sign out',
+                onPressed: _saving ? null : widget.onSignOut,
+                icon: const Icon(Icons.logout),
+              ),
+            ],
           ),
-        ],
-      ),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 760),
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
-              children: [
-                Icon(
-                  Icons.fact_check_outlined,
-                  size: 44,
-                  color: scheme.primary,
+          body: SafeArea(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 760),
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+                  children: [
+                    Icon(
+                      Icons.fact_check_outlined,
+                      size: 44,
+                      color: scheme.primary,
+                    ),
+                    Gap.m,
+                    Text(
+                      'Before you take part',
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    Gap.s,
+                    Text(
+                      'Please read this information carefully. Taking part is '
+                      'voluntary, and choosing not to take part will not affect '
+                      'your healthcare.',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        height: 1.5,
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                    Gap.xl,
+                    const _InformationSection(
+                      icon: Icons.science_outlined,
+                      title: 'Purpose',
+                      body:
+                          'This prototype provides an AI-guided relaxation exercise and asks about your experience so the research team can evaluate and improve it.',
+                    ),
+                    const _InformationSection(
+                      icon: Icons.volunteer_activism_outlined,
+                      title: 'Your choice',
+                      body:
+                          'You may stop a session at any time, leave optional questions unanswered, or contact the research team member who gave you access if you wish to withdraw.',
+                    ),
+                    const _InformationSection(
+                      icon: Icons.medical_information_outlined,
+                      title: 'Medical safety',
+                      body:
+                          'This is not a medical intervention. If you experience any discomfort, please stop immediately and seek help from your medical team.',
+                    ),
+                    const _InformationSection(
+                      icon: Icons.shield_outlined,
+                      title: 'Information collected',
+                      body:
+                          'Your responses are linked to your study-issued Participant ID. The app collects the approved demographic and health form, session activity, mood ratings and study questionnaires. It does not ask for your name, personal email, phone number or medical record number.',
+                    ),
+                    Gap.l,
+                    Text(
+                      'Please confirm each statement',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Gap.s,
+                    _ConsentCheck(
+                      value: _checks[0],
+                      text: 'I have read and understood the information above.',
+                      onChanged: (value) => _setCheck(0, value),
+                    ),
+                    _ConsentCheck(
+                      value: _checks[1],
+                      text:
+                          'I understand that taking part is voluntary and that I may stop at any time.',
+                      onChanged: (value) => _setCheck(1, value),
+                    ),
+                    _ConsentCheck(
+                      value: _checks[2],
+                      text:
+                          'I understand that this relaxation exercise is not medical treatment.',
+                      onChanged: (value) => _setCheck(2, value),
+                    ),
+                    _ConsentCheck(
+                      value: _checks[3],
+                      text:
+                          'I consent to the research team collecting and using the information described above for this study.',
+                      onChanged: (value) => _setCheck(3, value),
+                    ),
+                    Gap.l,
+                    FilledButton.icon(
+                      onPressed: _canConsent ? _accept : null,
+                      icon: _saving
+                          ? const SizedBox.square(
+                              dimension: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.check_circle_outline),
+                      label: const Text('I consent and continue'),
+                    ),
+                    Gap.s,
+                    TextButton(
+                      onPressed: _saving ? null : widget.onSignOut,
+                      child: const Text('Exit without consenting'),
+                    ),
+                    Gap.m,
+                    Text(
+                      'Consent record version: $studyConsentVersion',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
-                Gap.m,
-                Text(
-                  'Before you take part',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                Gap.s,
-                Text(
-                  'Please read this information carefully. Taking part is '
-                  'voluntary, and choosing not to take part will not affect '
-                  'your healthcare.',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    height: 1.5,
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ),
-                Gap.xl,
-                const _InformationSection(
-                  icon: Icons.science_outlined,
-                  title: 'Purpose',
-                  body:
-                      'This prototype provides an AI-guided relaxation exercise and asks about your experience so the research team can evaluate and improve it.',
-                ),
-                const _InformationSection(
-                  icon: Icons.volunteer_activism_outlined,
-                  title: 'Your choice',
-                  body:
-                      'You may stop a session at any time, leave optional questions unanswered, or contact the research team member who gave you access if you wish to withdraw.',
-                ),
-                const _InformationSection(
-                  icon: Icons.medical_information_outlined,
-                  title: 'Medical safety',
-                  body:
-                      'This is not a medical intervention. If you experience any discomfort, please stop immediately and seek help from your medical team.',
-                ),
-                const _InformationSection(
-                  icon: Icons.shield_outlined,
-                  title: 'Information collected',
-                  body:
-                      'Your responses are linked to your study-issued Participant ID. The app collects the approved demographic and health form, session activity, mood ratings and study questionnaires. It does not ask for your name, personal email, phone number or medical record number.',
-                ),
-                Gap.l,
-                Text(
-                  'Please confirm each statement',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                Gap.s,
-                _ConsentCheck(
-                  value: _checks[0],
-                  text: 'I have read and understood the information above.',
-                  onChanged: (value) => _setCheck(0, value),
-                ),
-                _ConsentCheck(
-                  value: _checks[1],
-                  text:
-                      'I understand that taking part is voluntary and that I may stop at any time.',
-                  onChanged: (value) => _setCheck(1, value),
-                ),
-                _ConsentCheck(
-                  value: _checks[2],
-                  text:
-                      'I understand that this relaxation exercise is not medical treatment.',
-                  onChanged: (value) => _setCheck(2, value),
-                ),
-                _ConsentCheck(
-                  value: _checks[3],
-                  text:
-                      'I consent to the research team collecting and using the information described above for this study.',
-                  onChanged: (value) => _setCheck(3, value),
-                ),
-                Gap.l,
-                FilledButton.icon(
-                  onPressed: _canConsent ? _accept : null,
-                  icon: _saving
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.check_circle_outline),
-                  label: const Text('I consent and continue'),
-                ),
-                Gap.s,
-                TextButton(
-                  onPressed: _saving ? null : widget.onSignOut,
-                  child: const Text('Exit without consenting'),
-                ),
-                Gap.m,
-                Text(
-                  'Consent record version: $studyConsentVersion',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ),
-      ),
+        if (_saving)
+          const BlockingLoadingOverlay(message: 'Saving your consent...'),
+      ],
     );
   }
 
@@ -166,7 +172,7 @@ class _ParticipantConsentScreenState extends State<ParticipantConsentScreen> {
     setState(() => _saving = true);
     try {
       await widget.service.acceptConsent();
-      widget.onAccepted();
+      await widget.onAccepted();
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -244,10 +250,7 @@ class _ConsentCheck extends StatelessWidget {
 }
 
 class ConsentWithdrawnScreen extends StatelessWidget {
-  const ConsentWithdrawnScreen({
-    super.key,
-    required this.onSignOut,
-  });
+  const ConsentWithdrawnScreen({super.key, required this.onSignOut});
 
   final Future<void> Function() onSignOut;
 

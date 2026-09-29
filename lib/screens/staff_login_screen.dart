@@ -121,7 +121,12 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                     Gap.l,
                     FilledButton.icon(
                       onPressed: auth.isBusy ? null : () => _submit(auth),
-                      icon: const Icon(Icons.login),
+                      icon: auth.isBusy
+                          ? const SizedBox.square(
+                              dimension: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.login),
                       label: Text(auth.isBusy ? 'Signing in...' : 'Sign in'),
                     ),
                   ],
