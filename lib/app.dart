@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
+import 'core/app_surface.dart';
 import 'core/theme.dart';
 import 'screens/home_screen.dart';
 import 'state/settings_store.dart';
@@ -17,7 +18,9 @@ class EmbraceApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final settings = context.watch<SettingsStore>();
     return MaterialApp(
-      title: 'EmbraceAI',
+      title: AppSurface.current == AppSurface.staff
+          ? 'EmbraceAI Staff Portal'
+          : 'EmbraceAI',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightFor(reduceMotion: settings.reduceMotion),
       darkTheme: AppTheme.darkFor(reduceMotion: settings.reduceMotion),

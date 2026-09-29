@@ -5,9 +5,7 @@ import '../core/theme.dart';
 import '../state/auth_store.dart';
 
 class ParticipantLoginScreen extends StatefulWidget {
-  const ParticipantLoginScreen({super.key, required this.onOpenStaffPortal});
-
-  final VoidCallback onOpenStaffPortal;
+  const ParticipantLoginScreen({super.key});
 
   @override
   State<ParticipantLoginScreen> createState() => _ParticipantLoginScreenState();
@@ -154,12 +152,6 @@ class _ParticipantLoginScreenState extends State<ParticipantLoginScreen> {
                           ),
                         ),
                       ],
-                    ),
-                    Gap.xl,
-                    TextButton.icon(
-                      onPressed: auth.isBusy ? null : widget.onOpenStaffPortal,
-                      icon: const Icon(Icons.admin_panel_settings_outlined),
-                      label: const Text('Staff portal'),
                     ),
                   ],
                 ),

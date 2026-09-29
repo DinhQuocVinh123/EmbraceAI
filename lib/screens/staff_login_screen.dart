@@ -5,9 +5,7 @@ import '../core/theme.dart';
 import '../state/auth_store.dart';
 
 class StaffLoginScreen extends StatefulWidget {
-  const StaffLoginScreen({super.key, required this.onBack});
-
-  final VoidCallback onBack;
+  const StaffLoginScreen({super.key});
 
   @override
   State<StaffLoginScreen> createState() => _StaffLoginScreenState();
@@ -31,14 +29,8 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
     final auth = context.watch<AuthStore>();
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          tooltip: 'Back to participant access',
-          onPressed: auth.isBusy ? null : widget.onBack,
-          icon: const Icon(Icons.arrow_back),
-        ),
-        title: const Text('Staff portal'),
-      ),
+      // Cổng staff có địa chỉ riêng nên không còn trang nào để quay lại.
+      appBar: AppBar(title: const Text('EmbraceAI Staff Portal')),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(

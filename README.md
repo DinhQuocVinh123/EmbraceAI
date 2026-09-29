@@ -8,8 +8,16 @@ team manage participants.
 Each session follows five steps: **check-in → tailoring → practice →
 reflection → follow-up**.
 
-**Live prototype:** https://embrace-ai-prototype-2026.web.app/
-Access requires a Participant ID and access key issued by the research team.
+**Live prototype**
+
+| | Address | Sign-in |
+|---|---|---|
+| Participant app | https://embrace-ai-prototype-2026.web.app | Participant ID and access key, or a one-time link or QR code |
+| Staff portal | https://embrace-ai-staff.web.app | Staff email and password |
+
+Both are built from the same code. They have separate addresses so that each
+keeps its own browser sign-in; a staff member can test a participant link
+without being signed out of the portal.
 
 ## Features
 
@@ -116,12 +124,17 @@ flutter analyze
 flutter test
 ```
 
-### 5. Build and deploy the web app
+### 5. Build and deploy the web apps
 
 ```bash
-dart run tools/build_web.dart
+dart run tools/build_web.dart          # builds build/web and build/web_staff
 firebase deploy --only hosting --project embrace-ai-prototype-2026
 ```
+
+`firebase deploy` also rebuilds each app before uploading it. To deploy one
+app only, use `--only hosting:participant` or `--only hosting:staff`. The
+surface is chosen at build time with `--dart-define=APP_SURFACE=staff`; the
+default is the participant app. The staff build leaves out the session videos.
 
 ## Project structure
 

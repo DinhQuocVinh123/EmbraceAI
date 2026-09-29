@@ -137,9 +137,18 @@ coordinators can create participants or change account and consent status.
 ## Build and host
 
 ```powershell
-flutter build web --release --dart-define-from-file=config/supabase.json
+dart run tools/build_web.dart
 firebase deploy --only hosting --project embrace-ai-prototype-2026
 ```
+
+This deploys two sites from the same code:
+
+- participant app: https://embrace-ai-prototype-2026.web.app
+- staff portal: https://embrace-ai-staff.web.app
+
+Staff sign in only on the staff portal. A staff account opened on the
+participant app, or a participant account opened on the staff portal, is shown
+the correct address instead of being signed in.
 
 Before collecting research data, review the ethics protocol, approved hosting
 region, retention schedule, authorised staff list, backup policy, and incident

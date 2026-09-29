@@ -1,5 +1,18 @@
 {
   "projects": {
     "default": "embrace-ai-prototype-2026"
-  }
+  },
+  "targets": {
+    "embrace-ai-prototype-2026": {
+      "hosting": {
+        "participant": [
+          "embrace-ai-prototype-2026"
+        ],
+        "staff": [
+          "embrace-ai-staff"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }
