@@ -13,17 +13,27 @@ import '../widgets/session_chrome.dart';
 import '../widgets/session_prompts.dart';
 import '../widgets/session_help.dart';
 
+/// Kết quả một buổi: câu trả lời, và người dùng có muốn lưu vào nhật ký không.
+class SessionOutcome {
+  const SessionOutcome({required this.answers, required this.saveToJournal});
+
+  final SessionAnswers answers;
+  final bool saveToJournal;
+}
+
 /// Màn hình chạy buổi thiền: video nền + lớp tương tác do app vẽ.
 class SessionScreen extends StatefulWidget {
   const SessionScreen({super.key, required this.scene});
 
   final SessionScene scene;
 
-  static Future<SessionAnswers?> open(
+  /// Trả về `null` khi rời trước màn tổng kết; còn lại luôn kèm câu trả lời,
+  /// kể cả khi người dùng không lưu vào nhật ký, để buổi tập vẫn được ghi nhận.
+  static Future<SessionOutcome?> open(
     BuildContext context,
     SessionScene scene,
   ) {
-    return Navigator.of(context).push<SessionAnswers>(
+    return Navigator.of(context).push<SessionOutcome>(
       AppMotion.pageRoute(context, builder: (_) => SessionScreen(scene: scene)),
     );
   }
@@ -333,8 +343,12 @@ class _SummaryView extends StatelessWidget {
   Widget build(BuildContext context) {
     return SummaryView(
       answers: answers,
-      onSave: () => Navigator.of(context).pop(answers),
-      onSkip: () => Navigator.of(context).pop(),
+      onSave: () => Navigator.of(
+        context,
+      ).pop(SessionOutcome(answers: answers, saveToJournal: true)),
+      onSkip: () => Navigator.of(
+        context,
+      ).pop(SessionOutcome(answers: answers, saveToJournal: false)),
     );
   }
 }

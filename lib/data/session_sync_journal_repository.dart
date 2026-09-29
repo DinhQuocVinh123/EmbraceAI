@@ -6,7 +6,13 @@ import '../models/journal_entry.dart';
 import '../models/mood.dart';
 import 'journal_repository.dart';
 
-class SessionSyncJournalRepository implements JournalRepository {
+class SessionSyncJournalRepository
+    implements JournalRepository, SessionRecorder {
+  /// `local_entry_id` của buổi tập không lưu vào nhật ký. Id trong máy bắt
+  /// đầu từ 1, nên 0 không trùng mục nào và đánh dấu buổi đó để ẩn khỏi
+  /// nhật ký trên mọi máy.
+  static const unsavedLocalEntryId = 0;
+
   SessionSyncJournalRepository({
     required JournalRepository local,
     JournalRepository? legacy,
@@ -56,6 +62,12 @@ class SessionSyncJournalRepository implements JournalRepository {
         final syncId = row['client_entry_id'] as String?;
         if (syncId != null) remoteSyncIds.add(syncId);
         final privateRow = syncId == null ? null : privateBySyncId[syncId];
+        // Người dùng đã chọn không lưu buổi này vào nhật ký: chỉ tính cho
+        // nghiên cứu, không hiện trong nhật ký.
+        if ((row['local_entry_id'] as num?)?.toInt() == unsavedLocalEntryId &&
+            privateRow == null) {
+          continue;
+        }
         final occurredAt = DateTime.parse(
           row['occurred_at'] as String,
         ).toLocal();
@@ -118,9 +130,7 @@ class SessionSyncJournalRepository implements JournalRepository {
             syncId: syncId,
             isRemoteSummary: true,
             mood: score == null ? null : Mood.fromScore(score),
-            note:
-                'Session completed on another device. Private reflections '
-                'remain on the device where they were written.',
+            note: 'Session completed on another device.',
             tags: const ['Session', 'Synced'],
             createdAt: occurredAt,
             updatedAt: DateTime.parse(
@@ -191,6 +201,30 @@ class SessionSyncJournalRepository implements JournalRepository {
       );
     } catch (_) {
       // The on-device journal remains the source of truth if sync is offline.
+    }
+  }
+
+  @override
+  Future<void> recordUnsavedSession({
+    required DateTime occurredAt,
+    Mood? moodAfter,
+    required bool reflectionProvided,
+  }) async {
+    if (_client.auth.currentUser == null) return;
+    try {
+      await _client.rpc(
+        'record_session',
+        params: {
+          'p_local_entry_id': unsavedLocalEntryId,
+          'p_client_entry_id': _newUuid(),
+          'p_occurred_at': occurredAt.toUtc().toIso8601String(),
+          'p_client_updated_at': DateTime.now().toUtc().toIso8601String(),
+          'p_mood_after': moodAfter?.score,
+          'p_reflection_provided': reflectionProvided,
+        },
+      );
+    } catch (_) {
+      // Mất mạng thì buổi này không được tính; nhật ký trên máy không đổi.
     }
   }
 

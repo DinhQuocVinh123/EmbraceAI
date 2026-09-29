@@ -79,8 +79,21 @@ class WelcomeScreen extends StatelessWidget {
     final store = context.read<JournalStore>();
     final messenger = ScaffoldMessenger.of(context);
     final snackBarAnimationStyle = AppMotion.style(context);
-    final answers = await SessionScreen.open(context, scene);
-    if (answers == null) return;
+    final outcome = await SessionScreen.open(context, scene);
+    if (outcome == null) return;
+    final answers = outcome.answers;
+
+    if (!outcome.saveToJournal) {
+      // Không lưu ghi chú, nhưng buổi tập vẫn được tính cho nghiên cứu.
+      if (answers.practiceStarted) {
+        await store.recordUnsavedSession(
+          occurredAt: answers.startedAt,
+          moodAfter: answers.moodAfter,
+          reflectionProvided: answers.reflection?.trim().isNotEmpty ?? false,
+        );
+      }
+      return;
+    }
 
     await store.save(_toEntry(answers));
     messenger.showSnackBar(

@@ -1,7 +1,6 @@
 import 'package:embrace_ai/core/theme.dart';
 import 'package:embrace_ai/data/session_script.dart';
 import 'package:embrace_ai/models/mood.dart';
-import 'package:embrace_ai/models/session_answers.dart';
 import 'package:embrace_ai/models/session_audio.dart';
 import 'package:embrace_ai/models/session_scene.dart';
 import 'package:embrace_ai/screens/session_screen.dart';
@@ -18,14 +17,14 @@ import 'support/fake_video_player.dart';
 void main() {
   late FakeVideoPlayerPlatform fake;
   late SettingsStore settings;
-  SessionAnswers? saved;
+  SessionOutcome? outcome;
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     settings = SettingsStore();
     fake = FakeVideoPlayerPlatform(duration: SessionScript.totalDuration);
     VideoPlayerPlatform.instance = fake;
-    saved = null;
+    outcome = null;
   });
 
   Future<void> tap(WidgetTester tester, String label) async {
@@ -71,7 +70,7 @@ void main() {
                 builder: (context) => Scaffold(
                   body: FilledButton(
                     onPressed: () async {
-                      saved = await SessionScreen.open(
+                      outcome = await SessionScreen.open(
                         context,
                         SessionScene.countryside,
                       );
@@ -158,10 +157,30 @@ void main() {
     await tap(tester, 'Save and continue');
     expect(find.text('Done'), findsOneWidget);
     await tap(tester, 'Save to journal');
-    expect(saved?.reflection, 'I noticed my breathing.');
-    expect(saved?.question, 'What happens next?');
-    expect(saved?.stressAfter, isNotNull);
-    expect(saved?.moodAfter, Mood.great);
+    expect(outcome?.answers.reflection, 'I noticed my breathing.');
+    expect(outcome?.answers.question, 'What happens next?');
+    expect(outcome?.answers.stressAfter, isNotNull);
+    expect(outcome?.answers.moodAfter, Mood.great);
+    expect(outcome?.saveToJournal, isTrue);
+    expect(outcome?.answers.practiceStarted, isTrue);
+  });
+
+  testWidgets('skipping the journal still returns the answers', (tester) async {
+    await open(tester);
+    await begin(tester);
+    await tester.tap(find.byTooltip('Help'));
+    await tester.pumpAndSettle();
+    await tap(tester, 'End practice');
+    await tap(tester, 'Quite good');
+    await tap(tester, 'Continue');
+    await tap(tester, 'Skip this question');
+    await tap(tester, 'Skip this question');
+    await tap(tester, 'Skip saving');
+
+    // Không lưu nhật ký vẫn phải trả câu trả lời về, để buổi tập được tính.
+    expect(outcome?.saveToJournal, isFalse);
+    expect(outcome?.answers.practiceStarted, isTrue);
+    expect(outcome?.answers.moodAfter, Mood.good);
   });
 
   testWidgets('help returns to the prior pause state and applies settings', (
@@ -238,9 +257,9 @@ void main() {
     await tap(tester, 'Skip this question');
     await tap(tester, 'Save to journal');
 
-    expect(saved?.moodAfter, Mood.great);
-    expect(saved?.stressAfter, isNotNull);
-    expect(saved?.reflection, '');
+    expect(outcome?.answers.moodAfter, Mood.great);
+    expect(outcome?.answers.stressAfter, isNotNull);
+    expect(outcome?.answers.reflection, '');
   });
 
   testWidgets('keyboard shortcuts pause, open help and request stop', (

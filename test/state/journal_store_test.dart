@@ -1,3 +1,4 @@
+import 'package:embrace_ai/data/journal_repository.dart';
 import 'package:embrace_ai/models/journal_entry.dart';
 import 'package:embrace_ai/models/mood.dart';
 import 'package:embrace_ai/state/journal_store.dart';
@@ -184,4 +185,44 @@ void main() {
       expect(store.hasCheckedInToday, isTrue);
     });
   });
+
+  group('buổi tập không lưu vào nhật ký', () {
+    test('vẫn được ghi nhận khi kho có máy chủ', () async {
+      final repo = _RecordingRepository();
+      final store = JournalStore(repo);
+      final at = DateTime(2026, 9, 29, 9);
+
+      await store.recordUnsavedSession(
+        occurredAt: at,
+        moodAfter: Mood.good,
+        reflectionProvided: false,
+      );
+
+      expect(repo.recorded, [(at, Mood.good, false)]);
+      // Không có mục nào được thêm vào nhật ký.
+      expect(store.entries, isEmpty);
+    });
+
+    test('kho chỉ lưu trên máy thì bỏ qua, không báo lỗi', () async {
+      final store = JournalStore(FakeRepository());
+      await store.recordUnsavedSession(
+        occurredAt: DateTime(2026, 9, 29),
+        reflectionProvided: false,
+      );
+      expect(store.entries, isEmpty);
+    });
+  });
+}
+
+class _RecordingRepository extends FakeRepository implements SessionRecorder {
+  final recorded = <(DateTime, Mood?, bool)>[];
+
+  @override
+  Future<void> recordUnsavedSession({
+    required DateTime occurredAt,
+    Mood? moodAfter,
+    required bool reflectionProvided,
+  }) async {
+    recorded.add((occurredAt, moodAfter, reflectionProvided));
+  }
 }

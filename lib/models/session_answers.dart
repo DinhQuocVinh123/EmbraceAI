@@ -53,6 +53,10 @@ class SessionAnswers {
   DateTime startedAt = DateTime.now();
   DateTime? finishedAt;
 
+  /// Phần tập đã thật sự chạy. Dừng ở bước an toàn hay rời trước khi tập thì
+  /// không tính là một buổi.
+  bool practiceStarted = false;
+
   /// Mức giảm căng thẳng, null nếu thiếu một trong hai lần đo.
   int? get stressDelta => (stressBefore != null && stressAfter != null)
       ? stressBefore! - stressAfter!

@@ -196,6 +196,7 @@ class SessionController extends ChangeNotifier {
     _phase = SessionPhase.practice;
     _current = plannedBeats.first;
     answers.startedAt = DateTime.now();
+    answers.practiceStarted = true;
     _notify();
     await _playMedia();
   }

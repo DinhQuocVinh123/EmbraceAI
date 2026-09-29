@@ -56,6 +56,22 @@ class JournalStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Ghi nhận một buổi tập mà người dùng không lưu vào nhật ký. Kho chỉ lưu
+  /// trên máy thì bỏ qua: không có máy chủ nào để báo.
+  Future<void> recordUnsavedSession({
+    required DateTime occurredAt,
+    Mood? moodAfter,
+    required bool reflectionProvided,
+  }) async {
+    if (_repository case final SessionRecorder recorder) {
+      await recorder.recordUnsavedSession(
+        occurredAt: occurredAt,
+        moodAfter: moodAfter,
+        reflectionProvided: reflectionProvided,
+      );
+    }
+  }
+
   Future<void> delete(int id) async {
     await _repository.delete(id);
     _entries = _entries.where((e) => e.id != id).toList();
