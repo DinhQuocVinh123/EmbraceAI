@@ -192,6 +192,48 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('access card fits a phone screen without overlapping buttons', (
+    tester,
+  ) async {
+    final service = _DelayedCreateStaffPortalService(participants);
+    await pumpPortal(tester, size: const Size(393, 852), service: service);
+
+    await tester.tap(find.text('New participant'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Generate access'));
+    await tester.pump();
+    service.completeCreate();
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    final expiry = find.textContaining('Account access expires');
+    final copy = find.text('Copy invitation');
+    await tester.scrollUntilVisible(
+      expiry,
+      200,
+      scrollable: find
+          .descendant(
+            of: find.byType(AlertDialog),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    // Nút thao tác nằm ngoài vùng cuộn, không được đè lên chữ trong hộp thoại.
+    final visibleExpiry = tester.getRect(expiry);
+    final copyRect = tester.getRect(copy);
+    final dialogBody = tester.getRect(
+      find
+          .descendant(
+            of: find.byType(AlertDialog),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    expect(copyRect.top, greaterThanOrEqualTo(dialogBody.bottom));
+    expect(visibleExpiry.bottom, lessThanOrEqualTo(dialogBody.bottom + 0.5));
+    expect(tester.getRect(find.text('Done')).bottom, lessThanOrEqualTo(852));
+  });
+
   test('participant invitation gives clear sign-in instructions', () {
     final invitation = buildParticipantInvitation(
       ParticipantAccessCard(

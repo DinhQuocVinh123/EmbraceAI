@@ -1355,55 +1355,60 @@ class _CreateParticipantDialogState extends State<_CreateParticipantDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('New participant'),
-      content: SizedBox(
-        width: 440,
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: _studyController,
-                decoration: const InputDecoration(
-                  labelText: 'Study ID',
-                  prefixIcon: Icon(Icons.science_outlined),
+      // Nội dung cuộn được để không tràn trên điện thoại hoặc khi phóng chữ;
+      // các nút của hộp thoại nằm ngoài vùng cuộn nên luôn nhìn thấy.
+      content: SingleChildScrollView(
+        child: SizedBox(
+          width: 440,
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: _studyController,
+                  decoration: const InputDecoration(
+                    labelText: 'Study ID',
+                    prefixIcon: Icon(Icons.science_outlined),
+                  ),
+                  validator: (value) => value == null || value.trim().isEmpty
+                      ? 'Enter a study ID'
+                      : null,
                 ),
-                validator: (value) => value == null || value.trim().isEmpty
-                    ? 'Enter a study ID'
-                    : null,
-              ),
-              Gap.m,
-              _dropdownField<String>(
-                label: 'Study group',
-                leadingIcon: Icons.group_outlined,
-                value: _group,
-                items: const [
-                  DropdownMenuItem(
-                    value: 'Unassigned',
-                    child: Text('Unassigned'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'Intervention',
-                    child: Text('Intervention'),
-                  ),
-                  DropdownMenuItem(value: 'Control', child: Text('Control')),
-                ],
-                onChanged: (value) =>
-                    setState(() => _group = value ?? 'Unassigned'),
-              ),
-              Gap.m,
-              _dropdownField<int>(
-                label: 'Invitation validity',
-                leadingIcon: Icons.event_outlined,
-                value: _validDays,
-                items: const [
-                  DropdownMenuItem(value: 30, child: Text('30 days')),
-                  DropdownMenuItem(value: 90, child: Text('90 days')),
-                  DropdownMenuItem(value: 180, child: Text('180 days')),
-                ],
-                onChanged: (value) => setState(() => _validDays = value ?? 90),
-              ),
-            ],
+                Gap.m,
+                _dropdownField<String>(
+                  label: 'Study group',
+                  leadingIcon: Icons.group_outlined,
+                  value: _group,
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'Unassigned',
+                      child: Text('Unassigned'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'Intervention',
+                      child: Text('Intervention'),
+                    ),
+                    DropdownMenuItem(value: 'Control', child: Text('Control')),
+                  ],
+                  onChanged: (value) =>
+                      setState(() => _group = value ?? 'Unassigned'),
+                ),
+                Gap.m,
+                _dropdownField<int>(
+                  label: 'Invitation validity',
+                  leadingIcon: Icons.event_outlined,
+                  value: _validDays,
+                  items: const [
+                    DropdownMenuItem(value: 30, child: Text('30 days')),
+                    DropdownMenuItem(value: 90, child: Text('90 days')),
+                    DropdownMenuItem(value: 180, child: Text('180 days')),
+                  ],
+                  onChanged: (value) =>
+                      setState(() => _validDays = value ?? 90),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -1445,84 +1450,88 @@ class _AccessCardDialog extends StatelessWidget {
       title: Text(
         card.reissued ? 'New sign-in details' : 'Participant access created',
       ),
-      content: SizedBox(
-        width: 460,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Ask the participant to scan this QR code with their phone camera. '
-              'The sign-in link is single use and should be shared privately.',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            if (card.reissued && accessKey != null) ...[
-              Gap.s,
+      // Nội dung cuộn được để không tràn trên điện thoại hoặc khi phóng chữ;
+      // các nút của hộp thoại nằm ngoài vùng cuộn nên luôn nhìn thấy.
+      content: SingleChildScrollView(
+        child: SizedBox(
+          width: 460,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
               Text(
-                'A new access key was issued. The previous key no longer '
-                'works; devices already signed in stay signed in.',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                'Ask the participant to scan this QR code with their phone camera. '
+                'The sign-in link is single use and should be shared privately.',
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
-            ],
-            Gap.l,
-            Center(
-              child: Semantics(
-                label: 'One-time participant sign-in QR code',
-                image: true,
-                child: ColoredBox(
-                  color: Colors.white,
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: QrImageView(
-                      data: card.loginUrl,
-                      size: 220,
-                      eyeStyle: const QrEyeStyle(
-                        eyeShape: QrEyeShape.square,
-                        color: Colors.black,
-                      ),
-                      dataModuleStyle: const QrDataModuleStyle(
-                        dataModuleShape: QrDataModuleShape.square,
-                        color: Colors.black,
+              if (card.reissued && accessKey != null) ...[
+                Gap.s,
+                Text(
+                  'A new access key was issued. The previous key no longer '
+                  'works; devices already signed in stay signed in.',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                ),
+              ],
+              Gap.l,
+              Center(
+                child: Semantics(
+                  label: 'One-time participant sign-in QR code',
+                  image: true,
+                  child: ColoredBox(
+                    color: Colors.white,
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: QrImageView(
+                        data: card.loginUrl,
+                        size: 220,
+                        eyeStyle: const QrEyeStyle(
+                          eyeShape: QrEyeShape.square,
+                          color: Colors.black,
+                        ),
+                        dataModuleStyle: const QrDataModuleStyle(
+                          dataModuleShape: QrDataModuleShape.square,
+                          color: Colors.black,
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-            Gap.l,
-            Text(
-              'Participant ID',
-              style: Theme.of(context).textTheme.labelLarge,
-            ),
-            Gap.xs,
-            SelectableText(
-              card.code,
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            if (accessKey != null) ...[
-              Gap.m,
+              Gap.l,
               Text(
-                'Manual access key',
+                'Participant ID',
                 style: Theme.of(context).textTheme.labelLarge,
               ),
               Gap.xs,
               SelectableText(
-                accessKey,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
+                card.code,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              if (accessKey != null) ...[
+                Gap.m,
+                Text(
+                  'Manual access key',
+                  style: Theme.of(context).textTheme.labelLarge,
                 ),
+                Gap.xs,
+                SelectableText(
+                  accessKey,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+              Gap.m,
+              Text(
+                'Account access expires ${DateFormat.yMMMd().format(card.expiresAt)}. '
+                'A new QR can be issued from the participant record.',
               ),
             ],
-            Gap.m,
-            Text(
-              'Account access expires ${DateFormat.yMMMd().format(card.expiresAt)}. '
-              'A new QR can be issued from the participant record.',
-            ),
-          ],
+          ),
         ),
       ),
       actions: [
@@ -1536,6 +1545,11 @@ class _AccessCardDialog extends StatelessWidget {
           },
           icon: const Icon(Icons.copy),
           label: const Text('Copy invitation'),
+          // Cùng bề rộng với nút Done (vốn trải ngang theo theme) để hai nút
+          // xếp chồng ngay ngắn.
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size.fromHeight(48),
+          ),
         ),
         FilledButton(
           onPressed: () => Navigator.pop(context),
