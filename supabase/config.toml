@@ -21,3 +21,12 @@ verify_jwt = true
 
 [functions.reissue-participant-access]
 verify_jwt = true
+
+[functions.ai-ingest]
+verify_jwt = true
+
+[functions.ask-embrace]
+verify_jwt = true
+
+[functions.ai-worker]
+verify_jwt = false
