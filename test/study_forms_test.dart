@@ -39,14 +39,45 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('demographics form remains scrollable at 200 percent text', (
+  Future<void> tapText(WidgetTester tester, String text) async {
+    await tester.tap(find.text(text));
+    await tester.pumpAndSettle();
+  }
+
+  final countryDropdown = find.byWidgetPredicate(
+    (widget) => widget is DropdownMenu<String>,
+  );
+
+  Future<void> pickCountry(WidgetTester tester, String country) async {
+    await tester.tap(countryDropdown);
+    await tester.pumpAndSettle();
+    final input = find.descendant(
+      of: countryDropdown,
+      matching: find.byType(TextField),
+    );
+    await tester.enterText(input, country);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(country).last);
+    await tester.pumpAndSettle();
+  }
+
+  /// Trả lời các câu trước câu nước sinh.
+  Future<void> answerUntilCountry(WidgetTester tester) async {
+    await tester.enterText(find.byType(TextField), '67');
+    await tapText(tester, 'Next');
+    await tester.tap(find.text('Female'));
+    await tapText(tester, 'Next');
+    await tester.tap(find.text('Asian'));
+    await tapText(tester, 'Next');
+  }
+
+  testWidgets('demographics shows one question at a time at 200 percent text', (
     tester,
   ) async {
-    final service = _FakeStudyAssessmentService();
     await pump(
       tester,
       DemographicsScreen(
-        service: service,
+        service: _FakeStudyAssessmentService(),
         onSubmitted: () async {},
         onSignOut: () async {},
       ),
@@ -54,13 +85,18 @@ void main() {
     );
 
     expect(find.text('Participant information'), findsOneWidget);
+    expect(find.text('Question 1 of 7'), findsOneWidget);
+    // Nút Tiếp nằm cố định ở đáy, không phải cuộn tìm.
+    await tapText(tester, 'Next');
+    expect(find.text('Question 1 of 7'), findsOneWidget);
+    // Ở cỡ chữ này ô nhập nằm dưới phần giới thiệu: cuộn tới để thấy lỗi.
     await tester.scrollUntilVisible(
-      find.text('Save and continue'),
-      300,
+      find.text('Enter age in years.'),
+      200,
       scrollable: find.byType(Scrollable).first,
-      maxScrolls: 30,
+      maxScrolls: 20,
     );
-    expect(find.text('Save and continue'), findsOneWidget);
+    expect(find.text('Enter age in years.'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -75,11 +111,9 @@ void main() {
         onSignOut: () async {},
       ),
     );
+    await answerUntilCountry(tester);
 
-    final finder = find.byWidgetPredicate(
-      (widget) => widget is DropdownMenu<String>,
-    );
-    final dropdown = tester.widget<DropdownMenu<String>>(finder);
+    final dropdown = tester.widget<DropdownMenu<String>>(countryDropdown);
     expect(dropdown.enableFilter, isTrue);
     expect(dropdown.enableSearch, isTrue);
     expect(dropdown.dropdownMenuEntries.length, countries.length);
@@ -87,15 +121,53 @@ void main() {
       dropdown.dropdownMenuEntries.any((entry) => entry.value == 'Vietnam'),
       isTrue,
     );
-    await tester.tap(finder);
-    await tester.pumpAndSettle();
-    final input = find.descendant(of: finder, matching: find.byType(TextField));
-    await tester.enterText(input, 'Vietnam');
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Vietnam').last);
-    await tester.pumpAndSettle();
+    await pickCountry(tester, 'Vietnam');
     expect(find.text('Vietnam'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('demographics saves drafts, then submits after the review', (
+    tester,
+  ) async {
+    final service = _FakeStudyAssessmentService();
+    var submitted = false;
+    await pump(
+      tester,
+      DemographicsScreen(
+        service: service,
+        onSubmitted: () async => submitted = true,
+        onSignOut: () async {},
+      ),
+    );
+
+    await answerUntilCountry(tester);
+    expect(service.lastDemographics?.ageYears, 67);
+    expect(service.lastDemographicsSubmit, isFalse);
+    await pickCountry(tester, 'Vietnam');
+    await tapText(tester, 'Next');
+    await tester.tap(find.text('Prefer not to say'));
+    await tapText(tester, 'Next');
+    await tester.enterText(find.byType(TextField), 'Heart failure');
+    await tapText(tester, 'Next');
+    // Câu cuối không bắt buộc.
+    await tapText(tester, 'Review answers');
+
+    expect(find.text('Check your answers'), findsOneWidget);
+    expect(find.text('Female'), findsOneWidget);
+    // Sửa một câu thì quay thẳng về trang xem lại.
+    await tester.tap(find.text('Change').first);
+    await tester.pumpAndSettle();
+    expect(find.text('Question 1 of 7'), findsOneWidget);
+    await tester.enterText(find.byType(TextField), '68');
+    await tapText(tester, 'Review answers');
+    expect(find.text('68'), findsOneWidget);
+
+    await tapText(tester, 'Save and continue');
+    expect(service.lastDemographicsSubmit, isTrue);
+    expect(service.lastDemographics?.ageYears, 68);
+    expect(service.lastDemographics?.countryOfBirth, 'Vietnam');
+    expect(service.lastDemographics?.cardiovascularDiagnosis, 'Heart failure');
+    expect(submitted, isTrue);
   });
 
   testWidgets('consent requires every acknowledgement before continuing', (
@@ -274,20 +346,45 @@ void main() {
       ),
     );
 
-    await tester.tap(find.text('Not at all').first);
-    await tester.scrollUntilVisible(
-      find.text('Save and next'),
-      300,
-      scrollable: find.byType(Scrollable).first,
-      maxScrolls: 30,
-    );
-    await tester.tap(find.text('Save and next'));
+    await tester.tap(find.text('Not at all'));
+    await tester.pump();
+    await tester.tap(find.text('Next'));
     await tester.pumpAndSettle();
 
     expect(service.lastAssessment?.gadResponses.first, 0);
     expect(service.lastSubmit, isFalse);
-    expect(find.text('Your experience'), findsOneWidget);
+    expect(find.text('2. Difficulty controlling worrying'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('every GAD-7 item shows the scale instruction verbatim', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      FinalAssessmentScreen(
+        service: _FakeStudyAssessmentService(),
+        onSubmitted: () async {},
+        onDefer: () {},
+        onSignOut: () async {},
+      ),
+    );
+
+    const stem =
+        'Over the last 2 weeks, how often have you been bothered by the '
+        'following problems?';
+    for (var item = 1; item <= 7; item++) {
+      expect(find.text('Question $item of 20'), findsOneWidget);
+      expect(find.text(stem), findsOneWidget);
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+    }
+    expect(
+      find.text(
+        'How would you rate your overall emotional well-being right now?',
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('final questionnaire actions stack at 200 percent text', (
@@ -305,7 +402,7 @@ void main() {
     );
 
     expect(find.text('Do this later'), findsOneWidget);
-    expect(find.text('Save and next'), findsOneWidget);
+    expect(find.text('Next'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }
@@ -322,8 +419,19 @@ class _FakeStudyAssessmentService extends StudyAssessmentService {
 
   ProgramAssessmentAnswers? lastAssessment;
   bool? lastSubmit;
+  DemographicAnswers? lastDemographics;
+  bool? lastDemographicsSubmit;
   bool acceptedConsent = false;
   final Completer<void>? consentCompleter;
+
+  @override
+  Future<void> saveDemographics(
+    DemographicAnswers answers, {
+    required bool submit,
+  }) async {
+    lastDemographics = answers;
+    lastDemographicsSubmit = submit;
+  }
 
   @override
   Future<void> acceptConsent() async {

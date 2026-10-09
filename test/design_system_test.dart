@@ -48,7 +48,6 @@ void main() {
     // Nợ cũ: các màn hình phiên thiền và phụ lục chưa được làm lại giao diện.
     // Khi làm lại file nào thì gỡ nó khỏi danh sách này.
     const legacy = {
-      'lib/screens/final_assessment_screen.dart',
       'lib/screens/session_screen.dart',
       'lib/widgets/mood_distribution.dart',
       'lib/widgets/mood_picker.dart',

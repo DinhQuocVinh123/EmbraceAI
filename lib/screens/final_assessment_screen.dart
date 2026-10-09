@@ -3,7 +3,14 @@ import 'package:flutter/material.dart';
 import '../core/theme.dart';
 import '../models/study_assessment.dart';
 import '../services/study_assessment_service.dart';
+import '../widgets/choice_tile.dart';
+import '../widgets/step_actions.dart';
 
+/// Phụ lục B–D, mỗi màn hình một câu hỏi.
+///
+/// Theo khuyến nghị ISPOR khi chuyển thang đo chuẩn (GAD-7) sang màn hình,
+/// mỗi câu phải tự đầy đủ: câu dẫn gốc của thang đo nằm trên mọi màn của nhóm
+/// câu đó, chữ giữ nguyên văn. Mỗi lần sang câu mới, câu trả lời được lưu nháp.
 class FinalAssessmentScreen extends StatefulWidget {
   const FinalAssessmentScreen({
     super.key,
@@ -23,6 +30,9 @@ class FinalAssessmentScreen extends StatefulWidget {
 }
 
 class _FinalAssessmentScreenState extends State<FinalAssessmentScreen> {
+  static const _gadStem =
+      'Over the last 2 weeks, how often have you been bothered by the '
+      'following problems?';
   static const _gadQuestions = [
     'Feeling nervous, anxious, or on edge',
     'Difficulty controlling worrying',
@@ -32,7 +42,24 @@ class _FinalAssessmentScreenState extends State<FinalAssessmentScreen> {
     'Becoming easily annoyed or irritable',
     'Feeling afraid as if something awful might happen',
   ];
+  static const _gadOptions = {
+    0: 'Not at all',
+    1: 'Several days',
+    2: 'More than half the days',
+    3: 'Nearly every day',
+  };
 
+  static const _wellbeingQuestion =
+      'How would you rate your overall emotional well-being right now?';
+  static const _wellbeingOptions = {
+    1: 'Very poor',
+    2: 'Poor',
+    3: 'Fair',
+    4: 'Good',
+    5: 'Very good',
+  };
+
+  static const _premStem = 'Please indicate how much you agree or disagree.';
   static const _premQuestions = [
     'The instructions were easy to understand.',
     'I felt comfortable using the system.',
@@ -43,6 +70,13 @@ class _FinalAssessmentScreenState extends State<FinalAssessmentScreen> {
     'I would be willing to use this system again.',
     'Overall, I am satisfied with the experience.',
   ];
+  static const _premOptions = {
+    1: 'Strongly disagree',
+    2: 'Disagree',
+    3: 'Neutral',
+    4: 'Agree',
+    5: 'Strongly agree',
+  };
 
   static const _openQuestions = [
     'What did you like most about the experience?',
@@ -51,11 +85,22 @@ class _FinalAssessmentScreenState extends State<FinalAssessmentScreen> {
     'Would you use this system again? Please explain why or why not.',
   ];
 
+  /// GAD-7, câu cảm nhận chung, 8 câu trải nghiệm, 4 câu mở.
+  static final _questionCount =
+      _gadQuestions.length + 1 + _premQuestions.length + _openQuestions.length;
+
   final _openControllers = List.generate(4, (_) => TextEditingController());
   ProgramAssessmentAnswers _answers = ProgramAssessmentAnswers();
-  int _step = 0;
+
+  /// Câu đang hiện; bằng số câu hỏi nghĩa là trang xem lại.
+  int _page = 0;
   bool _loading = true;
   bool _saving = false;
+
+  /// Các lần lưu nháp chạy nối tiếp nhau; lần gửi chính thức chờ chúng xong.
+  Future<void> _drafts = Future.value();
+
+  bool get _onReview => _page == _questionCount;
 
   @override
   void initState() {
@@ -103,29 +148,27 @@ class _FinalAssessmentScreenState extends State<FinalAssessmentScreen> {
           : SafeArea(
               child: Column(
                 children: [
-                  LinearProgressIndicator(value: (_step + 1) / 4),
+                  LinearProgressIndicator(
+                    value: (_page + 1) / (_questionCount + 1),
+                  ),
                   Expanded(
                     child: ListView(
-                      key: ValueKey(_step),
+                      key: ValueKey(_page),
                       padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
-                      children: [
-                        Text(
-                          'Step ${_step + 1} of 4',
-                          style: Theme.of(context).textTheme.labelLarge
-                              ?.copyWith(
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                        ),
-                        Gap.s,
-                        ..._stepContent(context),
-                      ],
+                      children: _onReview
+                          ? _reviewContent(context)
+                          : _questionContent(context),
                     ),
                   ),
-                  _BottomActions(
-                    step: _step,
-                    saving: _saving,
-                    onBack: _step == 0 ? widget.onDefer : _back,
-                    onNext: _saving ? null : _next,
+                  StepActions(
+                    nextLabel: _onReview ? 'Submit' : 'Next',
+                    nextIcon: _onReview
+                        ? Icons.send_outlined
+                        : Icons.arrow_forward,
+                    onNext: _next,
+                    backLabel: _page == 0 ? 'Do this later' : 'Back',
+                    onBack: _page == 0 ? _defer : _back,
+                    busy: _saving,
                   ),
                 ],
               ),
@@ -133,100 +176,161 @@ class _FinalAssessmentScreenState extends State<FinalAssessmentScreen> {
     );
   }
 
-  List<Widget> _stepContent(BuildContext context) => switch (_step) {
-    0 => _promContent(context),
-    1 => _premContent(context),
-    2 => _openContent(context),
-    _ => _reviewContent(context),
-  };
-
-  List<Widget> _promContent(BuildContext context) => [
-    const _Intro(
-      title: 'Emotional well-being',
-      body:
-          'Over the last 2 weeks, how often have you been bothered by the following problems? Every question on this page is optional.',
-    ),
-    Gap.l,
-    for (var index = 0; index < _gadQuestions.length; index++) ...[
-      _RatingQuestion(
-        number: index + 1,
-        question: _gadQuestions[index],
-        value: _answers.gadResponses[index],
-        options: const {
-          0: 'Not at all',
-          1: 'Several days',
-          2: 'More than half the days',
-          3: 'Nearly every day',
-        },
-        onChanged: (value) =>
-            setState(() => _answers.gadResponses[index] = value),
-      ),
-      if (index != _gadQuestions.length - 1) const Divider(height: 32),
-    ],
-    Gap.xl,
-    _RatingQuestion(
-      question:
-          'How would you rate your overall emotional well-being right now?',
-      value: _answers.emotionalWellbeing,
-      options: const {
-        1: 'Very poor',
-        2: 'Poor',
-        3: 'Fair',
-        4: 'Good',
-        5: 'Very good',
-      },
-      onChanged: (value) => setState(() => _answers.emotionalWellbeing = value),
-    ),
-  ];
-
-  List<Widget> _premContent(BuildContext context) => [
-    const _Intro(
-      title: 'Your experience',
-      body:
-          'Please indicate how much you agree or disagree. These questions are optional.',
-    ),
-    Gap.l,
-    for (var index = 0; index < _premQuestions.length; index++) ...[
-      _RatingQuestion(
+  List<Widget> _questionContent(BuildContext context) {
+    final gad = _gadQuestions.length;
+    final prem = _premQuestions.length;
+    final page = _page;
+    if (page < gad) {
+      return _ratingPage(
+        context,
+        section: 'Emotional well-being',
+        stem: _gadStem,
+        number: page + 1,
+        question: _gadQuestions[page],
+        options: _gadOptions,
+        value: _answers.gadResponses[page],
+        onChanged: (value) => _answers.gadResponses[page] = value,
+      );
+    }
+    if (page == gad) {
+      return _ratingPage(
+        context,
+        section: 'Emotional well-being',
+        question: _wellbeingQuestion,
+        options: _wellbeingOptions,
+        value: _answers.emotionalWellbeing,
+        onChanged: (value) => _answers.emotionalWellbeing = value,
+      );
+    }
+    if (page < gad + 1 + prem) {
+      final index = page - gad - 1;
+      return _ratingPage(
+        context,
+        section: 'Your experience',
+        stem: _premStem,
         number: index + 1,
         question: _premQuestions[index],
+        options: _premOptions,
         value: _answers.premResponses[index],
-        options: const {
-          1: 'Strongly disagree',
-          2: 'Disagree',
-          3: 'Neutral',
-          4: 'Agree',
-          5: 'Strongly agree',
-        },
-        onChanged: (value) =>
-            setState(() => _answers.premResponses[index] = value),
-      ),
-      if (index != _premQuestions.length - 1) const Divider(height: 32),
-    ],
-  ];
+        onChanged: (value) => _answers.premResponses[index] = value,
+      );
+    }
+    return _openPage(context, page - gad - 1 - prem);
+  }
 
-  List<Widget> _openContent(BuildContext context) => [
-    const _Intro(
-      title: 'In your own words',
-      body:
-          'You may leave any of these questions blank. Please do not include your name or contact details.',
-    ),
-    Gap.l,
-    for (var index = 0; index < _openQuestions.length; index++) ...[
-      TextFormField(
-        controller: _openControllers[index],
-        minLines: 3,
-        maxLines: 8,
-        maxLength: 2000,
-        textCapitalization: TextCapitalization.sentences,
-        decoration: InputDecoration(
-          labelText: '${index + 1}. ${_openQuestions[index]}',
-          alignLabelWithHint: true,
+  List<Widget> _header(BuildContext context, String section) {
+    final theme = Theme.of(context);
+    return [
+      Text(
+        'Question ${_page + 1} of $_questionCount',
+        style: theme.textTheme.labelLarge?.copyWith(
+          color: theme.colorScheme.primary,
         ),
       ),
-      if (index != _openQuestions.length - 1) Gap.l,
-    ],
-  ];
+      Gap.xs,
+      Text(
+        section,
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+      Gap.m,
+    ];
+  }
+
+  List<Widget> _ratingPage(
+    BuildContext context, {
+    required String section,
+    String? stem,
+    int? number,
+    required String question,
+    required Map<int, String> options,
+    required int? value,
+    required void Function(int? value) onChanged,
+  }) {
+    final theme = Theme.of(context);
+    void choose(int? choice) => setState(() => onChanged(choice));
+    return [
+      ..._header(context, section),
+      if (stem != null) ...[
+        Text(
+          stem,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            height: 1.5,
+          ),
+        ),
+        Gap.s,
+      ],
+      Semantics(
+        header: true,
+        child: Text(
+          number == null ? question : '$number. $question',
+          style: theme.textTheme.titleLarge,
+        ),
+      ),
+      Gap.m,
+      for (final option in options.entries) ...[
+        ChoiceTile(
+          label: option.value,
+          score: option.key,
+          selected: value == option.key,
+          onTap: () => choose(option.key),
+        ),
+        Gap.s,
+      ],
+      Row(
+        children: [
+          Expanded(
+            child: Text(
+              'This question is optional.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          if (value != null)
+            TextButton.icon(
+              onPressed: () => choose(null),
+              icon: const Icon(Icons.clear, size: 18),
+              label: const Text('Clear answer'),
+            ),
+        ],
+      ),
+    ];
+  }
+
+  List<Widget> _openPage(BuildContext context, int index) {
+    final theme = Theme.of(context);
+    return [
+      ..._header(context, 'In your own words'),
+      Text(
+        'You may leave this blank. Please do not include your name or '
+        'contact details.',
+        style: theme.textTheme.bodyLarge?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+          height: 1.5,
+        ),
+      ),
+      Gap.s,
+      Semantics(
+        header: true,
+        child: Text(
+          '${index + 1}. ${_openQuestions[index]}',
+          style: theme.textTheme.titleLarge,
+        ),
+      ),
+      Gap.m,
+      TextField(
+        controller: _openControllers[index],
+        minLines: 4,
+        maxLines: 10,
+        maxLength: 2000,
+        textCapitalization: TextCapitalization.sentences,
+        decoration: const InputDecoration(hintText: 'Your answer (optional)'),
+      ),
+    ];
+  }
 
   List<Widget> _reviewContent(BuildContext context) {
     final gadAnswered = _answers.gadResponses.whereType<int>().length;
@@ -293,19 +397,33 @@ class _FinalAssessmentScreenState extends State<FinalAssessmentScreen> {
     ];
   }
 
-  void _back() => setState(() => _step--);
+  void _back() => setState(() => _page--);
+
+  /// "Làm sau" vẫn giữ câu trả lời của câu đầu tiên.
+  void _defer() {
+    _saveDraft();
+    widget.onDefer();
+  }
+
+  void _saveDraft() {
+    _syncOpenResponses();
+    _drafts = _drafts
+        .then((_) => widget.service.saveAssessment(_answers, submit: false))
+        .catchError((Object _) {});
+  }
 
   Future<void> _next() async {
+    if (!_onReview) {
+      _saveDraft();
+      setState(() => _page++);
+      return;
+    }
     _syncOpenResponses();
     setState(() => _saving = true);
     try {
-      if (_step < 3) {
-        await widget.service.saveAssessment(_answers, submit: false);
-        if (mounted) setState(() => _step++);
-      } else {
-        await widget.service.saveAssessment(_answers, submit: true);
-        await widget.onSubmitted();
-      }
+      await _drafts;
+      await widget.service.saveAssessment(_answers, submit: true);
+      await widget.onSubmitted();
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -322,195 +440,6 @@ class _FinalAssessmentScreenState extends State<FinalAssessmentScreen> {
     for (var index = 0; index < _openControllers.length; index++) {
       _answers.openResponses[index] = _openControllers[index].text.trim();
     }
-  }
-}
-
-class _RatingQuestion extends StatelessWidget {
-  const _RatingQuestion({
-    this.number,
-    required this.question,
-    required this.value,
-    required this.options,
-    required this.onChanged,
-  });
-
-  final int? number;
-  final String question;
-  final int? value;
-  final Map<int, String> options;
-  final ValueChanged<int?> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Semantics(
-      container: true,
-      label: number == null ? question : 'Question $number. $question',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            number == null ? question : '$number. $question',
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w600,
-              height: 1.35,
-            ),
-          ),
-          Gap.s,
-          for (final option in options.entries) ...[
-            _RatingOption(
-              score: option.key,
-              label: option.value,
-              selected: value == option.key,
-              onTap: () => onChanged(option.key),
-            ),
-            if (option.key != options.keys.last) Gap.xs,
-          ],
-          if (value != null)
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                onPressed: () => onChanged(null),
-                icon: const Icon(Icons.clear, size: 18),
-                label: const Text('Clear answer'),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _RatingOption extends StatelessWidget {
-  const _RatingOption({
-    required this.score,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final int score;
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: '$score, $label',
-      onTap: onTap,
-      child: ExcludeSemantics(
-        child: Material(
-          color: selected
-              ? scheme.primaryContainer
-              : scheme.surfaceContainerLow,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-            side: BorderSide(
-              color: selected ? scheme.primary : scheme.outlineVariant,
-            ),
-          ),
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(8),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 52),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      selected
-                          ? Icons.radio_button_checked
-                          : Icons.radio_button_unchecked,
-                      color: selected
-                          ? scheme.primary
-                          : scheme.onSurfaceVariant,
-                    ),
-                    Gap.s,
-                    Text(
-                      score.toString(),
-                      style: const TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                    Gap.s,
-                    Expanded(child: Text(label)),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _BottomActions extends StatelessWidget {
-  const _BottomActions({
-    required this.step,
-    required this.saving,
-    required this.onBack,
-    required this.onNext,
-  });
-
-  final int step;
-  final bool saving;
-  final VoidCallback onBack;
-  final VoidCallback? onNext;
-
-  @override
-  Widget build(BuildContext context) {
-    final next = FilledButton.icon(
-      onPressed: onNext,
-      icon: saving
-          ? const SizedBox.square(
-              dimension: 18,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : Icon(step == 3 ? Icons.send_outlined : Icons.arrow_forward),
-      label: Text(step == 3 ? 'Submit' : 'Save and next'),
-    );
-    final back = OutlinedButton(
-      onPressed: saving ? null : onBack,
-      child: Text(step == 0 ? 'Do this later' : 'Back'),
-    );
-    final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.3;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        border: Border(
-          top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
-        ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-          child: largeText
-              ? Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(width: double.infinity, child: next),
-                    Gap.s,
-                    SizedBox(width: double.infinity, child: back),
-                  ],
-                )
-              : Row(
-                  children: [
-                    Expanded(child: back),
-                    Gap.m,
-                    Expanded(child: next),
-                  ],
-                ),
-        ),
-      ),
-    );
   }
 }
 
