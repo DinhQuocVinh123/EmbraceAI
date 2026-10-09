@@ -327,6 +327,17 @@ class SummaryView extends StatelessWidget {
             ),
             Gap.s,
             TextButton(onPressed: onSkip, child: const Text('Skip saving')),
+            Gap.s,
+            // Bỏ qua chỉ giữ buổi này khỏi nhật ký; buổi tập vẫn được tính cho
+            // nghiên cứu, nên nói rõ để người dùng không hiểu nhầm.
+            Text(
+              'Either way, the research team receives the session time and '
+              'your mood rating, never what you write.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
           ],
         ),
       ),

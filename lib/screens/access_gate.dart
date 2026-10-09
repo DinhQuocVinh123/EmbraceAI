@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../core/app_surface.dart';
 import '../core/theme.dart';
+import '../data/pending_sync_queue.dart';
 import '../data/prefs_journal_repository.dart';
 import '../data/session_sync_journal_repository.dart';
 import '../services/staff_portal_service.dart';
@@ -50,6 +51,7 @@ class AccessGate extends StatelessWidget {
       create: (_) => JournalStore(
         SessionSyncJournalRepository(
           local: PrefsJournalRepository(namespace: session.uid),
+          pending: PendingSyncQueue(namespace: session.uid),
           legacy: PrefsJournalRepository(),
         ),
       )..load(),

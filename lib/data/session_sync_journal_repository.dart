@@ -1,10 +1,57 @@
+import 'dart:async';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/journal_entry.dart';
 import '../models/mood.dart';
 import 'journal_repository.dart';
+import 'pending_sync_queue.dart';
+
+/// Phần máy chủ mà kho nhật ký dùng tới. Tách ra để test được logic đồng bộ
+/// mà không cần Supabase thật.
+abstract class SessionJournalRemote {
+  bool get isSignedIn;
+
+  Future<List<Map<String, dynamic>>> fetchSessions();
+
+  Future<List<Map<String, dynamic>>> fetchPrivateEntries();
+
+  Future<void> rpc(String function, Map<String, Object?> params);
+}
+
+class SupabaseSessionJournalRemote implements SessionJournalRemote {
+  SupabaseSessionJournalRemote(this._client);
+
+  final SupabaseClient _client;
+
+  @override
+  bool get isSignedIn => _client.auth.currentUser != null;
+
+  @override
+  Future<List<Map<String, dynamic>>> fetchSessions() => _client
+      .from('sessions')
+      .select(
+        'client_entry_id, local_entry_id, occurred_at, '
+        'client_updated_at, mood_after, journal_deleted_at',
+      )
+      .order('occurred_at', ascending: false);
+
+  @override
+  Future<List<Map<String, dynamic>>> fetchPrivateEntries() => _client
+      .from('participant_journal_entries')
+      .select(
+        'client_entry_id, occurred_at, client_updated_at, '
+        'mood_after, note, tags',
+      )
+      .order('occurred_at', ascending: false);
+
+  @override
+  Future<void> rpc(String function, Map<String, Object?> params) async {
+    await _client.rpc(function, params: params);
+  }
+}
 
 class SessionSyncJournalRepository
     implements JournalRepository, SessionRecorder {
@@ -13,47 +60,73 @@ class SessionSyncJournalRepository
   /// nhật ký trên mọi máy.
   static const unsavedLocalEntryId = 0;
 
+  static const _recordSession = 'record_session';
+  static const _deleteSessionJournal = 'delete_session_journal';
+
   SessionSyncJournalRepository({
     required JournalRepository local,
+    required PendingSyncQueue pending,
     JournalRepository? legacy,
     SupabaseClient? client,
+    SessionJournalRemote? remote,
   }) : _local = local,
+       _pending = pending,
        _legacy = legacy,
-       _client = client ?? Supabase.instance.client;
+       _remote =
+           remote ??
+           SupabaseSessionJournalRemote(client ?? Supabase.instance.client);
 
   final JournalRepository _local;
+  final PendingSyncQueue _pending;
   final JournalRepository? _legacy;
-  final SupabaseClient _client;
+  final SessionJournalRemote _remote;
+
+  Future<void>? _flushing;
 
   @override
   Future<List<JournalEntry>> fetchAll() async {
-    final localEntries = await _local.fetchAll();
+    var localEntries = await _local.fetchAll();
     final legacyEntries = await _legacy?.fetchAll() ?? const <JournalEntry>[];
-    if (_client.auth.currentUser == null) return localEntries;
+    if (!_remote.isSignedIn) return localEntries;
+
+    await _flushPending();
+    // Lệnh xoá còn kẹt trong hàng đợi thì máy chủ vẫn giữ ghi chú: không được
+    // kéo nó về lại.
+    final pendingDeletes = {
+      for (final call in await _pending.fetchAll())
+        if (call.function == _deleteSessionJournal) ?call.clientEntryId,
+    };
 
     try {
       final results = await Future.wait([
-        _client
-            .from('sessions')
-            .select(
-              'client_entry_id, local_entry_id, occurred_at, '
-              'client_updated_at, mood_after',
-            )
-            .order('occurred_at', ascending: false),
-        _client
-            .from('participant_journal_entries')
-            .select(
-              'client_entry_id, occurred_at, client_updated_at, '
-              'mood_after, note, tags',
-            )
-            .order('occurred_at', ascending: false),
+        _remote.fetchSessions(),
+        _remote.fetchPrivateEntries(),
       ]);
-      final rows = results[0].cast<Map<String, dynamic>>();
-      final privateRows = results[1].cast<Map<String, dynamic>>();
+      final rows = results[0];
+      final privateRows = results[1];
       final privateBySyncId = <String, Map<String, dynamic>>{
         for (final row in privateRows)
           if (row['client_entry_id'] case final String syncId) syncId: row,
       };
+
+      // Mục đã bị xoá trên máy khác thì xoá luôn bản trên máy này.
+      final deletedSyncIds = {
+        ...pendingDeletes,
+        for (final row in rows)
+          if (row['journal_deleted_at'] != null)
+            if (row['client_entry_id'] case final String syncId) syncId,
+      };
+      final keptEntries = <JournalEntry>[];
+      for (final entry in localEntries) {
+        final id = entry.id;
+        if (id != null && deletedSyncIds.contains(entry.syncId)) {
+          await _local.delete(id);
+        } else {
+          keptEntries.add(entry);
+        }
+      }
+      localEntries = keptEntries;
+
       final merged = <JournalEntry>[];
       final matchedLocalIds = <int>{};
       final remoteSyncIds = <String>{};
@@ -61,6 +134,7 @@ class SessionSyncJournalRepository
       for (final row in rows) {
         final syncId = row['client_entry_id'] as String?;
         if (syncId != null) remoteSyncIds.add(syncId);
+        if (deletedSyncIds.contains(syncId)) continue;
         final privateRow = syncId == null ? null : privateBySyncId[syncId];
         // Người dùng đã chọn không lưu buổi này vào nhật ký: chỉ tính cho
         // nghiên cứu, không hiện trong nhật ký.
@@ -177,55 +251,106 @@ class SessionSyncJournalRepository
     if (prepared.tags.contains('Session')) await _syncSession(prepared);
   }
 
+  /// Mục gắn với buổi tập thì xoá luôn ghi chú trên máy chủ và để lại dấu "đã
+  /// xoá" cho các máy khác. Buổi tập vẫn được tính cho nghiên cứu.
   @override
-  Future<void> delete(int id) => _local.delete(id);
+  Future<void> delete(int id) async {
+    final entries = await _local.fetchAll();
+    final entry = entries.where((e) => e.id == id).firstOrNull;
+    await _local.delete(id);
+    final syncId = entry?.syncId;
+    if (entry == null || syncId == null || !entry.tags.contains('Session')) {
+      return;
+    }
+    await _send(
+      PendingSyncCall(_deleteSessionJournal, {
+        'p_client_entry_id': syncId,
+        'p_occurred_at': entry.createdAt.toUtc().toIso8601String(),
+        'p_client_updated_at': DateTime.now().toUtc().toIso8601String(),
+        'p_mood_after': entry.mood?.score,
+        'p_reflection_provided': entry.note.trim().isNotEmpty,
+      }),
+    );
+  }
 
   Future<void> _syncSession(JournalEntry entry) async {
-    if (_client.auth.currentUser == null ||
-        entry.id == null ||
-        entry.syncId == null) {
+    if (!_remote.isSignedIn || entry.id == null || entry.syncId == null) {
       return;
     }
     try {
-      await _client.rpc(
-        'sync_session_journal',
-        params: {
-          'p_local_entry_id': entry.id,
-          'p_client_entry_id': entry.syncId,
-          'p_occurred_at': entry.createdAt.toUtc().toIso8601String(),
-          'p_client_updated_at': entry.updatedAt.toUtc().toIso8601String(),
-          'p_mood_after': entry.mood?.score,
-          'p_note': entry.note,
-          'p_tags': entry.tags,
-        },
-      );
+      await _remote.rpc('sync_session_journal', {
+        'p_local_entry_id': entry.id,
+        'p_client_entry_id': entry.syncId,
+        'p_occurred_at': entry.createdAt.toUtc().toIso8601String(),
+        'p_client_updated_at': entry.updatedAt.toUtc().toIso8601String(),
+        'p_mood_after': entry.mood?.score,
+        'p_note': entry.note,
+        'p_tags': entry.tags,
+      });
     } catch (_) {
       // The on-device journal remains the source of truth if sync is offline.
     }
   }
 
+  /// Mất mạng lúc kết thúc buổi tập thì lệnh nằm chờ trong hàng đợi và được
+  /// gửi lại lần mở app sau, nên buổi tập không bị mất khỏi số liệu.
   @override
   Future<void> recordUnsavedSession({
     required DateTime occurredAt,
     Mood? moodAfter,
     required bool reflectionProvided,
   }) async {
-    if (_client.auth.currentUser == null) return;
-    try {
-      await _client.rpc(
-        'record_session',
-        params: {
-          'p_local_entry_id': unsavedLocalEntryId,
-          'p_client_entry_id': _newUuid(),
-          'p_occurred_at': occurredAt.toUtc().toIso8601String(),
-          'p_client_updated_at': DateTime.now().toUtc().toIso8601String(),
-          'p_mood_after': moodAfter?.score,
-          'p_reflection_provided': reflectionProvided,
-        },
-      );
-    } catch (_) {
-      // Mất mạng thì buổi này không được tính; nhật ký trên máy không đổi.
+    await _send(
+      PendingSyncCall(_recordSession, {
+        'p_local_entry_id': unsavedLocalEntryId,
+        'p_client_entry_id': _newUuid(),
+        'p_occurred_at': occurredAt.toUtc().toIso8601String(),
+        'p_client_updated_at': DateTime.now().toUtc().toIso8601String(),
+        'p_mood_after': moodAfter?.score,
+        'p_reflection_provided': reflectionProvided,
+      }),
+    );
+  }
+
+  /// Ghi lệnh vào hàng đợi trước rồi mới gửi ở nền, để màn hình không phải
+  /// chờ mạng và tắt app giữa chừng cũng không mất lệnh.
+  Future<void> _send(PendingSyncCall call) async {
+    await _pending.add(call);
+    unawaited(_flushPending());
+  }
+
+  /// Chờ lượt gửi lại đang chạy (nếu có) kết thúc.
+  @visibleForTesting
+  Future<void> get idle => _flushing ?? Future<void>.value();
+
+  Future<void> _flushPending() =>
+      _flushing ??= _flushQueue().whenComplete(() => _flushing = null);
+
+  /// Gửi lần lượt theo đúng thứ tự. Lỗi mạng thì dừng và giữ phần còn lại cho
+  /// lần sau; máy chủ từ chối hẳn (tài khoản hết hạn, dữ liệu sai) thì bỏ lệnh
+  /// đó vì gửi lại cũng không khác.
+  Future<void> _flushQueue() async {
+    if (!_remote.isSignedIn) return;
+    final calls = await _pending.fetchAll();
+    var handled = 0;
+    for (final call in calls) {
+      try {
+        await _remote.rpc(call.function, call.params);
+      } catch (error) {
+        if (!_isRejected(error)) break;
+      }
+      handled++;
     }
+    if (handled == 0) return;
+    // Đọc lại vì trong lúc gửi có thể có lệnh mới được thêm vào cuối.
+    final current = await _pending.fetchAll();
+    await _pending.replaceAll(current.skip(handled).toList());
+  }
+
+  static bool _isRejected(Object error) {
+    if (error is! PostgrestException) return false;
+    final code = error.code ?? '';
+    return code == '42501' || code.startsWith('22') || code.startsWith('23');
   }
 
   static DateTime _remoteUpdatedAt(Map<String, dynamic> row) =>
