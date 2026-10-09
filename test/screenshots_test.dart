@@ -2,12 +2,15 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:embrace_ai/data/session_script.dart';
+import 'package:embrace_ai/models/ask_result.dart';
 import 'package:embrace_ai/models/mood.dart';
 import 'package:embrace_ai/models/session_answers.dart';
 import 'package:embrace_ai/models/session_scene.dart';
+import 'package:embrace_ai/screens/ask_screen.dart';
 import 'package:embrace_ai/screens/journal_screen.dart';
 import 'package:embrace_ai/screens/session_screen.dart';
 import 'package:embrace_ai/screens/welcome_screen.dart';
+import 'package:embrace_ai/services/ask_service.dart';
 import 'package:embrace_ai/state/journal_store.dart';
 import 'package:embrace_ai/state/settings_store.dart';
 import 'package:embrace_ai/widgets/session_chrome.dart';
@@ -395,6 +398,55 @@ void main() {
     );
     await shoot(tester, '18_practice_large_text');
   });
+
+  testWidgets('19 hỏi đáp Ask EmbraceAI', (tester) async {
+    ScreenshotHarness.sizePhone(tester);
+    final service = _ScriptedAskService({
+      'How do I turn on captions?': const AskResult(
+        type: AskResultType.answer,
+        answer:
+            'During a session, tap Help and choose Show captions. You can '
+            'also make the text bigger there.',
+        sources: [
+          AskSource(
+            title: 'User Guide',
+            heading: 'Participant app: a guided session',
+          ),
+        ],
+      ),
+      'Should I lower my medication dose?': const AskResult(
+        type: AskResultType.medicalRedirect,
+        answer:
+            'That is a question for your doctor or care team. You can save '
+            'it to ask at your next appointment.',
+      ),
+    });
+    await tester.pumpWidget(
+      ScreenshotHarness.wrap(
+        AskScreen(service: service),
+        journal: JournalStore(FakeRepository()),
+      ),
+    );
+    for (final question in service.results.keys) {
+      await tester.enterText(find.byType(TextField), question);
+      await tester.tap(find.byTooltip('Send'));
+      await tester.pumpAndSettle();
+    }
+    await shoot(tester, '19_hoi_dap');
+  });
+}
+
+class _ScriptedAskService implements AskService {
+  _ScriptedAskService(this.results);
+
+  final Map<String, AskResult> results;
+
+  @override
+  Future<bool> isEnabled() async => true;
+
+  @override
+  Future<AskResult> ask(String question) async =>
+      results[question] ?? AskResult.error;
 }
 
 /// Một khung hình lấy ra từ video thật, kèm đúng tỉ lệ khung của nó.

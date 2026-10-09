@@ -8,6 +8,7 @@ import 'app.dart';
 import 'core/backend_config.dart';
 import 'screens/access_gate.dart';
 import 'screens/backend_setup_screen.dart';
+import 'services/ask_service.dart';
 import 'services/study_assessment_service.dart';
 import 'state/auth_store.dart';
 import 'state/settings_store.dart';
@@ -32,6 +33,8 @@ Future<void> main() async {
       ChangeNotifierProvider(create: (_) => AuthStore()),
     if (BackendConfig.isConfigured)
       Provider(create: (_) => StudyAssessmentService()),
+    if (BackendConfig.isConfigured)
+      Provider<AskService>(create: (_) => SupabaseAskService()),
   ];
 
   runApp(
