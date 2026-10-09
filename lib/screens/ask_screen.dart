@@ -361,6 +361,16 @@ class _ResultCard extends StatelessWidget {
                         body,
                         style: theme.textTheme.bodyLarge?.copyWith(height: 1.5),
                       ),
+                      if (result.alsoAsked) ...[
+                        Gap.s,
+                        Text(
+                          'You also asked about something else. Please ask '
+                          'that part on its own.',
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            height: 1.5,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),

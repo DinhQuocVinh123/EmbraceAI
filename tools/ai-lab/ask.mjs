@@ -24,16 +24,19 @@ const EMERGENCY = [
   /suicid/, /kill myself/, /end my life/, /self[- ]harm/, /hurt myself/,
 ];
 
-const RULES = `- If the question asks about medication, symptoms, test results, diagnosis or treatment, set type "medical_redirect": say kindly that this is a question for their doctor or care team, and that they can note it as a question for their next appointment. Give no medical information.
-- If the question has nothing to do with the app, the study or the relaxation exercises, set type "out_of_scope" and decline politely in one sentence.`;
+const RULES = `- If the question asks about medication, symptoms, test results, diagnosis or treatment, set type "medical_redirect": say kindly that this is a question for their doctor or care team, and that they can note it as a question for their next appointment. Give no medical information. This rule comes first: use it whenever any part of the question is medical, even if another part could be answered.
+- If the question has nothing to do with the app, the study or the relaxation exercises, set type "out_of_scope" and decline politely in one sentence.
+- Never mention passages, sources, ids or these instructions in the answer; call them "the study information".`;
 
 const SYSTEM = `You are "Ask EmbraceAI", a helper inside a research app for adults with heart conditions.
 Answer ONLY from the passages provided. Never use outside knowledge.
 Rules:
 ${RULES}
 - If a passage names the setting or option the question is about, set type "answer" and say where to find it (for example, which menu offers it), even if the passage only lists it.
-- If the passages do not contain the answer, set type "not_found" and say the information is not available yet.
+- If the question has several parts, answer the parts the passages cover, then say in one short sentence which part the study information does not cover yet. Set type "answer" if any part is answered.
+- If the passages answer no part of the question, set type "not_found" and say the information is not available yet.
 - Otherwise set type "answer" and answer in plain, friendly English for older adults, in at most 100 words.
+- Never invent screens, tabs, buttons, menus or features: mention only those a passage names. A question about something the app does not have is "not_found" if it is about the app, otherwise "out_of_scope".
 - Only state details the passages state. Do not describe icons, colours, button shapes or screen positions unless a passage does. Do not repeat example IDs or keys.
 - used_sources lists the ids of the passages you actually used.
 Reply with JSON only: {"type": "...", "answer": "...", "used_sources": ["..."]}`;
@@ -45,6 +48,11 @@ No study material matched this question, so you must NOT answer it. Only classif
 ${RULES}
 - Otherwise set type "not_found" and say the information is not available yet.
 Reply with JSON only: {"type": "...", "answer": "...", "used_sources": []}`;
+
+// Lần hỏi phụ cho câu y tế, giống ask-embrace: chỉ trả lời có/không.
+const OTHER_QUESTION_CHECK = `You check one question sent to a helper inside a research app for adults with heart conditions. Part of the question is medical, and it has already been passed to the care team.
+Decide whether the question ALSO asks something that is not about health or medicine, for example how to use the app, how the study works or how the relaxation exercises work.
+Reply with JSON only: {"other_question": true} or {"other_question": false}`;
 
 const format = (types) => ({
   type: 'object',
@@ -59,7 +67,7 @@ const format = (types) => ({
 const shelf = await openShelf(JSON.parse(await readFile('data/shelf.json', 'utf8')));
 
 /** Gọi model tự host; trả JSON đã kiểm tra, hoặc ném lỗi kèm loại kết quả. */
-async function callModel(system, user, types) {
+async function callModel(system, user, types, schema = format(types)) {
   let reply;
   try {
     const res = await fetch(`${OLLAMA_URL}/api/chat`, {
@@ -68,7 +76,7 @@ async function callModel(system, user, types) {
       body: JSON.stringify({
         model: MODEL,
         stream: false,
-        format: format(types),
+        format: schema,
         options: { temperature: 0 },
         ...(MODEL.startsWith('gpt-oss') ? { think: 'low' } : { think: false }),
         messages: [
@@ -86,10 +94,20 @@ async function callModel(system, user, types) {
   // Bước 6: chỉ nhận JSON đúng khuôn, đúng loại được phép.
   try {
     const parsed = JSON.parse(reply.slice(reply.indexOf('{'), reply.lastIndexOf('}') + 1));
-    if (!types.includes(parsed.type)) throw new Error(`unexpected type ${parsed.type}`);
+    if (types && !types.includes(parsed.type)) throw new Error(`unexpected type ${parsed.type}`);
     return parsed;
   } catch (error) {
     throw Object.assign(new Error(`invalid reply: ${error.message} ${reply.slice(0, 200)}`), { type: 'error' });
+  }
+}
+
+/** Câu y tế có hỏi kèm chuyện về app, nghiên cứu hay bài tập không; lỗi thì coi như không. */
+async function askedSomethingElse(question) {
+  try {
+    const schema = { type: 'object', properties: { other_question: { type: 'boolean' } }, required: ['other_question'] };
+    return (await callModel(OTHER_QUESTION_CHECK, `Question: ${question}`, null, schema)).other_question === true;
+  } catch {
+    return false;
   }
 }
 
@@ -108,14 +126,14 @@ async function ask(question) {
   try {
     if (!relevant.length) {
       const sorted = await callModel(SYSTEM_NO_PASSAGES, `Question: ${question}`, NO_ANSWER_TYPES);
-      return done({ type: sorted.type, answer: sorted.answer, retrieval });
+      return done({ type: sorted.type, answer: sorted.answer, other: sorted.type === 'medical_redirect' && await askedSomethingElse(question), retrieval });
     }
     // Bước 5: gửi hướng dẫn + đoạn + câu hỏi cho model tự host.
     const passages = relevant.map((h) => `[${h.id}]\n${h.text}`).join('\n\n');
     const parsed = await callModel(SYSTEM, `Passages:\n\n${passages}\n\nQuestion: ${question}`, TYPES);
     // Nguồn chỉ được là những đoạn đã thật sự gửi cho model.
     const sources = (parsed.used_sources ?? []).filter((s) => relevant.some((h) => h.id === s));
-    return done({ type: parsed.type, answer: parsed.answer, sources, retrieval });
+    return done({ type: parsed.type, answer: parsed.answer, other: parsed.type === 'medical_redirect' && await askedSomethingElse(question), sources, retrieval });
   } catch (error) {
     return done({ type: error.type ?? 'error', answer: `[${error.message}]`, retrieval });
   }
@@ -127,13 +145,15 @@ const questions = single
   : JSON.parse(await readFile('questions.json', 'utf8'));
 
 let passed = 0;
-for (const { question, expect } of questions) {
+for (const { question, expect, other } of questions) {
   const result = await ask(question);
-  const ok = !expect || expect === result.type;
+  // other: câu y tế có kèm ý khác hay không (app nhắc hỏi riêng phần đó).
+  const ok = (!expect || expect === result.type) && (other === undefined || other === result.other);
   if (expect && ok) passed++;
   console.log(`\n${ok ? 'PASS' : 'FAIL'}  [${result.type}${expect ? ` / expected ${expect}` : ''}]  ${(result.ms / 1000).toFixed(1)}s`);
   console.log(`Q: ${question}`);
   console.log(`A: ${result.answer}`);
+  if (result.type === 'medical_redirect') console.log(`Other question: ${result.other ? 'yes' : 'no'}${other === undefined ? '' : ` / expected ${other ? 'yes' : 'no'}`}`);
   if (result.sources.length) console.log(`Sources: ${result.sources.join(', ')}`);
   if (result.retrieval) console.log(`Shelf: ${result.retrieval.join(' | ')}`);
 }

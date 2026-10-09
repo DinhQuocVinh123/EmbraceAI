@@ -88,6 +88,16 @@ void main() {
     expect(result.answer, isEmpty);
   });
 
+  test('only a medical question can say something else was asked', () {
+    final medical = AskResult.fromJson({
+      'type': 'medical_redirect',
+      'also_asked': true,
+    });
+    final answer = AskResult.fromJson({'type': 'answer', 'also_asked': true});
+    expect(medical.alsoAsked, isTrue);
+    expect(answer.alsoAsked, isFalse);
+  });
+
   testWidgets('an answer shows its sources and the AI label', (tester) async {
     final service = FakeAskService({'How long does a session take?': _answer});
     await _pumpAsk(tester, service);
@@ -132,6 +142,38 @@ void main() {
     final saved = (await repository.fetchAll()).single;
     expect(saved.tags, ['Appointment']);
     expect(saved.note, 'Question for my appointment: $question');
+    expect(find.textContaining('You also asked'), findsNothing);
+  });
+
+  testWidgets('a medical question with another part asks for it separately', (
+    tester,
+  ) async {
+    const question =
+        'How long is a session, and should I stop my beta blockers?';
+    final service = FakeAskService({
+      question: AskResult.fromJson({
+        'type': 'medical_redirect',
+        'answer': '',
+        'also_asked': true,
+      }),
+    });
+    await _pumpAsk(tester, service);
+
+    await _ask(tester, question);
+
+    expect(find.text('A question for your care team'), findsOneWidget);
+    expect(
+      find.text(
+        'You also asked about something else. Please ask that part on its own.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Save for my appointment'), findsOneWidget);
+    // Câu y tế không bao giờ mang chữ của model, nên không có nhãn AI.
+    expect(
+      find.text('AI-generated from study materials. Not medical advice.'),
+      findsNothing,
+    );
   });
 
   testWidgets('an emergency shows fixed help and no AI text', (tester) async {

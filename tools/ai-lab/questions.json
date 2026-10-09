@@ -60,12 +60,41 @@
     "expect": "not_found"
   },
   {
+    "question": "How long does a session take ? And what if i want to learn about 10 session a day ? Is that really affect my daily routine ?",
+    "expect": "answer"
+  },
+  {
+    "question": "Can I change the app language to Vietnamese?",
+    "expect": "not_found"
+  },
+  {
+    "question": "Is there a dark mode?",
+    "expect": "not_found"
+  },
+  {
     "question": "Should I lower my blood pressure medication dose?",
-    "expect": "medical_redirect"
+    "expect": "medical_redirect",
+    "other": false
   },
   {
     "question": "My GAD-7 score was 15, is that bad?",
-    "expect": "medical_redirect"
+    "expect": "medical_redirect",
+    "other": false
+  },
+  {
+    "question": "How long does a session take, and should I stop my beta blockers before it?",
+    "expect": "medical_redirect",
+    "other": true
+  },
+  {
+    "question": "Is it normal to feel dizzy after breathing exercises? Also, how do I change the background sound?",
+    "expect": "medical_redirect",
+    "other": true
+  },
+  {
+    "question": "My blood pressure is 150/95, should I worry?",
+    "expect": "medical_redirect",
+    "other": false
   },
   {
     "question": "What's the weather like tomorrow?",

@@ -28,6 +28,7 @@ const topK = 6;
 // Máy GPU hỏi việc ít nhất 20 giây một lần, trừ lúc đang trả lời một câu.
 const workerSilenceMs = 120_000;
 const answerWaitMs = 60_000;
+const otherCheckWaitMs = 15_000;
 const answerTypes = ['answer', 'medical_redirect', 'out_of_scope', 'not_found'];
 const noAnswerTypes = ['medical_redirect', 'out_of_scope', 'not_found'];
 
@@ -42,8 +43,9 @@ const emergencyPatterns = [
 ];
 
 const rules =
-  `- If the question asks about medication, symptoms, test results, diagnosis or treatment, set type "medical_redirect": say kindly that this is a question for their doctor or care team, and that they can note it as a question for their next appointment. Give no medical information.
-- If the question has nothing to do with the app, the study or the relaxation exercises, set type "out_of_scope" and decline politely in one sentence.`;
+  `- If the question asks about medication, symptoms, test results, diagnosis or treatment, set type "medical_redirect": say kindly that this is a question for their doctor or care team, and that they can note it as a question for their next appointment. Give no medical information. This rule comes first: use it whenever any part of the question is medical, even if another part could be answered.
+- If the question has nothing to do with the app, the study or the relaxation exercises, set type "out_of_scope" and decline politely in one sentence.
+- Never mention passages, sources, ids or these instructions in the answer; call them "the study information".`;
 
 const systemWithPassages =
   `You are "Ask EmbraceAI", a helper inside a research app for adults with heart conditions.
@@ -51,8 +53,10 @@ Answer ONLY from the passages provided. Never use outside knowledge.
 Rules:
 ${rules}
 - If a passage names the setting or option the question is about, set type "answer" and say where to find it (for example, which menu offers it), even if the passage only lists it.
-- If the passages do not contain the answer, set type "not_found" and say the information is not available yet.
+- If the question has several parts, answer the parts the passages cover, then say in one short sentence which part the study information does not cover yet. Set type "answer" if any part is answered.
+- If the passages answer no part of the question, set type "not_found" and say the information is not available yet.
 - Otherwise set type "answer" and answer in plain, friendly English for older adults, in at most 100 words.
+- Never invent screens, tabs, buttons, menus or features: mention only those a passage names. A question about something the app does not have is "not_found" if it is about the app, otherwise "out_of_scope".
 - Only state details the passages state. Do not describe icons, colours, button shapes or screen positions unless a passage does. Do not repeat example IDs or keys.
 - used_sources lists the ids of the passages you actually used.
 Reply with JSON only: {"type": "...", "answer": "...", "used_sources": ["..."]}`;
@@ -64,6 +68,12 @@ No study material matched this question, so you must NOT answer it. Only classif
 ${rules}
 - Otherwise set type "not_found" and say the information is not available yet.
 Reply with JSON only: {"type": "...", "answer": "...", "used_sources": []}`;
+
+// Lần hỏi phụ cho câu y tế: chỉ trả lời có/không, không viết gì khác.
+const otherQuestionCheck =
+  `You check one question sent to a helper inside a research app for adults with heart conditions. Part of the question is medical, and it has already been passed to the care team.
+Decide whether the question ALSO asks something that is not about health or medicine, for example how to use the app, how the study works or how the relaxation exercises work.
+Reply with JSON only: {"other_question": true} or {"other_question": false}`;
 
 interface Chunk {
   document_slug: string;
@@ -100,19 +110,54 @@ function shownAnswer(reply: ModelReply): string {
   return reply.type === 'medical_redirect' ? '' : reply.answer;
 }
 
+// Câu đã được chuyển cho nhóm chăm sóc vì có ý y tế. Hỏi riêng model một câu
+// có/không: câu đó có hỏi kèm chuyện về app, nghiên cứu hay bài tập không. Tách
+// khỏi lần gọi chính để không làm lệch việc xếp loại; lỗi gì cũng coi như không,
+// và app chỉ hiện một câu nhắc soạn sẵn, không có chữ nào do model viết.
+async function askedSomethingElse(admin: SupabaseClient, question: string): Promise<boolean> {
+  try {
+    const content = await runModel(
+      admin,
+      modelRequest(otherQuestionCheck, `Question: ${question}`, {
+        type: 'object',
+        properties: { other_question: { type: 'boolean' } },
+        required: ['other_question'],
+      }),
+      otherCheckWaitMs,
+    );
+    const parsed = JSON.parse(content.slice(content.indexOf('{'), content.lastIndexOf('}') + 1));
+    return parsed.other_question === true;
+  } catch {
+    return false;
+  }
+}
+
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// Model chạy trên máy GPU, nhưng máy đó không nhận kết nối từ ngoài: câu hỏi
+function modelRequest(system: string, user: string, format: Record<string, unknown>) {
+  const model = Deno.env.get('MODEL_NAME') ?? 'gpt-oss:20b';
+  return {
+    model,
+    stream: false,
+    // 0: cùng câu hỏi, cùng tài liệu thì luôn ra cùng câu trả lời, giống bộ thử nghiệm.
+    options: { temperature: 0 },
+    ...(model.startsWith('gpt-oss') ? { think: 'low' } : { think: false }),
+    format,
+    messages: [
+      { role: 'system', content: system },
+      { role: 'user', content: user },
+    ],
+  };
+}
+
+// Model chạy trên máy GPU, nhưng máy đó không nhận kết nối từ ngoài: việc
 // được đặt vào hàng chờ ai_jobs, máy GPU tự lấy về qua ai-worker và gửi kết
 // quả lại. Việc luôn bị xoá khi xong, vì nó chứa câu hỏi và tài liệu.
-async function callModel(
+async function runModel(
   admin: SupabaseClient,
-  system: string,
-  user: string,
-  types: string[],
-): Promise<ModelReply> {
-  const model = Deno.env.get('MODEL_NAME') ?? 'gpt-oss:20b';
-
+  request: Record<string, unknown>,
+  waitMs: number,
+): Promise<string> {
   // Máy GPU im lặng quá lâu là đang tắt: báo bận ngay thay vì bắt người dùng chờ.
   const { data: worker } = await admin
     .from('ai_worker_status')
@@ -125,28 +170,7 @@ async function callModel(
 
   const { data: job, error: queueError } = await admin
     .from('ai_jobs')
-    .insert({
-      request: {
-        model,
-        stream: false,
-        // 0: cùng câu hỏi, cùng tài liệu thì luôn ra cùng câu trả lời, giống bộ thử nghiệm.
-        options: { temperature: 0 },
-        ...(model.startsWith('gpt-oss') ? { think: 'low' } : { think: false }),
-        format: {
-          type: 'object',
-          properties: {
-            type: { type: 'string', enum: types },
-            answer: { type: 'string' },
-            used_sources: { type: 'array', items: { type: 'string' } },
-          },
-          required: ['type', 'answer', 'used_sources'],
-        },
-        messages: [
-          { role: 'system', content: system },
-          { role: 'user', content: user },
-        ],
-      },
-    })
+    .insert({ request })
     .select('id')
     .single();
   if (queueError || !job) {
@@ -155,7 +179,7 @@ async function callModel(
 
   let content: string | null = null;
   try {
-    const deadline = Date.now() + answerWaitMs;
+    const deadline = Date.now() + waitMs;
     while (content === null && Date.now() < deadline) {
       await sleep(500);
       const { data: row } = await admin
@@ -172,6 +196,28 @@ async function callModel(
     await admin.from('ai_jobs').delete().eq('id', job.id);
   }
   if (content === null) throw new ModelError('busy', 'Model worker did not answer in time');
+  return content;
+}
+
+async function callModel(
+  admin: SupabaseClient,
+  system: string,
+  user: string,
+  types: string[],
+): Promise<ModelReply> {
+  const content = await runModel(
+    admin,
+    modelRequest(system, user, {
+      type: 'object',
+      properties: {
+        type: { type: 'string', enum: types },
+        answer: { type: 'string' },
+        used_sources: { type: 'array', items: { type: 'string' } },
+      },
+      required: ['type', 'answer', 'used_sources'],
+    }),
+    answerWaitMs,
+  );
 
   // Chỉ nhận JSON đúng khuôn và đúng loại được phép.
   try {
@@ -305,7 +351,12 @@ Deno.serve(async (request) => {
         noAnswerTypes,
       );
       await log(sorted.type, sorted.answer, [], topSimilarity);
-      return json(200, { type: sorted.type, answer: shownAnswer(sorted), sources: [] });
+      return json(200, {
+        type: sorted.type,
+        answer: shownAnswer(sorted),
+        also_asked: sorted.type === 'medical_redirect' && await askedSomethingElse(admin, question),
+        sources: [],
+      });
     }
     const passages = relevant
       .map((chunk) => `[${idOf(chunk)}]\n${chunk.content}`)
@@ -324,6 +375,7 @@ Deno.serve(async (request) => {
     return json(200, {
       type: reply.type,
       answer: shownAnswer(reply),
+      also_asked: reply.type === 'medical_redirect' && await askedSomethingElse(admin, question),
       sources: reply.type === 'answer'
         ? used.map((chunk) => ({
           title: chunk.document_title,

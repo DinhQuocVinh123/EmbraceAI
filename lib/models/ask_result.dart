@@ -1,5 +1,5 @@
 /// Kết quả một lần hỏi Ask EmbraceAI, theo đúng hợp đồng với Edge Function
-/// `ask-embrace`: `{type, answer, sources: [{title, heading}]}`.
+/// `ask-embrace`: `{type, answer, also_asked, sources: [{title, heading}]}`.
 enum AskResultType {
   answer('answer'),
   medicalRedirect('medical_redirect'),
@@ -42,6 +42,7 @@ class AskResult {
     required this.type,
     this.answer = '',
     this.sources = const [],
+    this.alsoAsked = false,
   });
 
   static const busy = AskResult(type: AskResultType.busy);
@@ -52,6 +53,10 @@ class AskResult {
   /// Chữ do model viết; trống với các loại không có chữ của AI.
   final String answer;
   final List<AskSource> sources;
+
+  /// Câu hỏi y tế có kèm một ý khác: app nhắc hỏi riêng phần đó, vì không bao
+  /// giờ hiện chữ do model viết cho câu y tế.
+  final bool alsoAsked;
 
   /// Chỉ ba loại này mang chữ do model viết, nên chỉ chúng mang nhãn AI.
   bool get writtenByAi =>
@@ -71,6 +76,12 @@ class AskResult {
     final answer = type == AskResultType.emergency
         ? ''
         : (json['answer'] as String? ?? '').trim();
-    return AskResult(type: type, answer: answer, sources: sources);
+    return AskResult(
+      type: type,
+      answer: answer,
+      sources: sources,
+      alsoAsked:
+          type == AskResultType.medicalRedirect && json['also_asked'] == true,
+    );
   }
 }
