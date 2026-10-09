@@ -72,3 +72,9 @@ app.*.map.json
 # --- Mẫu nghe thử giọng đọc ---
 # Chỉ dùng để duyệt chọn giọng, app không dùng.
 /docs/voice_samples/
+
+# File khoá tạm của Word khi đang mở tài liệu
+~$*
+
+# Bộ cài cho máy GPU có chứa khoá máy chủ
+/tools/*.zip

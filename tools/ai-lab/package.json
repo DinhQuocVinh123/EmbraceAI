@@ -1,0 +1,14 @@
+{
+  "name": "embrace-ai-lab",
+  "private": true,
+  "type": "module",
+  "description": "Local RAG experiment for Ask EmbraceAI: the shelf, the safety checks and a self-hosted model.",
+  "scripts": {
+    "ingest": "node ingest.mjs",
+    "ask": "node ask.mjs"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "^0.3.16",
+    "@huggingface/transformers": "^3.7.0"
+  }
+}

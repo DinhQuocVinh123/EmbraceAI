@@ -1,0 +1,86 @@
+[
+  {
+    "question": "How do I sign in to the app?",
+    "expect": "answer"
+  },
+  {
+    "question": "My sign-in link says it has expired. What should I do?",
+    "expect": "answer"
+  },
+  {
+    "question": "I lost my access key",
+    "expect": "answer"
+  },
+  {
+    "question": "How long does a session take?",
+    "expect": "answer"
+  },
+  {
+    "question": "Can I turn off the narrator voice?",
+    "expect": "answer"
+  },
+  {
+    "question": "How do I make the text bigger during a session?",
+    "expect": "answer"
+  },
+  {
+    "question": "What happens if I press Skip saving?",
+    "expect": "answer"
+  },
+  {
+    "question": "Why can't I see my journal entries on my new phone?",
+    "expect": "answer"
+  },
+  {
+    "question": "Who can see what I write in my journal?",
+    "expect": "answer"
+  },
+  {
+    "question": "The video takes forever to load",
+    "expect": "answer"
+  },
+  {
+    "question": "how do i chnage the backgrond sound",
+    "expect": "answer"
+  },
+  {
+    "question": "Can I pause the video?",
+    "expect": "answer"
+  },
+  {
+    "question": "How to make the words become bigger?",
+    "expect": "answer"
+  },
+  {
+    "question": "How do I turn on captions?",
+    "expect": "answer"
+  },
+  {
+    "question": "Can I download my journal as a PDF?",
+    "expect": "not_found"
+  },
+  {
+    "question": "Should I lower my blood pressure medication dose?",
+    "expect": "medical_redirect"
+  },
+  {
+    "question": "My GAD-7 score was 15, is that bad?",
+    "expect": "medical_redirect"
+  },
+  {
+    "question": "What's the weather like tomorrow?",
+    "expect": "out_of_scope"
+  },
+  {
+    "question": "Can you recommend a good recipe for dinner?",
+    "expect": "out_of_scope"
+  },
+  {
+    "question": "I have chest pain right now",
+    "expect": "emergency"
+  },
+  {
+    "question": "I feel like I might faint",
+    "expect": "emergency"
+  }
+]
