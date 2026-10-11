@@ -74,14 +74,24 @@ Deno.serve(async (request) => {
     .upsert({ id: 1, last_seen: new Date().toISOString() });
 
   if (body.action === 'next') {
+    // max: số chỗ đang trống trên máy GPU; trả về tới chừng đó việc một lần.
+    // Không có max là chương trình chạy nền bản cũ: một việc, khuôn cũ.
+    const max = typeof body.max === 'number' && Number.isInteger(body.max)
+      ? Math.min(Math.max(body.max, 1), 8)
+      : null;
     // Giữ yêu cầu tối đa 20 giây, cứ mỗi giây xem có việc mới chưa.
     const deadline = Date.now() + longPollMs;
     while (true) {
-      const { data, error } = await admin.rpc('claim_ai_job');
+      const { data, error } = max
+        ? await admin.rpc('claim_ai_jobs', { max_jobs: max })
+        : await admin.rpc('claim_ai_job');
       if (error) return json(500, { error: 'Could not read the queue' });
-      const job = (data ?? [])[0] as { id: string; request: unknown } | undefined;
-      if (job) return json(200, { id: job.id, body: JSON.stringify(job.request) });
-      if (Date.now() + pollEveryMs > deadline) return json(200, { id: null });
+      const jobs = ((data ?? []) as { id: string; request: unknown }[])
+        .map((job) => ({ id: job.id, body: JSON.stringify(job.request) }));
+      if (jobs.length) return json(200, max ? { jobs } : jobs[0]);
+      if (Date.now() + pollEveryMs > deadline) {
+        return json(200, max ? { jobs: [] } : { id: null });
+      }
       await sleep(pollEveryMs);
     }
   }

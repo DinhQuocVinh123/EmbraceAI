@@ -26,14 +26,17 @@ try {
     }
     if (-not (Test-Path $ollama)) { throw 'Ollama did not install. Install it from ollama.com, then run this again.' }
 
-    Step '3/6 Listen on the network and keep the model loaded'
+    Step '3/6 Listen on the network, keep the model loaded, answer 4 at once'
     # The server only answers other machines once OLLAMA_HOST is 0.0.0.0;
     # the firewall rule in step 5 limits that to Tailscale addresses.
     [Environment]::SetEnvironmentVariable('OLLAMA_HOST', '0.0.0.0:11434', 'User')
     [Environment]::SetEnvironmentVariable('OLLAMA_KEEP_ALIVE', '24h', 'User')
+    # Gấp đôi số câu mỗi phút (đo trên RTX 5060 Ti); model-worker.ps1 cũng giữ 4 câu.
+    [Environment]::SetEnvironmentVariable('OLLAMA_NUM_PARALLEL', '4', 'User')
     Get-Process 'ollama app', 'ollama' -ErrorAction SilentlyContinue | Stop-Process -Force
     $env:OLLAMA_HOST = '0.0.0.0:11434'
     $env:OLLAMA_KEEP_ALIVE = '24h'
+    $env:OLLAMA_NUM_PARALLEL = '4'
     Start-Process (Join-Path $ollamaDir 'ollama app.exe')
     $env:OLLAMA_HOST = '127.0.0.1:11434'
     $up = $false

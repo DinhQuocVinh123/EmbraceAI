@@ -36,6 +36,10 @@ try {
         throw 'Ollama is not running. Open the Ollama app from the Start menu, then run this again.'
     }
     Write-Host "Models: $(($tags.models | ForEach-Object { $_.name }) -join ', ')"
+    $parallel = [Environment]::GetEnvironmentVariable('OLLAMA_NUM_PARALLEL', 'User')
+    if ($parallel -ne '4') {
+        Write-Warning 'Ollama answers one question at a time. Run START-HERE.bat again (or set OLLAMA_NUM_PARALLEL to 4) and restart Ollama.'
+    }
 
     Step '2/4 Remove the old public address (Funnel and the Caddy gatekeeper)'
     $ts = 'C:\Program Files\Tailscale\tailscale.exe'

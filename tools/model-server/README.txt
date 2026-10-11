@@ -31,5 +31,7 @@ Bộ cài làm gì:
   trong mạng Tailscale riêng (dải 100.64.0.0/10), không mở ra internet.
 - Tắt chế độ ngủ khi cắm điện; bật Tailscale "Run unattended".
 - Giữ model nằm sẵn trong GPU 24 giờ để trả lời nhanh.
+- Cho Ollama trả lời 4 câu cùng lúc (OLLAMA_NUM_PARALLEL=4): gấp đôi số câu
+  mỗi phút so với từng câu một.
   Lưu ý: model chiếm khoảng 13 GB bộ nhớ GPU, nên nếu người khác cũng dùng
   GPU của máy này cho việc nặng, hai bên sẽ tranh nhau.
