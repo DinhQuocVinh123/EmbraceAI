@@ -205,6 +205,25 @@ void main() {
     expect(find.textContaining('busy right now'), findsOneWidget);
   });
 
+  testWidgets('a full queue shows the server message without the AI label', (
+    tester,
+  ) async {
+    const message =
+        'Many people are asking right now. Please try again in a minute.';
+    final service = FakeAskService({
+      'hello': AskResult.fromJson({'type': 'busy', 'answer': message}),
+    });
+    await _pumpAsk(tester, service);
+
+    await _ask(tester, 'hello');
+
+    expect(find.text(message), findsOneWidget);
+    expect(
+      find.text('AI-generated from study materials. Not medical advice.'),
+      findsNothing,
+    );
+  });
+
   testWidgets('stays usable at 200 percent text', (tester) async {
     tester.view.physicalSize = const Size(390 * 3, 844 * 3);
     tester.view.devicePixelRatio = 3;

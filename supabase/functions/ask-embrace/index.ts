@@ -29,6 +29,14 @@ const topK = 6;
 const workerSilenceMs = 120_000;
 const answerWaitMs = 60_000;
 const otherCheckWaitMs = 15_000;
+// Máy GPU trả lời khoảng 78 câu mỗi phút (song song 4, đo ngày 11/10): câu thứ
+// 60 trong hàng xong sau khoảng 45-50 giây. Hàng dài hơn thì báo bận ngay, thay
+// vì để người hỏi chờ trọn 60 giây rồi mới báo. Secret AI_MAX_QUEUE đổi ngưỡng.
+const configuredQueue = Number.parseInt(Deno.env.get('AI_MAX_QUEUE') ?? '', 10);
+const maxQueue = Number.isFinite(configuredQueue) && configuredQueue > 0 ? configuredQueue : 60;
+// Lần hỏi phụ của câu y tế chỉ chạy khi hàng còn ngắn, để không làm hàng dài thêm.
+const otherCheckMaxQueue = 10;
+const queueFullMessage = 'Many people are asking right now. Please try again in a minute.';
 const answerTypes = ['answer', 'medical_redirect', 'out_of_scope', 'not_found'];
 const noAnswerTypes = ['medical_redirect', 'out_of_scope', 'not_found'];
 
@@ -114,8 +122,21 @@ function shownAnswer(reply: ModelReply): string {
 // có/không: câu đó có hỏi kèm chuyện về app, nghiên cứu hay bài tập không. Tách
 // khỏi lần gọi chính để không làm lệch việc xếp loại; lỗi gì cũng coi như không,
 // và app chỉ hiện một câu nhắc soạn sẵn, không có chữ nào do model viết.
+// Số câu đang chờ hoặc đang được máy GPU trả lời. Câu chờ quá 90 giây không được
+// nhận nữa (claim_ai_jobs), nên không tính.
+async function queueLength(admin: SupabaseClient): Promise<number> {
+  const since = new Date(Date.now() - 90_000).toISOString();
+  const { count } = await admin
+    .from('ai_jobs')
+    .select('id', { count: 'exact', head: true })
+    .in('status', ['queued', 'working'])
+    .gte('created_at', since);
+  return count ?? 0;
+}
+
 async function askedSomethingElse(admin: SupabaseClient, question: string): Promise<boolean> {
   try {
+    if ((await queueLength(admin)) > otherCheckMaxQueue) return false;
     const content = await runModel(
       admin,
       modelRequest(otherQuestionCheck, `Question: ${question}`, {
@@ -318,6 +339,13 @@ Deno.serve(async (request) => {
   if (emergencyPatterns.some((pattern) => pattern.test(lower))) {
     await log('emergency', '', [], null);
     return json(200, { type: 'emergency', answer: '', sources: [] });
+  }
+
+  // Hàng chờ đã quá dài: báo bận ngay, trước khi tốn công tìm tài liệu.
+  const waiting = await queueLength(admin);
+  if (waiting >= maxQueue) {
+    await log('busy', `Queue full: ${waiting} questions waiting`, [], null);
+    return json(200, { type: 'busy', answer: queueFullMessage, sources: [] });
   }
 
   // Bước 3–4: lập vector câu hỏi, tìm trên kệ theo cả nghĩa lẫn từ khoá.
