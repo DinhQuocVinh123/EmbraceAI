@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/motion.dart';
 import '../core/theme.dart';
+import '../l10n/l10n.dart';
 import '../models/mood.dart';
 import '../services/reflection_service.dart';
 
@@ -19,13 +20,13 @@ class ReflectionCard extends StatefulWidget {
 
 class _ReflectionCardState extends State<ReflectionCard> {
   final _service = ReflectionService();
-  late String _prompt = _service.promptFor(widget.mood);
+  late int _prompt = _service.pick();
 
   @override
   void didUpdateWidget(covariant ReflectionCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.mood != widget.mood) {
-      setState(() => _prompt = _service.promptFor(widget.mood));
+      setState(() => _prompt = _service.pick());
     }
   }
 
@@ -33,6 +34,11 @@ class _ReflectionCardState extends State<ReflectionCard> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final prompt = ReflectionService.text(
+      context.l10n,
+      widget.mood,
+      _prompt,
+    );
 
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
@@ -54,8 +60,8 @@ class _ReflectionCardState extends State<ReflectionCard> {
             child: AnimatedSwitcher(
               duration: AppMotion.duration(context, AppMotion.standard),
               child: Text(
-                _prompt,
-                key: ValueKey(_prompt),
+                prompt,
+                key: ValueKey(prompt),
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: scheme.onPrimaryContainer,
                   height: 1.4,
@@ -64,11 +70,11 @@ class _ReflectionCardState extends State<ReflectionCard> {
             ),
           ),
           IconButton(
-            tooltip: 'Another question',
+            tooltip: context.l10n.reflectAnother,
             icon: const Icon(Icons.refresh, size: 20),
             color: scheme.onPrimaryContainer,
             onPressed: () => setState(
-              () => _prompt = _service.anotherFor(widget.mood, _prompt),
+              () => _prompt = _service.another(_prompt),
             ),
           ),
         ],

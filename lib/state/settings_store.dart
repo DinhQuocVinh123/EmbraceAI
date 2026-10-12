@@ -1,23 +1,42 @@
+import 'dart:ui' show Locale;
+
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/session_audio.dart';
 import '../models/session_scene.dart';
 
+/// Tên và mô tả hiển thị nằm ở lib/l10n/labels.dart.
 enum SoundLevel {
-  quiet('Quiet', 'Soft volume', 0.35),
-  normal('Normal', 'Comfortable volume', 0.70),
-  louder('Louder', 'Full volume', 1.0);
+  quiet(0.35),
+  normal(0.70),
+  louder(1.0);
 
-  const SoundLevel(this.label, this.description, this.volume);
+  const SoundLevel(this.volume);
 
-  final String label;
-  final String description;
   final double volume;
 
   static SoundLevel fromId(String? id) => SoundLevel.values.firstWhere(
     (level) => level.name == id,
     orElse: () => SoundLevel.normal,
+  );
+}
+
+/// Ngôn ngữ của app người tham gia. Mặc định theo điện thoại: máy đặt tiếng
+/// Việt thì hiện tiếng Việt, còn lại là tiếng Anh.
+enum AppLanguage {
+  system(null),
+  english(Locale('en')),
+  vietnamese(Locale('vi'));
+
+  const AppLanguage(this.locale);
+
+  /// null: để Flutter chọn theo ngôn ngữ của điện thoại.
+  final Locale? locale;
+
+  static AppLanguage fromId(String? id) => AppLanguage.values.firstWhere(
+    (language) => language.name == id,
+    orElse: () => AppLanguage.system,
   );
 }
 
@@ -36,6 +55,7 @@ class SettingsStore extends ChangeNotifier {
   static const _backgroundSoundKey = 'settings.backgroundSound';
   static const _backgroundLevelKey = 'settings.backgroundLevel';
   static const _reduceMotionKey = 'settings.reduceMotion';
+  static const _languageKey = 'settings.language';
 
   /// Các nấc cỡ chữ, hiện cho người dùng chọn thay vì một thanh trượt vô định.
   static const textScaleSteps = <double>[1.0, 1.25, 1.5, 1.75, 2.0];
@@ -49,7 +69,9 @@ class SettingsStore extends ChangeNotifier {
   BackgroundSound _backgroundSound = BackgroundSound.matchScene;
   SoundLevel _backgroundLevel = SoundLevel.normal;
   bool _reduceMotion = false;
+  AppLanguage _language = AppLanguage.system;
 
+  AppLanguage get language => _language;
   double get textScale => _textScale;
   bool get highClarity => _highClarity;
   bool get captionsOn => _captionsOn;
@@ -79,7 +101,16 @@ class SettingsStore extends ChangeNotifier {
     );
     _backgroundLevel = SoundLevel.fromId(prefs.getString(_backgroundLevelKey));
     _reduceMotion = prefs.getBool(_reduceMotionKey) ?? false;
+    _language = AppLanguage.fromId(prefs.getString(_languageKey));
     notifyListeners();
+  }
+
+  Future<void> setLanguage(AppLanguage value) async {
+    if (value == _language) return;
+    _language = value;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_languageKey, value.name);
   }
 
   Future<void> setTextScale(double value) async {

@@ -11,6 +11,11 @@ import '../models/beat.dart';
 /// hình, không có file phụ đề rời), rồi soát lại từng câu. Mốc thời gian lấy
 /// từ lúc chữ hiện ra và biến mất.
 ///
+/// PHỤ ĐỀ TIẾNG VIỆT là bản nháp dịch từ câu tiếng Anh, giữ nguyên mốc thời
+/// gian; nhóm nghiên cứu cần duyệt trước khi dùng với người tham gia thật.
+/// Giọng tiếng Việt đọc đúng các câu này: sửa câu nào thì tạo lại giọng đọc
+/// theo `tools/voice/README.md`.
+///
 /// Ba chỗ trong video vốn là câu hỏi kèm lựa chọn dạng `[ ... ]` thì KHÔNG
 /// đưa vào đây — chúng trở thành nút bấm thật trong app (xem [BeatInteraction]).
 class SessionScript {
@@ -56,28 +61,37 @@ class SessionScript {
       start: _ms(0),
       end: _ms(45),
       captions: [
-        Caption(_ms(6), _ms(9.5), 'Hello. Welcome.'),
+        Caption(
+          _ms(6),
+          _ms(9.5),
+          'Hello. Welcome.',
+          'Xin chào. Chào mừng bạn.',
+        ),
         Caption(
           _ms(12.5),
           _ms(16.5),
           'Thank you for taking a few minutes to pause.',
+          'Cảm ơn bạn đã dành vài phút để dừng lại.',
         ),
         Caption(
           _ms(19.5),
           _ms(28.5),
           "I'll guide you through a short relaxation exercise using gentle "
-          'breathing and present-moment awareness.',
+              'breathing and present-moment awareness.',
+          'Tôi sẽ hướng dẫn bạn một bài thư giãn ngắn, với hơi thở nhẹ nhàng và sự chú tâm vào hiện tại.',
         ),
         Caption(
           _ms(32.5),
           _ms(39),
           "You don't need any previous experience. There is nothing to "
-          'achieve.',
+              'achieve.',
+          'Bạn không cần có kinh nghiệm trước. Không có gì phải đạt được cả.',
         ),
         Caption(
           _ms(41),
           _ms(45),
           'Simply follow along in whatever way feels comfortable.',
+          'Bạn chỉ cần làm theo, theo cách nào thấy thoải mái.',
         ),
       ],
     ),
@@ -94,6 +108,7 @@ class SessionScript {
           _ms(46),
           _ms(51),
           'Before we begin, are you feeling comfortable enough to continue?',
+          'Trước khi bắt đầu, bạn có thấy đủ thoải mái để tiếp tục không?',
         ),
       ],
     ),
@@ -106,12 +121,18 @@ class SessionScript {
       end: _ms(95),
       interaction: BeatInteraction.moodCheckIn,
       captions: [
-        Caption(_ms(66), _ms(69), 'How are you feeling today?'),
+        Caption(
+          _ms(66),
+          _ms(69),
+          'How are you feeling today?',
+          'Hôm nay bạn thấy thế nào?',
+        ),
         Caption(
           _ms(80),
           _ms(92),
           'Thank you for sharing that. Waiting for appointments or test '
-          'results can bring understandable worries.',
+              'results can bring understandable worries.',
+          'Cảm ơn bạn đã chia sẻ. Chờ đến buổi khám hay chờ kết quả xét nghiệm có thể khiến ta lo lắng, và điều đó rất dễ hiểu.',
         ),
       ],
     ),
@@ -134,22 +155,31 @@ class SessionScript {
           _ms(96),
           _ms(100),
           'If it feels comfortable, let your body settle where you are.',
+          'Nếu thấy thoải mái, hãy để cơ thể yên vị ở chỗ bạn đang ngồi.',
         ),
-        Caption(_ms(108), _ms(112), 'Notice the surface beneath you.'),
+        Caption(
+          _ms(108),
+          _ms(112),
+          'Notice the surface beneath you.',
+          'Hãy cảm nhận bề mặt bên dưới bạn.',
+        ),
         Caption(
           _ms(122),
           _ms(126),
           'Notice what is holding your weight right now.',
+          'Cảm nhận thứ đang đỡ lấy cơ thể bạn lúc này.',
         ),
         Caption(
           _ms(136),
           _ms(140),
           'Allow your shoulders to soften if that feels comfortable.',
+          'Nếu thấy thoải mái, hãy để đôi vai thả lỏng.',
         ),
         Caption(
           _ms(150),
           _ms(155),
           'There is no need to change anything. Simply notice.',
+          'Không cần thay đổi điều gì. Chỉ cần nhận biết.',
         ),
       ],
     ),
@@ -174,23 +204,27 @@ class SessionScript {
           _ms(217),
           _ms(220),
           'While waiting for appointments, our minds often become busy.',
+          'Khi chờ đến buổi khám, tâm trí ta thường trở nên bận rộn.',
         ),
         Caption(
           _ms(225),
           _ms(232),
           'You may notice thoughts about your health, your medications, or '
-          'your test results.',
+              'your test results.',
+          'Bạn có thể thấy những ý nghĩ về sức khoẻ, về thuốc men, hay về kết quả xét nghiệm.',
         ),
         Caption(
           _ms(240),
           _ms(244),
           'Whatever thoughts arise, it is natural for the mind to do this.',
+          'Dù ý nghĩ nào xuất hiện, tâm trí làm vậy cũng là điều tự nhiên.',
         ),
         Caption(
           _ms(250),
           _ms(258),
           'Whenever you notice your attention drifting, gently bring it back '
-          'to your breathing.',
+              'to your breathing.',
+          'Mỗi khi thấy sự chú ý trôi đi, hãy nhẹ nhàng đưa nó trở về với hơi thở.',
         ),
       ],
     ),
@@ -203,23 +237,36 @@ class SessionScript {
       end: _ms(335),
       skippable: true,
       captions: [
-        Caption(_ms(276.5), _ms(280), 'Now bring your attention to your body.'),
+        Caption(
+          _ms(276.5),
+          _ms(280),
+          'Now bring your attention to your body.',
+          'Bây giờ, hãy đưa sự chú ý về cơ thể.',
+        ),
         Caption(
           _ms(286),
           _ms(292),
           'Perhaps you notice warmth… coolness… or areas of tension.',
+          'Có thể bạn nhận thấy hơi ấm… sự mát lạnh… hay những chỗ đang căng.',
         ),
-        Caption(_ms(302), _ms(308), 'Notice your forehead, and your jaw.'),
+        Caption(
+          _ms(302),
+          _ms(308),
+          'Notice your forehead, and your jaw.',
+          'Cảm nhận vầng trán, và quai hàm.',
+        ),
         Caption(
           _ms(316),
           _ms(322),
           'Your shoulders, your arms, your hands. These hands have done a '
-          'great deal today.',
+              'great deal today.',
+          'Đôi vai, cánh tay, bàn tay. Đôi bàn tay này hôm nay đã làm được rất nhiều việc.',
         ),
         Caption(
           _ms(330),
           _ms(335),
           'There is no right or wrong experience. Simply notice.',
+          'Không có trải nghiệm nào là đúng hay sai. Chỉ cần nhận biết.',
         ),
       ],
     ),
@@ -235,24 +282,33 @@ class SessionScript {
           _ms(336),
           _ms(340),
           'Living with more than one health condition can be demanding.',
+          'Sống chung với nhiều bệnh cùng lúc có thể rất vất vả.',
         ),
         Caption(
           _ms(346),
           _ms(350),
           'Many people experience uncertainty, fatigue, or frustration.',
+          'Nhiều người cảm thấy bất an, mệt mỏi hay bực bội.',
         ),
         Caption(
           _ms(358),
           _ms(365),
           'See whether you can offer yourself the same kindness you would '
-          'offer someone you care about.',
+              'offer someone you care about.',
+          'Hãy thử dành cho chính mình sự tử tế mà bạn vẫn dành cho người bạn thương.',
         ),
         Caption(
           _ms(369),
           _ms(373),
           'You might say quietly: May I care for myself today.',
+          'Bạn có thể khẽ nói: Mong hôm nay tôi biết chăm sóc bản thân.',
         ),
-        Caption(_ms(375), _ms(379), 'May I meet this moment with patience.'),
+        Caption(
+          _ms(375),
+          _ms(379),
+          'May I meet this moment with patience.',
+          'Mong tôi đón nhận khoảnh khắc này bằng sự kiên nhẫn.',
+        ),
       ],
     ),
     Beat(
@@ -268,23 +324,27 @@ class SessionScript {
           _ms(381.75),
           _ms(384),
           'Before your next appointment, consider this.',
+          'Trước buổi khám tới, hãy nghĩ về điều này.',
         ),
         Caption(
           _ms(388),
           _ms(393),
           'What is the most important thing you would like your healthcare '
-          'team to understand about you?',
+              'team to understand about you?',
+          'Điều quan trọng nhất bạn muốn nhóm chăm sóc sức khoẻ hiểu về mình là gì?',
         ),
         Caption(
           _ms(403),
           _ms(407),
           'Is there one question you would like answered?',
+          'Bạn có câu hỏi nào muốn được giải đáp không?',
         ),
         Caption(
           _ms(417),
           _ms(422),
           "You don't need to solve everything today. One important concern "
-          'is enough.',
+              'is enough.',
+          'Bạn không cần giải quyết mọi việc trong hôm nay. Một điều quan trọng là đủ.',
         ),
       ],
     ),
@@ -296,15 +356,31 @@ class SessionScript {
       start: _ms(425),
       end: _ms(460),
       captions: [
-        Caption(_ms(427), _ms(429), 'Move your fingers and toes a little.'),
-        Caption(_ms(435), _ms(438), 'Thank you for practising with me today.'),
+        Caption(
+          _ms(427),
+          _ms(429),
+          'Move your fingers and toes a little.',
+          'Hãy cử động nhẹ các ngón tay và ngón chân.',
+        ),
+        Caption(
+          _ms(435),
+          _ms(438),
+          'Thank you for practising with me today.',
+          'Cảm ơn bạn đã cùng tập với tôi hôm nay.',
+        ),
         Caption(
           _ms(443),
           _ms(449),
           'Even a few moments of slowing down can become part of caring for '
-          'yourself.',
+              'yourself.',
+          'Chỉ vài phút chậm lại cũng có thể trở thành một phần của việc chăm sóc bản thân.',
         ),
-        Caption(_ms(455), _ms(458), "I hope you'll join me again soon."),
+        Caption(
+          _ms(455),
+          _ms(458),
+          "I hope you'll join me again soon.",
+          'Mong sớm gặp lại bạn.',
+        ),
       ],
     ),
     Beat(
@@ -315,7 +391,14 @@ class SessionScript {
       start: _ms(460),
       end: _ms(480),
       interaction: BeatInteraction.feedback,
-      captions: [Caption(_ms(461), _ms(464), 'How do you feel now?')],
+      captions: [
+        Caption(
+          _ms(461),
+          _ms(464),
+          'How do you feel now?',
+          'Bây giờ bạn thấy thế nào?',
+        ),
+      ],
     ),
   ];
 

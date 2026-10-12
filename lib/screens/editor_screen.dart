@@ -3,6 +3,8 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../core/theme.dart';
+import '../l10n/l10n.dart';
+import '../l10n/labels.dart';
 import '../core/motion.dart';
 import '../models/journal_entry.dart';
 import '../models/mood.dart';
@@ -74,11 +76,15 @@ class _EditorScreenState extends State<EditorScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(_isEditing ? 'Edit entry' : 'How was today?'),
+          title: Text(
+            _isEditing
+                ? context.l10n.editorEditTitle
+                : context.l10n.editorNewTitle,
+          ),
           actions: [
             if (_isEditing)
               IconButton(
-                tooltip: 'Delete',
+                tooltip: context.l10n.editorDelete,
                 icon: const Icon(Icons.delete_outline),
                 onPressed: _confirmDelete,
               ),
@@ -101,14 +107,14 @@ class _EditorScreenState extends State<EditorScreen> {
                 maxLines: 12,
                 textCapitalization: TextCapitalization.sentences,
                 onChanged: (_) => setState(() {}),
-                decoration: const InputDecoration(
-                  labelText: 'Journal note',
-                  hintText: 'Write a few lines… (you can leave this empty)',
+                decoration: InputDecoration(
+                  labelText: context.l10n.editorNoteLabel,
+                  hintText: context.l10n.editorNoteHint,
                 ),
               ),
               Gap.l,
               Text(
-                'Related to',
+                context.l10n.editorRelatedTo,
                 style: theme.textTheme.labelLarge?.copyWith(
                   color: scheme.onSurfaceVariant,
                 ),
@@ -120,7 +126,7 @@ class _EditorScreenState extends State<EditorScreen> {
                 children: [
                   for (final tag in _allTags)
                     FilterChip(
-                      label: Text(tag),
+                      label: Text(tagLabel(context.l10n, tag)),
                       selected: _tags.contains(tag),
                       onSelected: (selected) => setState(() {
                         if (selected) {
@@ -140,7 +146,11 @@ class _EditorScreenState extends State<EditorScreen> {
               Gap.xl,
               FilledButton(
                 onPressed: _saving ? null : _save,
-                child: Text(_isEditing ? 'Save changes' : 'Save'),
+                child: Text(
+                  _isEditing
+                      ? context.l10n.editorSaveChanges
+                      : context.l10n.commonSave,
+                ),
               ),
             ],
           ),
@@ -174,7 +184,7 @@ class _EditorScreenState extends State<EditorScreen> {
       if (!mounted) return;
       setState(() => _saving = false);
       messenger.showSnackBar(
-        SnackBar(content: Text('Could not save: $e')),
+        SnackBar(content: Text(context.l10n.editorSaveFailed('$e'))),
         snackBarAnimationStyle: AppMotion.style(context),
       );
     }
@@ -185,16 +195,16 @@ class _EditorScreenState extends State<EditorScreen> {
       context: context,
       animationStyle: AppMotion.style(context),
       builder: (context) => AlertDialog(
-        title: const Text('Discard what you wrote?'),
-        content: const Text('Anything unsaved will be lost.'),
+        title: Text(context.l10n.editorDiscardTitle),
+        content: Text(context.l10n.editorDiscardBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Keep writing'),
+            child: Text(context.l10n.editorKeepWriting),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Discard'),
+            child: Text(context.l10n.editorDiscard),
           ),
         ],
       ),
@@ -209,16 +219,16 @@ class _EditorScreenState extends State<EditorScreen> {
       context: context,
       animationStyle: AppMotion.style(context),
       builder: (context) => AlertDialog(
-        title: const Text('Delete this entry?'),
-        content: const Text('This cannot be undone.'),
+        title: Text(context.l10n.editorDeleteTitle),
+        content: Text(context.l10n.editorDeleteBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete'),
+            child: Text(context.l10n.editorDelete),
           ),
         ],
       ),
@@ -254,7 +264,10 @@ class _DateTimeRow extends StatelessWidget {
         Gap.s,
         Expanded(
           child: Text(
-            DateFormat('EEEE, d MMM y • HH:mm', 'en').format(value),
+            DateFormat(
+              'EEEE, d MMM y • HH:mm',
+              context.l10n.localeName,
+            ).format(value),
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -262,7 +275,7 @@ class _DateTimeRow extends StatelessWidget {
         ),
         TextButton(
           onPressed: () => _pick(context),
-          child: const Text('Change'),
+          child: Text(context.l10n.editorChange),
         ),
       ],
     );
@@ -275,7 +288,7 @@ class _DateTimeRow extends StatelessWidget {
       initialDate: value,
       firstDate: DateTime(now.year - 5),
       lastDate: now,
-      locale: const Locale('en'),
+      locale: Localizations.localeOf(context),
     );
     if (date == null || !context.mounted) return;
 

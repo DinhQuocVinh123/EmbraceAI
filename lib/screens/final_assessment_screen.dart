@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../core/theme.dart';
+import '../l10n/l10n.dart';
 import '../models/study_assessment.dart';
 import '../services/study_assessment_service.dart';
 import '../widgets/choice_tile.dart';
+import '../widgets/language_picker.dart';
 import '../widgets/step_actions.dart';
 
 /// Phụ lục B–D, mỗi màn hình một câu hỏi.
@@ -11,6 +13,9 @@ import '../widgets/step_actions.dart';
 /// Theo khuyến nghị ISPOR khi chuyển thang đo chuẩn (GAD-7) sang màn hình,
 /// mỗi câu phải tự đầy đủ: câu dẫn gốc của thang đo nằm trên mọi màn của nhóm
 /// câu đó, chữ giữ nguyên văn. Mỗi lần sang câu mới, câu trả lời được lưu nháp.
+/// Bản tiếng Việt là bản dịch nháp; với GAD-7 phải thay bằng bản tiếng Việt đã
+/// được kiểm định trước khi dùng với người tham gia thật. Câu trả lời lưu bằng
+/// điểm, không phụ thuộc ngôn ngữ.
 class FinalAssessmentScreen extends StatefulWidget {
   const FinalAssessmentScreen({
     super.key,
@@ -30,66 +35,67 @@ class FinalAssessmentScreen extends StatefulWidget {
 }
 
 class _FinalAssessmentScreenState extends State<FinalAssessmentScreen> {
-  static const _gadStem =
-      'Over the last 2 weeks, how often have you been bothered by the '
-      'following problems?';
-  static const _gadQuestions = [
-    'Feeling nervous, anxious, or on edge',
-    'Difficulty controlling worrying',
-    'Worrying too much about different things',
-    'Difficulty relaxing',
-    'Restlessness / difficulty sitting still',
-    'Becoming easily annoyed or irritable',
-    'Feeling afraid as if something awful might happen',
+  static String _gadStem(AppLocalizations l) => l.gadStem;
+  static List<String> _gadQuestions(AppLocalizations l) => [
+    l.gad1,
+    l.gad2,
+    l.gad3,
+    l.gad4,
+    l.gad5,
+    l.gad6,
+    l.gad7,
   ];
-  static const _gadOptions = {
-    0: 'Not at all',
-    1: 'Several days',
-    2: 'More than half the days',
-    3: 'Nearly every day',
+  static Map<int, String> _gadOptions(AppLocalizations l) => {
+    0: l.gadNotAtAll,
+    1: l.gadSeveralDays,
+    2: l.gadMoreThanHalf,
+    3: l.gadNearlyEveryDay,
   };
 
-  static const _wellbeingQuestion =
-      'How would you rate your overall emotional well-being right now?';
-  static const _wellbeingOptions = {
-    1: 'Very poor',
-    2: 'Poor',
-    3: 'Fair',
-    4: 'Good',
-    5: 'Very good',
+  static Map<int, String> _wellbeingOptions(AppLocalizations l) => {
+    1: l.wellbeingVeryPoor,
+    2: l.wellbeingPoor,
+    3: l.wellbeingFair,
+    4: l.wellbeingGood,
+    5: l.wellbeingVeryGood,
   };
 
-  static const _premStem = 'Please indicate how much you agree or disagree.';
-  static const _premQuestions = [
-    'The instructions were easy to understand.',
-    'I felt comfortable using the system.',
-    'The experience was calming and relaxing.',
-    'The system was easy to interact with.',
-    'I felt safe during the experience.',
-    'The experience was helpful for my well-being.',
-    'I would be willing to use this system again.',
-    'Overall, I am satisfied with the experience.',
+  static List<String> _premQuestions(AppLocalizations l) => [
+    l.prem1,
+    l.prem2,
+    l.prem3,
+    l.prem4,
+    l.prem5,
+    l.prem6,
+    l.prem7,
+    l.prem8,
   ];
-  static const _premOptions = {
-    1: 'Strongly disagree',
-    2: 'Disagree',
-    3: 'Neutral',
-    4: 'Agree',
-    5: 'Strongly agree',
+  static Map<int, String> _premOptions(AppLocalizations l) => {
+    1: l.premStronglyDisagree,
+    2: l.premDisagree,
+    3: l.premNeutral,
+    4: l.premAgree,
+    5: l.premStronglyAgree,
   };
 
-  static const _openQuestions = [
-    'What did you like most about the experience?',
-    'What did you find difficult or uncomfortable, if anything?',
-    'How could the system be improved?',
-    'Would you use this system again? Please explain why or why not.',
+  static List<String> _openQuestions(AppLocalizations l) => [
+    l.open1,
+    l.open2,
+    l.open3,
+    l.open4,
   ];
+
+  static const _gadCount = 7;
+  static const _premCount = 8;
+  static const _openCount = 4;
 
   /// GAD-7, câu cảm nhận chung, 8 câu trải nghiệm, 4 câu mở.
-  static final _questionCount =
-      _gadQuestions.length + 1 + _premQuestions.length + _openQuestions.length;
+  static const _questionCount = _gadCount + 1 + _premCount + _openCount;
 
-  final _openControllers = List.generate(4, (_) => TextEditingController());
+  final _openControllers = List.generate(
+    _openCount,
+    (_) => TextEditingController(),
+  );
   ProgramAssessmentAnswers _answers = ProgramAssessmentAnswers();
 
   /// Câu đang hiện; bằng số câu hỏi nghĩa là trang xem lại.
@@ -132,12 +138,14 @@ class _FinalAssessmentScreenState extends State<FinalAssessmentScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Final questionnaire'),
+        title: Text(l10n.finalAppBar),
         actions: [
+          const LanguageButton(),
           IconButton(
-            tooltip: 'Sign out',
+            tooltip: l10n.homeSignOut,
             onPressed: widget.onSignOut,
             icon: const Icon(Icons.logout),
           ),
@@ -161,12 +169,12 @@ class _FinalAssessmentScreenState extends State<FinalAssessmentScreen> {
                     ),
                   ),
                   StepActions(
-                    nextLabel: _onReview ? 'Submit' : 'Next',
+                    nextLabel: _onReview ? l10n.finalSubmit : l10n.commonNext,
                     nextIcon: _onReview
                         ? Icons.send_outlined
                         : Icons.arrow_forward,
                     onNext: _next,
-                    backLabel: _page == 0 ? 'Do this later' : 'Back',
+                    backLabel: _page == 0 ? l10n.finalDoLater : l10n.commonBack,
                     onBack: _page == 0 ? _defer : _back,
                     busy: _saving,
                   ),
@@ -177,17 +185,18 @@ class _FinalAssessmentScreenState extends State<FinalAssessmentScreen> {
   }
 
   List<Widget> _questionContent(BuildContext context) {
-    final gad = _gadQuestions.length;
-    final prem = _premQuestions.length;
+    final l10n = context.l10n;
+    const gad = _gadCount;
+    const prem = _premCount;
     final page = _page;
     if (page < gad) {
       return _ratingPage(
         context,
-        section: 'Emotional well-being',
-        stem: _gadStem,
+        section: l10n.finalSectionWellbeing,
+        stem: _gadStem(l10n),
         number: page + 1,
-        question: _gadQuestions[page],
-        options: _gadOptions,
+        question: _gadQuestions(l10n)[page],
+        options: _gadOptions(l10n),
         value: _answers.gadResponses[page],
         onChanged: (value) => _answers.gadResponses[page] = value,
       );
@@ -195,9 +204,9 @@ class _FinalAssessmentScreenState extends State<FinalAssessmentScreen> {
     if (page == gad) {
       return _ratingPage(
         context,
-        section: 'Emotional well-being',
-        question: _wellbeingQuestion,
-        options: _wellbeingOptions,
+        section: l10n.finalSectionWellbeing,
+        question: l10n.wellbeingQuestion,
+        options: _wellbeingOptions(l10n),
         value: _answers.emotionalWellbeing,
         onChanged: (value) => _answers.emotionalWellbeing = value,
       );
@@ -206,11 +215,11 @@ class _FinalAssessmentScreenState extends State<FinalAssessmentScreen> {
       final index = page - gad - 1;
       return _ratingPage(
         context,
-        section: 'Your experience',
-        stem: _premStem,
+        section: l10n.finalSectionExperience,
+        stem: l10n.premStem,
         number: index + 1,
-        question: _premQuestions[index],
-        options: _premOptions,
+        question: _premQuestions(l10n)[index],
+        options: _premOptions(l10n),
         value: _answers.premResponses[index],
         onChanged: (value) => _answers.premResponses[index] = value,
       );
@@ -222,7 +231,7 @@ class _FinalAssessmentScreenState extends State<FinalAssessmentScreen> {
     final theme = Theme.of(context);
     return [
       Text(
-        'Question ${_page + 1} of $_questionCount',
+        context.l10n.demoQuestionOf(_page + 1, _questionCount),
         style: theme.textTheme.labelLarge?.copyWith(
           color: theme.colorScheme.primary,
         ),
@@ -283,7 +292,7 @@ class _FinalAssessmentScreenState extends State<FinalAssessmentScreen> {
         children: [
           Expanded(
             child: Text(
-              'This question is optional.',
+              context.l10n.demoOptionalNote,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -293,7 +302,7 @@ class _FinalAssessmentScreenState extends State<FinalAssessmentScreen> {
             TextButton.icon(
               onPressed: () => choose(null),
               icon: const Icon(Icons.clear, size: 18),
-              label: const Text('Clear answer'),
+              label: Text(context.l10n.finalClearAnswer),
             ),
         ],
       ),
@@ -302,11 +311,11 @@ class _FinalAssessmentScreenState extends State<FinalAssessmentScreen> {
 
   List<Widget> _openPage(BuildContext context, int index) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     return [
-      ..._header(context, 'In your own words'),
+      ..._header(context, l10n.finalSectionOwnWords),
       Text(
-        'You may leave this blank. Please do not include your name or '
-        'contact details.',
+        l10n.finalOpenIntro,
         style: theme.textTheme.bodyLarge?.copyWith(
           color: theme.colorScheme.onSurfaceVariant,
           height: 1.5,
@@ -316,7 +325,7 @@ class _FinalAssessmentScreenState extends State<FinalAssessmentScreen> {
       Semantics(
         header: true,
         child: Text(
-          '${index + 1}. ${_openQuestions[index]}',
+          '${index + 1}. ${_openQuestions(l10n)[index]}',
           style: theme.textTheme.titleLarge,
         ),
       ),
@@ -327,7 +336,7 @@ class _FinalAssessmentScreenState extends State<FinalAssessmentScreen> {
         maxLines: 10,
         maxLength: 2000,
         textCapitalization: TextCapitalization.sentences,
-        decoration: const InputDecoration(hintText: 'Your answer (optional)'),
+        decoration: InputDecoration(hintText: l10n.finalOpenHint),
       ),
     ];
   }
@@ -340,42 +349,39 @@ class _FinalAssessmentScreenState extends State<FinalAssessmentScreen> {
         .length;
     final gad2 = _answers.gad2Score;
     final gad7 = _answers.gad7Score;
+    final l10n = context.l10n;
     return [
-      const _Intro(
-        title: 'Review and submit',
-        body:
-            'Your answers will be linked only to your study-issued Participant ID. You can go back and change them before submitting.',
-      ),
+      _Intro(title: l10n.finalReviewTitle, body: l10n.finalReviewBody),
       Gap.xl,
       _ReviewRow(
         icon: Icons.psychology_alt_outlined,
-        label: 'Anxiety questions',
-        value: '$gadAnswered of 7 answered',
+        label: l10n.finalReviewAnxiety,
+        value: l10n.finalAnsweredOf(gadAnswered, _gadCount),
       ),
       const Divider(height: 32),
       _ReviewRow(
         icon: Icons.favorite_outline,
-        label: 'Emotional well-being',
+        label: l10n.finalSectionWellbeing,
         value: _answers.emotionalWellbeing == null
-            ? 'Not answered'
-            : '${_answers.emotionalWellbeing} of 5',
+            ? l10n.demoNotAnswered
+            : l10n.finalOutOfFive(_answers.emotionalWellbeing!),
       ),
       const Divider(height: 32),
       _ReviewRow(
         icon: Icons.fact_check_outlined,
-        label: 'Experience questions',
-        value: '$premAnswered of 8 answered',
+        label: l10n.finalReviewExperience,
+        value: l10n.finalAnsweredOf(premAnswered, _premCount),
       ),
       const Divider(height: 32),
       _ReviewRow(
         icon: Icons.notes_outlined,
-        label: 'Written feedback',
-        value: '$openAnswered of 4 answered',
+        label: l10n.finalReviewWritten,
+        value: l10n.finalAnsweredOf(openAnswered, _openCount),
       ),
       if (gad2 != null) ...[
         Gap.xl,
         Text(
-          'Recorded screening totals',
+          l10n.finalScreeningTotals,
           style: Theme.of(
             context,
           ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
@@ -383,12 +389,12 @@ class _FinalAssessmentScreenState extends State<FinalAssessmentScreen> {
         Gap.s,
         Text(
           gad7 != null
-              ? 'GAD-2: $gad2/6  |  GAD-7: $gad7/21'
-              : 'GAD-2: $gad2/6  |  GAD-7 incomplete',
+              ? l10n.finalGadTotals(gad2, gad7)
+              : l10n.finalGadIncomplete(gad2),
         ),
         Gap.xs,
         Text(
-          'These are screening scores, not a diagnosis.',
+          l10n.finalScreeningNote,
           style: TextStyle(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
@@ -426,11 +432,9 @@ class _FinalAssessmentScreenState extends State<FinalAssessmentScreen> {
       await widget.onSubmitted();
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Your answers could not be saved. Try again.'),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.finalSaveFailed)));
     } finally {
       if (mounted) setState(() => _saving = false);
     }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../core/motion.dart';
+import '../l10n/l10n.dart';
+import '../widgets/language_picker.dart';
 import 'editor_screen.dart';
 import 'insights_screen.dart';
 import 'journal_screen.dart';
@@ -35,6 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
       appBar: widget.onSignOut == null
           ? null
@@ -53,8 +56,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
               actions: [
+                const LanguageButton(),
                 IconButton(
-                  tooltip: 'Sign out',
+                  tooltip: l10n.homeSignOut,
                   onPressed: widget.onSignOut,
                   icon: const Icon(Icons.logout),
                 ),
@@ -81,7 +85,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ? FloatingActionButton.extended(
               onPressed: () => EditorScreen.open(context),
               icon: const Icon(Icons.edit_outlined),
-              label: const Text('New entry'),
+              label: Text(l10n.homeNewEntry),
             )
           : null,
       floatingActionButtonAnimator: AppMotion.isReduced(context)
@@ -91,21 +95,21 @@ class _HomeScreenState extends State<HomeScreen> {
         animationDuration: AppMotion.duration(context, AppMotion.standard),
         selectedIndex: _index,
         onDestinationSelected: (value) => setState(() => _index = value),
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.self_improvement_outlined),
-            selectedIcon: Icon(Icons.self_improvement),
-            label: 'Session',
+            icon: const Icon(Icons.self_improvement_outlined),
+            selectedIcon: const Icon(Icons.self_improvement),
+            label: l10n.homeTabSession,
           ),
           NavigationDestination(
-            icon: Icon(Icons.book_outlined),
-            selectedIcon: Icon(Icons.book),
-            label: 'Journal',
+            icon: const Icon(Icons.book_outlined),
+            selectedIcon: const Icon(Icons.book),
+            label: l10n.homeTabJournal,
           ),
           NavigationDestination(
-            icon: Icon(Icons.insights_outlined),
-            selectedIcon: Icon(Icons.insights),
-            label: 'Insights',
+            icon: const Icon(Icons.insights_outlined),
+            selectedIcon: const Icon(Icons.insights),
+            label: l10n.homeTabInsights,
           ),
         ],
       ),
@@ -140,7 +144,7 @@ class _AssessmentBanner extends StatelessWidget {
             color: scheme.onTertiaryContainer,
           ),
           title: Text(
-            'Final questionnaire is ready',
+            context.l10n.homeFinalReady,
             style: TextStyle(
               color: scheme.onTertiaryContainer,
               fontWeight: FontWeight.w600,
@@ -148,7 +152,7 @@ class _AssessmentBanner extends StatelessWidget {
           ),
           trailing: TextButton(
             onPressed: onOpen,
-            child: const Text('Open'),
+            child: Text(context.l10n.commonOpen),
           ),
         ),
       ),

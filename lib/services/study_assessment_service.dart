@@ -39,10 +39,11 @@ class StudyAssessmentService {
     return StudyProgress.fromSupabase(row);
   }
 
-  Future<void> acceptConsent() async {
+  /// [version]: phiên bản kèm ngôn ngữ của bản đã đọc ([consentVersionFor]).
+  Future<void> acceptConsent({String version = studyConsentVersion}) async {
     await _client.rpc(
       'record_participant_consent',
-      params: {'p_consent_version': studyConsentVersion},
+      params: {'p_consent_version': version},
     );
   }
 

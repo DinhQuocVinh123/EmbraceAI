@@ -48,6 +48,10 @@ class FakeVideoPlayerPlatform extends VideoPlayerPlatform {
   bool isPlayingSource(String source) => _stateFor(source).playing;
   Duration positionFor(String source) => _stateFor(source).position;
 
+  /// Đặt vị trí của một file khác video chính, để giả cảnh hai bên trôi lệch.
+  void setPositionFor(String source, Duration value) =>
+      _stateFor(source).position = value;
+
   _FakePlayerState _stateFor(String source) =>
       _players.values.lastWhere((state) => state.source == source);
 

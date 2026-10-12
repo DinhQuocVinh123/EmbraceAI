@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/theme.dart';
+import '../l10n/l10n.dart';
+import '../l10n/labels.dart';
 import '../state/auth_store.dart';
 
 class StaffLoginScreen extends StatefulWidget {
@@ -105,7 +107,7 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                       Semantics(
                         liveRegion: true,
                         child: Text(
-                          error,
+                          authErrorText(english, error),
                           style: TextStyle(color: theme.colorScheme.error),
                         ),
                       ),

@@ -1,10 +1,16 @@
-/// Một câu phụ đề kèm khoảng thời gian nó xuất hiện.
+/// Một câu phụ đề kèm khoảng thời gian nó xuất hiện, bằng hai ngôn ngữ. Giọng
+/// tiếng Anh nằm trong video; giọng tiếng Việt là file riêng đọc [textVi]
+/// đúng các mốc này (xem `narrationAssetFor`).
 class Caption {
-  const Caption(this.start, this.end, this.text);
+  const Caption(this.start, this.end, this.text, this.textVi);
 
   final Duration start;
   final Duration end;
   final String text;
+  final String textVi;
+
+  /// Câu theo mã ngôn ngữ đang dùng (`AppLocalizations.localeName`).
+  String textFor(String languageCode) => languageCode == 'vi' ? textVi : text;
 
   bool coversAt(Duration position) => position >= start && position < end;
 }
@@ -53,13 +59,13 @@ class Beat {
   final String titleVi;
   final String titleEn;
 
-  /// Nhãn hiện lên màn hình.
+  /// Nhãn hiện lên màn hình theo mã ngôn ngữ đang dùng.
   ///
-  /// App đang chạy tiếng Anh. Giữ một chỗ duy nhất chọn ngôn ngữ, thay vì để
-  /// mỗi màn hình tự với tay vào [titleVi] hay [titleEn] — đã có lần màn hình
-  /// thiền lấy nhầm bản tiếng Việt và không test nào bắt được, vì test ảnh
-  /// truyền thẳng chuỗi tiếng Anh vào chứ không đi qua đây.
-  String get title => titleEn;
+  /// Giữ một chỗ duy nhất chọn ngôn ngữ, thay vì để mỗi màn hình tự với tay
+  /// vào [titleVi] hay [titleEn] — đã có lần màn hình thiền lấy nhầm bản
+  /// tiếng Việt và không test nào bắt được.
+  String titleFor(String languageCode) =>
+      languageCode == 'vi' ? titleVi : titleEn;
   final Duration start;
   final Duration end;
   final BeatInteraction interaction;

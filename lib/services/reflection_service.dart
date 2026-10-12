@@ -1,66 +1,51 @@
 import 'dart:math';
 
+import '../l10n/app_localizations.dart';
 import '../models/mood.dart';
 
 /// Sinh câu hỏi gợi mở để người dùng dễ bắt đầu viết.
 ///
 /// Bộ câu hỏi soạn sẵn, chạy hoàn toàn ngoại tuyến — không cần mạng, không
 /// gửi nhật ký đi đâu. Nếu sau này muốn gợi ý do mô hình sinh ra, thay thân
-/// [promptFor] bằng một lời gọi API bất đồng bộ và đổi kiểu trả về thành
-/// `Future<String>`; phần UI gọi nó đã tách sẵn ở widget ReflectionCard nên
-/// không phải sửa chỗ khác.
+/// [text] bằng một lời gọi API bất đồng bộ; phần UI gọi nó đã tách sẵn ở
+/// widget ReflectionCard nên không phải sửa chỗ khác.
 class ReflectionService {
   ReflectionService({Random? random}) : _random = random ?? Random();
 
   final Random _random;
 
-  static const _byMood = <Mood, List<String>>{
-    Mood.awful: [
-      'What feels heaviest right now? Try naming it.',
-      'If a friend were in this situation, what would you say to them?',
-      'Is there one small thing you could do now to lighten it a little?',
-    ],
-    Mood.low: [
-      'What happened today that took something out of you?',
-      'What is your body telling you — tired, hungry, short on sleep?',
-      'Is there anything you are expecting of yourself that could wait?',
-    ],
-    Mood.neutral: [
-      'What small detail of today is worth remembering?',
-      'Where did most of your time go today?',
-      'If tomorrow were just like today, what would you change?',
-    ],
-    Mood.good: [
-      'What went smoothly today?',
-      'Who helped make today feel easier?',
-      'Which of your habits is actually working for you?',
-    ],
-    Mood.great: [
-      'Which moment made the day?',
-      'What would you like to keep from today for the harder days?',
-      'What did you manage that surprised even you?',
-    ],
-  };
+  /// Mỗi mức tâm trạng có ba câu.
+  static const promptsPerMood = 3;
 
-  /// Một câu hỏi ngẫu nhiên hợp với [mood].
-  String promptFor(Mood mood) {
-    final prompts = _byMood[mood] ?? _byMood[Mood.neutral]!;
-    return prompts[_random.nextInt(prompts.length)];
-  }
+  /// Số thứ tự một câu ngẫu nhiên.
+  int pick() => _random.nextInt(promptsPerMood);
 
-  /// Câu hỏi khác câu [previous], để nút đổi câu luôn có tác dụng.
-  String anotherFor(Mood mood, String? previous) {
-    final prompts = _byMood[mood] ?? _byMood[Mood.neutral]!;
-    if (prompts.length == 1) return prompts.first;
-    String next;
+  /// Số thứ tự một câu khác câu [previous], để nút đổi câu luôn có tác dụng.
+  int another(int previous) {
+    int next;
     do {
-      next = prompts[_random.nextInt(prompts.length)];
+      next = _random.nextInt(promptsPerMood);
     } while (next == previous);
     return next;
   }
+
+  /// Câu thứ [index] cho [mood], theo ngôn ngữ đang dùng.
+  static String text(AppLocalizations l, Mood mood, int index) =>
+      switch (mood) {
+        Mood.awful => [l.reflectAwful1, l.reflectAwful2, l.reflectAwful3],
+        Mood.low => [l.reflectLow1, l.reflectLow2, l.reflectLow3],
+        Mood.neutral => [
+          l.reflectNeutral1,
+          l.reflectNeutral2,
+          l.reflectNeutral3,
+        ],
+        Mood.good => [l.reflectGood1, l.reflectGood2, l.reflectGood3],
+        Mood.great => [l.reflectGreat1, l.reflectGreat2, l.reflectGreat3],
+      }[index];
 }
 
-/// Thẻ gợi ý sẵn có khi thêm nhật ký.
+/// Thẻ gợi ý sẵn có khi thêm nhật ký. Lưu bằng tiếng Anh như một mã; tên
+/// hiển thị lấy qua `tagLabel` trong lib/l10n/labels.dart.
 const kSuggestedTags = <String>[
   'Appointment',
   'Family',

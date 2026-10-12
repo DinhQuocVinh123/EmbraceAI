@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/theme.dart';
+import '../l10n/l10n.dart';
+import '../l10n/labels.dart';
 import '../state/auth_store.dart';
+import '../widgets/language_picker.dart';
 
 class ParticipantLoginScreen extends StatefulWidget {
   const ParticipantLoginScreen({super.key});
@@ -28,6 +31,7 @@ class _ParticipantLoginScreenState extends State<ParticipantLoginScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthStore>();
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -40,6 +44,12 @@ class _ParticipantLoginScreenState extends State<ParticipantLoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    // Chọn ngôn ngữ trước khi đăng nhập; nhãn luôn ghi cả hai
+                    // thứ tiếng để ai cũng tìm ra.
+                    const Align(
+                      alignment: Alignment.centerRight,
+                      child: LanguageButton(showLabel: true),
+                    ),
                     Icon(
                       Icons.self_improvement,
                       size: 54,
@@ -56,7 +66,7 @@ class _ParticipantLoginScreenState extends State<ParticipantLoginScreen> {
                     ),
                     Gap.s,
                     Text(
-                      'Enter the access details provided by your research team.',
+                      l10n.loginIntro,
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodyLarge?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
@@ -69,15 +79,15 @@ class _ParticipantLoginScreenState extends State<ParticipantLoginScreen> {
                       enabled: !auth.isBusy,
                       textCapitalization: TextCapitalization.characters,
                       autofillHints: const [AutofillHints.username],
-                      decoration: const InputDecoration(
-                        labelText: 'Participant ID',
+                      decoration: InputDecoration(
+                        labelText: l10n.loginIdLabel,
                         hintText: 'EA-XXXX-XXXX',
-                        prefixIcon: Icon(Icons.badge_outlined),
-                        border: OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.badge_outlined),
+                        border: const OutlineInputBorder(),
                       ),
                       validator: (value) =>
                           value == null || value.trim().isEmpty
-                          ? 'Enter your Participant ID'
+                          ? l10n.loginIdMissing
                           : null,
                     ),
                     Gap.m,
@@ -87,13 +97,13 @@ class _ParticipantLoginScreenState extends State<ParticipantLoginScreen> {
                       obscureText: _obscureKey,
                       autofillHints: const [AutofillHints.password],
                       decoration: InputDecoration(
-                        labelText: 'Access key',
+                        labelText: l10n.loginKeyLabel,
                         prefixIcon: const Icon(Icons.key_outlined),
                         border: const OutlineInputBorder(),
                         suffixIcon: IconButton(
                           tooltip: _obscureKey
-                              ? 'Show access key'
-                              : 'Hide access key',
+                              ? l10n.loginShowKey
+                              : l10n.loginHideKey,
                           onPressed: () =>
                               setState(() => _obscureKey = !_obscureKey),
                           icon: Icon(
@@ -105,7 +115,7 @@ class _ParticipantLoginScreenState extends State<ParticipantLoginScreen> {
                       ),
                       validator: (value) =>
                           value == null || value.trim().isEmpty
-                          ? 'Enter your access key'
+                          ? l10n.loginKeyMissing
                           : null,
                       onFieldSubmitted: (_) => _submit(auth),
                     ),
@@ -114,7 +124,7 @@ class _ParticipantLoginScreenState extends State<ParticipantLoginScreen> {
                       Semantics(
                         liveRegion: true,
                         child: Text(
-                          error,
+                          authErrorText(l10n, error),
                           style: TextStyle(color: theme.colorScheme.error),
                         ),
                       ),
@@ -129,7 +139,7 @@ class _ParticipantLoginScreenState extends State<ParticipantLoginScreen> {
                             )
                           : const Icon(Icons.login),
                       label: Text(
-                        auth.isBusy ? 'Checking access...' : 'Continue',
+                        auth.isBusy ? l10n.loginChecking : l10n.commonContinue,
                       ),
                     ),
                     Gap.m,
@@ -144,8 +154,7 @@ class _ParticipantLoginScreenState extends State<ParticipantLoginScreen> {
                         Gap.s,
                         Expanded(
                           child: Text(
-                            'EmbraceAI does not ask for your name, personal email, '
-                            'phone number, or medical record number.',
+                            l10n.loginPrivacy,
                             style: theme.textTheme.bodySmall?.copyWith(
                               height: 1.45,
                             ),

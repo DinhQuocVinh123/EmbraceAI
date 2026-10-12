@@ -6,6 +6,34 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/account_session.dart';
 import '../services/credential_codec.dart';
 
+/// Lỗi đăng nhập dưới dạng mã. Màn hình chọn câu theo ngôn ngữ đang dùng
+/// (`authErrorText` trong lib/l10n/labels.dart); cổng nhân viên luôn tiếng Anh.
+enum AuthErrorKind {
+  linkExpired,
+  accountNotActive,
+  qrSignedOutOther,
+  serviceUnreachable,
+  serviceUnreachableRetry,
+  checkDetails,
+  pageForOther,
+  invalidDetails,
+  participantInactive,
+  qrOtherNotOpened,
+  noStaffAccess,
+  tooManyAttempts,
+  suspended,
+  notVerified,
+}
+
+class AuthError {
+  const AuthError(this.kind, {this.participant});
+
+  final AuthErrorKind kind;
+
+  /// Mã người tham gia của link QR (EA-XXXX-XXXX), với các lỗi nhắc đến nó.
+  final String? participant;
+}
+
 class AuthStore extends ChangeNotifier {
   AuthStore({SupabaseClient? client, Uri? initialUri})
     : _client = client ?? Supabase.instance.client,
@@ -30,12 +58,12 @@ class AuthStore extends ChangeNotifier {
   bool _loading = true;
   bool _busy = false;
   bool _manualFlow = false;
-  String? _error;
+  AuthError? _error;
 
   AccountSession? get session => _session;
   bool get isLoading => _loading;
   bool get isBusy => _busy;
-  String? get error => _error;
+  AuthError? get error => _error;
 
   Future<void> _restoreSession() async {
     final tokenHash = _signInTokenHash;
@@ -51,10 +79,7 @@ class AuthStore extends ChangeNotifier {
         // Tải lại trang sau khi đã đăng nhập bằng link sẽ dùng lại mã cũ; lúc
         // đó phiên vẫn còn nên không báo lỗi.
         if (_client.auth.currentUser == null) {
-          _error =
-              'This sign-in link has expired or has already been used. Sign '
-              'in with your Participant ID and access key, or ask the '
-              'research team for a new link.';
+          _error = const AuthError(AuthErrorKind.linkExpired);
         }
       } finally {
         _manualFlow = false;
@@ -76,14 +101,14 @@ class AuthStore extends ChangeNotifier {
           loaded = await _loadSession(user);
         }
         if (loaded == null) {
-          _error = 'This account is not active for EmbraceAI.';
+          _error = const AuthError(AuthErrorKind.accountNotActive);
           await _client.auth.signOut();
         } else if (!_matchesQrParticipant(loaded)) {
           _session = null;
-          _error =
-              'This QR code is for ${_displayExpectedParticipant()}. '
-              'A different saved account was signed out. Scan the QR code '
-              'again to continue safely.';
+          _error = AuthError(
+            AuthErrorKind.qrSignedOutOther,
+            participant: _displayExpectedParticipant(),
+          );
           await _client.auth.signOut();
         } else {
           _session = loaded;
@@ -91,7 +116,7 @@ class AuthStore extends ChangeNotifier {
         }
       }
     } on PostgrestException {
-      _error = 'The access service could not be reached.';
+      _error = const AuthError(AuthErrorKind.serviceUnreachable);
       _session = null;
     } finally {
       _loading = false;
@@ -114,13 +139,15 @@ class AuthStore extends ChangeNotifier {
     final code = CredentialCodec.normalizeCode(participantCode);
     final key = CredentialCodec.normalizeAccessKey(accessKey);
     if (code.length != 10 || key.length != 16) {
-      _setError('Check the Participant ID and access key, then try again.');
+      _setError(const AuthError(AuthErrorKind.checkDetails));
       return;
     }
     if (_expectedParticipantCode case final expected? when code != expected) {
       _setError(
-        'This page was opened for ${_displayExpectedParticipant()}. '
-        'Use that Participant ID or open the main app address again.',
+        AuthError(
+          AuthErrorKind.pageForOther,
+          participant: _displayExpectedParticipant(),
+        ),
       );
       return;
     }
@@ -133,21 +160,25 @@ class AuthStore extends ChangeNotifier {
       );
       final user = response.user;
       if (user == null) {
-        throw const AuthFlowException('The access details are invalid.');
+        throw const AuthFlowException(
+          AuthError(AuthErrorKind.invalidDetails),
+        );
       }
       await _client.rpc('activate_participant');
       final loaded = await _loadSession(user);
       if (loaded == null || loaded.isStaff) {
         await _client.auth.signOut();
         throw const AuthFlowException(
-          'This participant account is expired or inactive.',
+          AuthError(AuthErrorKind.participantInactive),
         );
       }
       if (!_matchesQrParticipant(loaded)) {
         await _client.auth.signOut();
         throw AuthFlowException(
-          'This QR code is for ${_displayExpectedParticipant()}. '
-          'The other account was not opened.',
+          AuthError(
+            AuthErrorKind.qrOtherNotOpened,
+            participant: _displayExpectedParticipant(),
+          ),
         );
       }
       _session = loaded;
@@ -168,7 +199,7 @@ class AuthStore extends ChangeNotifier {
       if (loaded == null || !loaded.isStaff) {
         await _client.auth.signOut();
         throw const AuthFlowException(
-          'This account does not have staff portal access.',
+          AuthError(AuthErrorKind.noStaffAccess),
         );
       }
       _session = loaded;
@@ -230,11 +261,11 @@ class AuthStore extends ChangeNotifier {
     try {
       await action();
     } on AuthFlowException catch (error) {
-      _error = error.message;
+      _error = error.error;
     } on AuthException catch (error) {
       _error = _friendlyAuthError(error);
     } on PostgrestException {
-      _error = 'The access service could not be reached. Please try again.';
+      _error = const AuthError(AuthErrorKind.serviceUnreachableRetry);
     } finally {
       _manualFlow = false;
       _busy = false;
@@ -243,18 +274,19 @@ class AuthStore extends ChangeNotifier {
     }
   }
 
-  void _setError(String message) {
-    _error = message;
+  void _setError(AuthError error) {
+    _error = error;
     notifyListeners();
   }
 
-  static String _friendlyAuthError(AuthException error) => switch (error.code) {
-    'over_request_rate_limit' || 'over_email_send_rate_limit' =>
-      'Too many attempts. Wait a moment before trying again.',
-    'user_banned' => 'This account has been suspended.',
-    'invalid_credentials' => 'The access details are invalid.',
-    _ => 'The credentials could not be verified.',
-  };
+  static AuthError _friendlyAuthError(AuthException error) =>
+      AuthError(switch (error.code) {
+        'over_request_rate_limit' ||
+        'over_email_send_rate_limit' => AuthErrorKind.tooManyAttempts,
+        'user_banned' => AuthErrorKind.suspended,
+        'invalid_credentials' => AuthErrorKind.invalidDetails,
+        _ => AuthErrorKind.notVerified,
+      });
 
   @visibleForTesting
   static String? participantCodeFromUri(Uri uri) {
@@ -277,9 +309,10 @@ class AuthStore extends ChangeNotifier {
         (!session.isStaff && session.participantCode == expected);
   }
 
-  String _displayExpectedParticipant() {
+  /// null khi không có mã: màn hình hiện "người tham gia này".
+  String? _displayExpectedParticipant() {
     final code = _expectedParticipantCode;
-    if (code == null || code.length != 10) return 'this participant';
+    if (code == null || code.length != 10) return null;
     return '${code.substring(0, 2)}-${code.substring(2, 6)}-'
         '${code.substring(6)}';
   }
@@ -292,6 +325,6 @@ class AuthStore extends ChangeNotifier {
 }
 
 class AuthFlowException implements Exception {
-  const AuthFlowException(this.message);
-  final String message;
+  const AuthFlowException(this.error);
+  final AuthError error;
 }

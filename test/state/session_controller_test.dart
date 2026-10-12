@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:embrace_ai/data/session_script.dart';
 import 'package:embrace_ai/models/beat.dart';
 import 'package:embrace_ai/models/breathing_cue.dart';
@@ -25,12 +27,14 @@ void main() {
     double voiceVolume = 0.70,
     BackgroundSound backgroundSound = BackgroundSound.none,
     double backgroundVolume = 0.70,
+    String? narrationAsset,
   }) async {
     final c = SessionController(
       scene: scene,
       voiceVolume: voiceVolume,
       backgroundSound: backgroundSound,
       backgroundVolume: backgroundVolume,
+      narrationAsset: narrationAsset,
     );
     await c.init();
     try {
@@ -141,6 +145,53 @@ void main() {
       voiceVolume: 0.35,
       backgroundSound: sound,
       backgroundVolume: 1,
+    );
+  });
+
+  testWidgets('the Vietnamese voice replaces the video voice and follows it', (
+    tester,
+  ) async {
+    final narration = narrationAssetFor('vi')!;
+    expect(narrationAssetFor('en'), isNull);
+    expect(File(narration).existsSync(), isTrue);
+    await withSession(
+      tester,
+      (c) async {
+        expect(fake.opened, [SessionScene.countryside.asset, narration]);
+        expect(fake.volume, 0);
+        expect(fake.volumeFor(narration), 0.35);
+
+        await begin(c, PracticeChoice.breathing);
+        expect(fake.isPlaying, isTrue);
+        expect(fake.isPlayingSource(narration), isTrue);
+
+        // Hai bên trôi lệch: giọng được kéo về đúng vị trí của hình.
+        fake.position = const Duration(seconds: 12);
+        fake.setPositionFor(narration, const Duration(seconds: 15));
+        await tester.pump(const Duration(milliseconds: 600));
+        await tester.pump();
+        expect(fake.positionFor(narration), const Duration(seconds: 12));
+
+        // Bỏ qua bài thả lỏng cơ thể: giọng nhảy theo video.
+        final grounding = SessionScript.beats.firstWhere(
+          (b) => b.id == 'grounding',
+        );
+        await runTo(tester, fake, grounding.end + const Duration(seconds: 2));
+        expect(fake.position, greaterThanOrEqualTo(grounding.end));
+        expect(fake.positionFor(narration), fake.position);
+
+        await c.togglePlay();
+        expect(fake.isPlayingSource(narration), isFalse);
+        await c.updateAudio(
+          voiceVolume: 1,
+          backgroundSound: BackgroundSound.none,
+          backgroundVolume: 0.70,
+        );
+        expect(fake.volume, 0);
+        expect(fake.volumeFor(narration), 1);
+      },
+      voiceVolume: 0.35,
+      narrationAsset: narration,
     );
   });
 

@@ -7,21 +7,18 @@ import 'package:flutter/material.dart';
 enum Mood {
   awful(
     score: 1,
-    label: 'Really hard',
     emoji: '😞',
     onLight: Color(0xFFC62828),
     onDark: Color(0xFFE57373),
   ),
   low(
     score: 2,
-    label: 'Not great',
     emoji: '😕',
     onLight: Color(0xFFC75100),
     onDark: Color(0xFFFFB74D),
   ),
   neutral(
     score: 3,
-    label: 'Okay',
     emoji: '😐',
     // Vàng là mức giữa, nhưng vàng đủ đậm để đọc trên nền sáng thì lại ngả
     // sang nâu và lẫn với mức "Not great" ngay bên cạnh. Kéo về phía ô liu
@@ -31,14 +28,12 @@ enum Mood {
   ),
   good(
     score: 4,
-    label: 'Quite good',
     emoji: '🙂',
     onLight: Color(0xFF2E7D32),
     onDark: Color(0xFF81C784),
   ),
   great(
     score: 5,
-    label: 'Really good',
     emoji: '😄',
     onLight: Color(0xFF00695C),
     onDark: Color(0xFF4DB6AC),
@@ -46,14 +41,13 @@ enum Mood {
 
   const Mood({
     required this.score,
-    required this.label,
     required this.emoji,
     required this.onLight,
     required this.onDark,
   });
 
+  /// Tên hiển thị nằm ở lib/l10n/labels.dart.
   final int score;
-  final String label;
   final String emoji;
 
   /// Hai sắc độ cho cùng một ý nghĩa.
@@ -89,14 +83,14 @@ enum Mood {
 /// Đây là các loại cảm nhận, không phải thang điểm tốt-xấu. Mood dùng cho
 /// Journal và Insights được hỏi riêng bằng thang năm mức sau khi tập xong.
 enum CheckInFeeling {
-  calm('Calm', '🙂'),
-  stressed('Stressed', '😟'),
-  tired('Tired', '😪'),
-  upset('Upset', '😣'),
-  distracted('Distracted', '🤔');
+  calm('🙂'),
+  stressed('😟'),
+  tired('😪'),
+  upset('😣'),
+  distracted('🤔');
 
-  const CheckInFeeling(this.label, this.emoji);
+  const CheckInFeeling(this.emoji);
 
-  final String label;
+  /// Tên hiển thị nằm ở lib/l10n/labels.dart.
   final String emoji;
 }

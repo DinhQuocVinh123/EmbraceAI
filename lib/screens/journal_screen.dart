@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../core/theme.dart';
+import '../l10n/l10n.dart';
 import '../models/journal_entry.dart';
 import '../state/journal_store.dart';
 import '../widgets/empty_state.dart';
@@ -27,11 +28,11 @@ class JournalScreen extends StatelessWidget {
     if (store.error != null) {
       return EmptyState(
         icon: Icons.error_outline,
-        title: 'Could not open your journal',
+        title: context.l10n.journalErrorTitle,
         message: '${store.error}',
         action: FilledButton.tonal(
           onPressed: store.load,
-          child: const Text('Try again'),
+          child: Text(context.l10n.commonTryAgain),
         ),
       );
     }
@@ -39,13 +40,11 @@ class JournalScreen extends StatelessWidget {
     if (store.isEmpty) {
       return EmptyState(
         icon: Icons.favorite_outline,
-        title: 'Nothing here yet',
-        message:
-            'Write a line about today. One sentence is enough — this '
-            'is for looking back, not for writing well.',
+        title: context.l10n.journalEmptyTitle,
+        message: context.l10n.journalEmptyBody,
         action: FilledButton(
           onPressed: () => EditorScreen.open(context),
-          child: const Text('Write the first line'),
+          child: Text(context.l10n.journalEmptyAction),
         ),
       );
     }
@@ -134,7 +133,7 @@ class _Header extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            _greeting(now ?? DateTime.now()),
+            _greeting(context.l10n, now ?? DateTime.now()),
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.w600,
             ),
@@ -142,10 +141,8 @@ class _Header extends StatelessWidget {
           Gap.xs,
           Text(
             store.hasCheckedInToday
-                ? 'You have ${store.todayEntries.length} journal '
-                      '${store.todayEntries.length == 1 ? "entry" : "entries"} '
-                      'today.'
-                : 'How are you feeling today?',
+                ? context.l10n.journalTodayCount(store.todayEntries.length)
+                : context.l10n.journalHowToday,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: scheme.onSurfaceVariant,
             ),
@@ -171,7 +168,7 @@ class _Header extends StatelessWidget {
                   ),
                   Gap.xs,
                   Text(
-                    '$streak days in a row',
+                    context.l10n.journalStreak(streak),
                     style: theme.textTheme.labelLarge?.copyWith(
                       color: scheme.onPrimaryContainer,
                     ),
@@ -185,12 +182,11 @@ class _Header extends StatelessWidget {
     );
   }
 
-  String _greeting(DateTime currentTime) {
+  String _greeting(AppLocalizations l10n, DateTime currentTime) {
     final hour = currentTime.hour;
-    if (hour < 11) return 'Good morning';
-    if (hour < 14) return 'Good afternoon';
-    if (hour < 18) return 'Good afternoon';
-    return 'Good evening';
+    if (hour < 11) return l10n.greetingMorning;
+    if (hour < 18) return l10n.greetingAfternoon;
+    return l10n.greetingEvening;
   }
 }
 
@@ -206,7 +202,7 @@ class _DayHeader extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8, left: 4),
       child: Text(
-        _label(date, now ?? DateTime.now()),
+        _label(context.l10n, date, now ?? DateTime.now()),
         style: theme.textTheme.labelLarge?.copyWith(
           color: theme.colorScheme.onSurfaceVariant,
           fontWeight: FontWeight.w600,
@@ -215,16 +211,16 @@ class _DayHeader extends StatelessWidget {
     );
   }
 
-  String _label(DateTime date, DateTime currentTime) {
+  String _label(AppLocalizations l10n, DateTime date, DateTime currentTime) {
     final today = DateTime(
       currentTime.year,
       currentTime.month,
       currentTime.day,
     );
     final diff = today.difference(date).inDays;
-    if (diff == 0) return 'Today';
-    if (diff == 1) return 'Yesterday';
-    if (diff < 7) return DateFormat('EEEE', 'en').format(date);
-    return DateFormat('d MMMM y', 'en').format(date);
+    if (diff == 0) return l10n.dayToday;
+    if (diff == 1) return l10n.dayYesterday;
+    if (diff < 7) return DateFormat('EEEE', l10n.localeName).format(date);
+    return DateFormat('d MMMM y', l10n.localeName).format(date);
   }
 }

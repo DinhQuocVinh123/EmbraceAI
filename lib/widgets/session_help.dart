@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n.dart';
 import '../state/settings_store.dart';
 import 'session_sound_controls.dart';
 
@@ -11,6 +12,7 @@ class SessionHelp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return ListenableBuilder(
       listenable: settings,
       builder: (context, _) => FractionallySizedBox(
@@ -24,12 +26,12 @@ class SessionHelp extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        'Help',
+                        l10n.helpTitle,
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                     ),
                     IconButton(
-                      tooltip: 'Close help',
+                      tooltip: l10n.helpClose,
                       onPressed: () => Navigator.of(context).pop(false),
                       icon: const Icon(Icons.close),
                     ),
@@ -40,11 +42,7 @@ class SessionHelp extends StatelessWidget {
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
                   children: [
-                    const Text(
-                      'Take your time. Find a comfortable position and let your '
-                      'breathing stay natural. You can leave the practice whenever '
-                      'you need to.',
-                    ),
+                    Text(l10n.helpBody),
                     const SizedBox(height: 16),
                     SessionSoundControls(
                       settings: settings,
@@ -54,7 +52,7 @@ class SessionHelp extends StatelessWidget {
                     const Divider(height: 32),
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('Easier view'),
+                      title: Text(l10n.helpEasierView),
                       value: settings.isAssisted,
                       onChanged: (enabled) => enabled
                           ? settings.enableAssistedView()
@@ -62,7 +60,7 @@ class SessionHelp extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Text size',
+                      l10n.welcomeTextSize,
                       style: Theme.of(context).textTheme.titleSmall,
                     ),
                     Wrap(
@@ -70,7 +68,9 @@ class SessionHelp extends StatelessWidget {
                       children: [
                         for (final scale in SettingsStore.textScaleSteps)
                           ChoiceChip(
-                            label: Text('${(scale * 100).round()}%'),
+                            label: Text(
+                              l10n.percentValue((scale * 100).round()),
+                            ),
                             selected: settings.textScale == scale,
                             onSelected: (_) => settings.setTextScale(scale),
                           ),
@@ -78,19 +78,19 @@ class SessionHelp extends StatelessWidget {
                     ),
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('Brighter picture'),
+                      title: Text(l10n.helpBrighterPicture),
                       value: settings.highClarity,
                       onChanged: settings.setHighClarity,
                     ),
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('Show captions'),
+                      title: Text(l10n.welcomeShowCaptions),
                       value: settings.captionsOn,
                       onChanged: settings.setCaptionsOn,
                     ),
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('Reduce motion'),
+                      title: Text(l10n.welcomeReduceMotion),
                       value: settings.reduceMotion,
                       onChanged: settings.setReduceMotion,
                     ),
@@ -98,13 +98,13 @@ class SessionHelp extends StatelessWidget {
                     FilledButton.icon(
                       onPressed: () => Navigator.of(context).pop(false),
                       icon: const Icon(Icons.arrow_back),
-                      label: const Text('Return to practice'),
+                      label: Text(l10n.helpReturn),
                     ),
                     const SizedBox(height: 8),
                     TextButton.icon(
                       onPressed: () => Navigator.of(context).pop(true),
                       icon: const Icon(Icons.stop_circle_outlined),
-                      label: const Text('End practice'),
+                      label: Text(l10n.helpEnd),
                     ),
                   ],
                 ),

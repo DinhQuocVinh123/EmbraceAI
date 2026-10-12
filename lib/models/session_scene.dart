@@ -10,30 +10,23 @@ import 'package:flutter/material.dart';
 enum SessionScene {
   countryside(
     id: 'countryside',
-    label: 'Vietnamese countryside',
-    description: 'Sunrise courtyards, still water and a quiet village lane',
     asset: 'assets/video/countryside_8min_final_v4.mp4',
     swatch: Color(0xFFC08A5E),
   ),
   beach(
     id: 'beach',
-    label: 'Beach, dawn to night',
-    description: 'Open horizon, slow waves, the light changing through the day',
     asset: 'assets/video/ocean_8min_final_v5.mp4',
     swatch: Color(0xFF5A8CB8),
   );
 
   const SessionScene({
     required this.id,
-    required this.label,
-    required this.description,
     required this.asset,
     required this.swatch,
   });
 
+  /// Tên và mô tả hiển thị nằm ở lib/l10n/labels.dart.
   final String id;
-  final String label;
-  final String description;
   final String asset;
 
   /// Màu đại diện, dùng cho ô chọn khi chưa có ảnh xem trước.

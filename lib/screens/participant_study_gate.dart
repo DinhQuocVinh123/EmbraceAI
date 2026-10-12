@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../l10n/l10n.dart';
 import '../models/study_assessment.dart';
 import '../services/study_assessment_service.dart';
 import 'demographics_screen.dart';
@@ -136,17 +137,17 @@ class _StudyGateError extends StatelessWidget {
         title: const Text('EmbraceAI'),
         actions: [
           IconButton(
-            tooltip: 'Sign out',
+            tooltip: context.l10n.homeSignOut,
             onPressed: onSignOut,
             icon: const Icon(Icons.logout),
           ),
         ],
       ),
-      body: const Center(
+      body: Center(
         child: Padding(
-          padding: EdgeInsets.all(24),
+          padding: const EdgeInsets.all(24),
           child: Text(
-            'Your study information could not be loaded. Check your connection and try again.',
+            context.l10n.studyLoadFailed,
             textAlign: TextAlign.center,
           ),
         ),

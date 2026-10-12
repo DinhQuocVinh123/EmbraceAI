@@ -5,7 +5,10 @@ import 'package:video_player/video_player.dart' hide Caption;
 
 import '../core/theme.dart';
 import '../core/motion.dart';
+import '../l10n/l10n.dart';
+import '../l10n/labels.dart';
 import '../models/session_answers.dart';
+import '../models/session_audio.dart';
 import '../state/session_controller.dart';
 import '../models/session_scene.dart';
 import '../state/settings_store.dart';
@@ -43,18 +46,23 @@ class SessionScreen extends StatefulWidget {
 }
 
 class _SessionScreenState extends State<SessionScreen> {
-  late final SettingsStore _settings;
   late final SessionController _c;
+  var _started = false;
 
   @override
-  void initState() {
-    super.initState();
-    _settings = context.read<SettingsStore>();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Ngôn ngữ chỉ đọc được từ đây, chưa đọc được trong initState. Giọng đọc
+    // chọn một lần lúc mở buổi tập, không đổi giữa chừng.
+    if (_started) return;
+    _started = true;
+    final settings = context.read<SettingsStore>();
     _c = SessionController(
       scene: widget.scene,
-      voiceVolume: _settings.effectiveVoiceVolume,
-      backgroundSound: _settings.backgroundSound,
-      backgroundVolume: _settings.effectiveBackgroundVolume,
+      voiceVolume: settings.effectiveVoiceVolume,
+      backgroundSound: settings.backgroundSound,
+      backgroundVolume: settings.effectiveBackgroundVolume,
+      narrationAsset: narrationAssetFor(context.l10n.localeName),
     );
     _c.init();
   }
@@ -94,8 +102,8 @@ class _SessionScreenState extends State<SessionScreen> {
                     c.phase == SessionPhase.disclaimer ||
                             c.phase == SessionPhase.safety ||
                             c.phase == SessionPhase.checkIn
-                        ? 'Before you begin'
-                        : 'After your practice',
+                        ? context.l10n.sessionBeforeTitle
+                        : context.l10n.sessionAfterTitle,
                   ),
                 ),
                 body: SafeArea(
@@ -150,14 +158,14 @@ class _PlayerView extends StatelessWidget {
             videoSurface: VideoPlayer(video),
             aspectRatio: video.value.aspectRatio,
             beatNumber: controller.plannedBeats.indexOf(beat) + 1,
-            beatTitle: beat.title,
+            beatTitle: beat.titleFor(context.l10n.localeName),
             totalBeats: controller.plannedBeats.length,
             position: controller.position,
             total: controller.total,
             isPlaying: controller.isPlaying,
             highClarity: settings.highClarity,
             captionsOn: settings.captionsOn,
-            caption: controller.activeCaption?.text,
+            caption: controller.activeCaption?.textFor(context.l10n.localeName),
             breathingCue: controller.breathingCue,
             reduceMotion: settings.reduceMotion,
             onStop: () => _confirmStop(context, controller),
@@ -176,16 +184,16 @@ class _PlayerView extends StatelessWidget {
       context: context,
       animationStyle: AppMotion.style(context),
       builder: (context) => AlertDialog(
-        title: const Text('Stop the session?'),
-        content: const Text('You can come back to it any time.'),
+        title: Text(context.l10n.sessionStopTitle),
+        content: Text(context.l10n.sessionStopBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Keep going'),
+            child: Text(context.l10n.sessionKeepGoing),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Stop'),
+            child: Text(context.l10n.sessionStop),
           ),
         ],
       ),
@@ -295,20 +303,20 @@ class SummaryView extends StatelessWidget {
             ),
             Gap.m,
             Text(
-              'Done',
+              context.l10n.commonDone,
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
             ),
             Gap.m,
             Text(
-              answers.closingMessage,
+              answers.closingMessage(context.l10n),
               style: theme.textTheme.bodyLarge?.copyWith(height: 1.5),
             ),
             if (answers.question != null && answers.question!.isNotEmpty) ...[
               Gap.l,
               _SummaryBlock(
-                title: 'Question for your appointment',
+                title: context.l10n.sessionSummaryQuestion,
                 body: answers.question!,
               ),
             ],
@@ -316,23 +324,25 @@ class SummaryView extends StatelessWidget {
                 answers.reflection!.isNotEmpty) ...[
               Gap.m,
               _SummaryBlock(
-                title: 'What you noticed',
+                title: context.l10n.feedbackNoticeLabel,
                 body: answers.reflection!,
               ),
             ],
             Gap.xl,
             FilledButton(
               onPressed: onSave,
-              child: const Text('Save to journal'),
+              child: Text(context.l10n.sessionSaveToJournal),
             ),
             Gap.s,
-            TextButton(onPressed: onSkip, child: const Text('Skip saving')),
+            TextButton(
+              onPressed: onSkip,
+              child: Text(context.l10n.sessionSkipSaving),
+            ),
             Gap.s,
             // Bỏ qua chỉ giữ buổi này khỏi nhật ký; buổi tập vẫn được tính cho
             // nghiên cứu, nên nói rõ để người dùng không hiểu nhầm.
             Text(
-              'Either way, the research team receives the session time and '
-              'your mood rating, never what you write.',
+              context.l10n.sessionPrivacyNote,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
@@ -416,9 +426,9 @@ class _ErrorView extends StatelessWidget {
               size: 40,
             ),
             Gap.m,
-            const Text(
-              'Could not open the session video',
-              style: TextStyle(color: Colors.white, fontSize: 18),
+            Text(
+              context.l10n.sessionVideoError,
+              style: const TextStyle(color: Colors.white, fontSize: 18),
             ),
             Gap.s,
             Text(
@@ -429,7 +439,7 @@ class _ErrorView extends StatelessWidget {
             Gap.l,
             FilledButton(
               onPressed: () => Navigator.of(context).maybePop(),
-              child: const Text('Go back'),
+              child: Text(context.l10n.commonBack),
             ),
           ],
         ),

@@ -28,13 +28,23 @@ class SessionController extends ChangeNotifier {
     double voiceVolume = 0.70,
     this.backgroundSound = BackgroundSound.none,
     double backgroundVolume = 0.70,
+    this.narrationAsset,
   }) : _voiceVolume = voiceVolume,
        _backgroundVolume = backgroundVolume;
 
+  /// Lệch quá mức này thì giọng đọc riêng được kéo về đúng vị trí của video.
+  static const narrationTolerance = Duration(milliseconds: 400);
+
   final SessionScene scene;
+
+  /// Giọng hướng dẫn phát riêng, thay cho giọng trong video (đang tắt tiếng).
+  /// `null` nghĩa là dùng giọng có sẵn trong video.
+  final String? narrationAsset;
   final SessionAnswers answers = SessionAnswers();
   VideoPlayerController? _video;
   VideoPlayerController? get video => _video;
+  VideoPlayerController? _narration;
+  bool _aligningNarration = false;
   VideoPlayerController? _background;
   BackgroundSound backgroundSound;
   SessionPhase _phase = SessionPhase.disclaimer;
@@ -107,7 +117,19 @@ class SessionController extends ChangeNotifier {
       );
       _video = v;
       await v.initialize();
-      await v.setVolume(_voiceVolume);
+      if (narrationAsset case final asset?) {
+        final narration = VideoPlayerController.asset(
+          asset,
+          videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+        );
+        await narration.initialize();
+        if (_disposed) {
+          await narration.dispose();
+          return;
+        }
+        _narration = narration;
+      }
+      await _applyVoiceVolume();
       await _replaceBackground(backgroundSound);
       if (_disposed) return;
       v.addListener(_tick);
@@ -141,7 +163,34 @@ class SessionController extends ChangeNotifier {
       _seek(next.start);
       return;
     }
+    unawaited(_alignNarration(v));
     _notify();
+  }
+
+  /// Giữ giọng đọc riêng đi cùng hình: video khựng lại để tải thì giọng chờ
+  /// theo, lệch quá [narrationTolerance] thì kéo về đúng vị trí của video.
+  Future<void> _alignNarration(VideoPlayerController video) async {
+    final narration = _narration;
+    if (narration == null || _aligningNarration) return;
+    _aligningNarration = true;
+    try {
+      final moving = video.value.isPlaying && !video.value.isBuffering;
+      if (!moving) {
+        if (narration.value.isPlaying) await narration.pause();
+        return;
+      }
+      // Hỏi thẳng vị trí hiện tại; số trong `value` có thể cũ tới nửa giây.
+      final heard = await narration.position ?? narration.value.position;
+      final drift = heard - video.value.position;
+      if (drift.abs() > narrationTolerance) {
+        await narration.seekTo(video.value.position);
+      }
+      if (!narration.value.isPlaying && !_disposed) await narration.play();
+    } catch (_) {
+      // Lần nhích sau sẽ thử lại; lỗi phát thật sự đã hiện qua video.
+    } finally {
+      _aligningNarration = false;
+    }
   }
 
   Future<void> _seek(Duration target) async {
@@ -149,6 +198,7 @@ class SessionController extends ChangeNotifier {
     try {
       await Future.wait([
         if (_video case final video?) video.seekTo(target),
+        if (_narration case final narration?) narration.seekTo(target),
         if (_background case final background?) background.seekTo(target),
       ]);
     } catch (e) {
@@ -265,7 +315,7 @@ class SessionController extends ChangeNotifier {
   }) async {
     _voiceVolume = voiceVolume.clamp(0.0, 1.0);
     _backgroundVolume = backgroundVolume.clamp(0.0, 1.0);
-    await _video?.setVolume(_voiceVolume);
+    await _applyVoiceVolume();
     if (this.backgroundSound != backgroundSound) {
       this.backgroundSound = backgroundSound;
       await _replaceBackground(backgroundSound);
@@ -294,7 +344,12 @@ class SessionController extends ChangeNotifier {
     // Narration is the primary audio. Start it first so mobile WebViews grant
     // their user-gesture playback permission to the guided voice, not the
     // optional ambience controller.
-    await video.setVolume(_voiceVolume);
+    await _applyVoiceVolume();
+    final narration = _narration;
+    if (narration != null) {
+      await narration.seekTo(video.value.position);
+      await narration.play();
+    }
     await video.play();
     final background = _background;
     if (background != null) {
@@ -306,8 +361,17 @@ class SessionController extends ChangeNotifier {
   Future<void> _pauseMedia() async {
     await Future.wait([
       if (_video case final video?) video.pause(),
+      if (_narration case final narration?) narration.pause(),
       if (_background case final background?) background.pause(),
     ]);
+  }
+
+  /// Có giọng đọc riêng thì video tắt tiếng, thanh âm lượng giọng điều khiển
+  /// file giọng đọc; không thì nó điều khiển chính video.
+  Future<void> _applyVoiceVolume() async {
+    final narration = _narration;
+    await _video?.setVolume(narration == null ? _voiceVolume : 0);
+    await narration?.setVolume(_voiceVolume);
   }
 
   Future<void> _replaceBackground(BackgroundSound sound) async {
@@ -347,6 +411,7 @@ class SessionController extends ChangeNotifier {
     _backgroundGeneration++;
     _video?.removeListener(_tick);
     _video?.dispose();
+    _narration?.dispose();
     _background?.dispose();
     super.dispose();
   }

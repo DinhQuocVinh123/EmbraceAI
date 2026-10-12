@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 
 import '../core/theme.dart';
 import '../core/motion.dart';
+import '../l10n/l10n.dart';
+import '../l10n/labels.dart';
 import '../models/journal_entry.dart';
 import '../state/journal_store.dart';
 import 'editor_screen.dart';
@@ -40,13 +42,17 @@ class EntryDetailScreen extends StatelessWidget {
     // Entry vừa bị xoá ở màn sửa — đóng luôn thay vì hiện dữ liệu cũ.
     final entry = currentEntry ?? initialEntry;
     final mood = entry.mood;
+    final l10n = context.l10n;
+    final note = entryNote(l10n, entry);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(DateFormat('d MMMM y', 'en').format(entry.createdAt)),
+        title: Text(
+          DateFormat('d MMMM y', l10n.localeName).format(entry.createdAt),
+        ),
         actions: [
           IconButton(
-            tooltip: 'Edit',
+            tooltip: l10n.entryEdit,
             icon: const Icon(Icons.edit_outlined),
             onPressed: currentEntry?.id == null
                 ? null
@@ -90,7 +96,7 @@ class EntryDetailScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      mood?.label ?? 'Mood not recorded',
+                      mood?.label(l10n) ?? l10n.moodNotRecorded,
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -106,9 +112,9 @@ class EntryDetailScreen extends StatelessWidget {
               ],
             ),
             Gap.l,
-            if (entry.note.trim().isEmpty)
+            if (note.trim().isEmpty)
               Text(
-                'That day you only logged a mood, with nothing written.',
+                l10n.entryMoodOnly,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: scheme.onSurfaceVariant,
                   fontStyle: FontStyle.italic,
@@ -116,7 +122,7 @@ class EntryDetailScreen extends StatelessWidget {
               )
             else
               SelectableText(
-                entry.note,
+                note,
                 style: theme.textTheme.bodyLarge?.copyWith(height: 1.6),
               ),
             if (entry.tags.isNotEmpty) ...[
@@ -125,15 +131,17 @@ class EntryDetailScreen extends StatelessWidget {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  for (final tag in entry.tags) Chip(label: Text(tag)),
+                  for (final tag in entry.tags)
+                    Chip(label: Text(tagLabel(l10n, tag))),
                 ],
               ),
             ],
             if (entry.updatedAt.difference(entry.createdAt).inMinutes > 1) ...[
               Gap.l,
               Text(
-                'Last edited '
-                '${DateFormat('d/M/y HH:mm').format(entry.updatedAt)}',
+                l10n.entryLastEdited(
+                  DateFormat('d/M/y HH:mm').format(entry.updatedAt),
+                ),
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: scheme.onSurfaceVariant,
                 ),

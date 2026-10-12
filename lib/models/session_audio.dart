@@ -1,19 +1,19 @@
 import 'session_scene.dart';
 
+/// Giọng hướng dẫn theo ngôn ngữ đang dùng. Giọng tiếng Anh nằm sẵn trong
+/// video nên không có file riêng. Giọng tiếng Việt là một file đọc đúng các
+/// mốc phụ đề, tạo bằng `tools/voice/synth_narration_vi.py`; sửa câu tiếng
+/// Việt trong kịch bản thì tạo lại file này.
+String? narrationAssetFor(String languageCode) =>
+    languageCode == 'vi' ? 'assets/audio/narration_vi.m4a' : null;
+
 enum BackgroundSound {
-  matchScene(
-    'Match video',
-    'Countryside music or ocean waves chosen with the picture',
-  ),
-  none('None', 'Narration without a background sound'),
-  countryside('Countryside', 'Soft instrumental countryside ambience'),
-  ocean('Ocean waves', 'Slow waves and a light sea breeze'),
-  rain('Gentle rain', 'Steady rain without thunder');
-
-  const BackgroundSound(this.label, this.description);
-
-  final String label;
-  final String description;
+  // Tên và mô tả hiển thị nằm ở lib/l10n/labels.dart.
+  matchScene,
+  none,
+  countryside,
+  ocean,
+  rain;
 
   String? assetFor(SessionScene scene) => switch (this) {
     BackgroundSound.matchScene =>

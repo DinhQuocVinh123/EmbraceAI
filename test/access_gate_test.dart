@@ -85,7 +85,7 @@ class _FakeAuthStore extends ChangeNotifier implements AuthStore {
   bool get isBusy => false;
 
   @override
-  String? get error => null;
+  AuthError? get error => null;
 
   @override
   Future<void> signOut() async {}

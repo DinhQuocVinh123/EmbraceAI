@@ -22,12 +22,17 @@ TOTAL = 480.0    # độ dài video
 
 
 def parse_literals(seg):
-    """Nối các chuỗi Dart liền kề trong một đoạn."""
-    out = []
+    """Tách các đối số chuỗi; chuỗi Dart liền kề trong một đối số được nối lại."""
+    args = [[]]
+    out = args[0]
     i = 0
     while i < len(seg):
         ch = seg[i]
-        if ch in "'\"":
+        if ch == ",":
+            out = []
+            args.append(out)
+            i += 1
+        elif ch in "'\"":
             quote = ch
             i += 1
             buf = []
@@ -46,7 +51,7 @@ def parse_literals(seg):
             out.append("".join(buf))
         else:
             i += 1
-    return "".join(out)
+    return ["".join(a) for a in args if a]
 
 
 def main():
@@ -64,10 +69,12 @@ def main():
             i += 1
         body = src[start:i - 1]
         tm = re.match(r"\s*_ms\(([\d.]+)\)\s*,\s*_ms\(([\d.]+)\)\s*,", body)
+        text, text_vi = parse_literals(body[tm.end():])
         caps.append({
             "start": float(tm.group(1)),
             "end": float(tm.group(2)),
-            "text": parse_literals(body[tm.end():]),
+            "text": text,
+            "textVi": text_vi,
         })
 
     caps.sort(key=lambda c: c["start"])

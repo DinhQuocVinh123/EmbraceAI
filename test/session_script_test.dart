@@ -1,4 +1,8 @@
+import 'dart:ui' show Locale;
+
 import 'package:embrace_ai/data/session_script.dart';
+import 'package:embrace_ai/l10n/l10n.dart';
+import 'package:embrace_ai/l10n/labels.dart';
 import 'package:embrace_ai/models/beat.dart';
 import 'package:embrace_ai/models/mood.dart';
 import 'package:embrace_ai/models/session_answers.dart';
@@ -199,39 +203,39 @@ void main() {
         ..stressBefore = 8
         ..stressAfter = 3
         ..practice = PracticeChoice.grounding;
-      expect(a.closingMessage, contains('8'));
-      expect(a.closingMessage, contains('3'));
-      expect(a.closingMessage, contains('body scan'));
+      expect(a.closingMessage(english), contains('8'));
+      expect(a.closingMessage(english), contains('3'));
+      expect(a.closingMessage(english), contains('body scan'));
     });
 
     test('không đổi thì trấn an chứ không báo thất bại', () {
       final a = SessionAnswers()
         ..stressBefore = 5
         ..stressAfter = 5;
-      expect(a.closingMessage, contains('does not always shift'));
+      expect(a.closingMessage(english), contains('does not always shift'));
     });
 
     test('căng hơn lúc đầu vẫn được ghi nhận tử tế', () {
       final a = SessionAnswers()
         ..stressBefore = 3
         ..stressAfter = 6;
-      expect(a.closingMessage, contains('honest'));
+      expect(a.closingMessage(english), contains('honest'));
     });
 
     test('không trả lời gì vẫn có câu chốt', () {
-      expect(SessionAnswers().closingMessage, isNotEmpty);
+      expect(SessionAnswers().closingMessage(english), isNotEmpty);
     });
 
     test('có ghi câu hỏi thì câu chốt nhắc tới', () {
       final a = SessionAnswers()..question = 'What does this result mean?';
-      expect(a.closingMessage, contains('appointment'));
+      expect(a.closingMessage(english), contains('appointment'));
     });
 
     test('chọn bài thở thì gợi ý lần sau thêm phần tiếp đất', () {
       final a = SessionAnswers()
         ..feeling = CheckInFeeling.stressed
         ..practice = PracticeChoice.breathing;
-      expect(a.closingMessage, contains('grounding'));
+      expect(a.closingMessage(english), contains('grounding'));
     });
 
     test('mood cuối buổi độc lập với trạng thái check-in', () {
@@ -274,17 +278,25 @@ void main() {
       expect(SessionScene.fromId(null), SessionScene.countryside);
     });
 
-    test('nhãn và mô tả đều bằng tiếng Anh, không rỗng', () {
-      final viet = RegExp('[ăâđêôơưàáảãạèéẻẽẹìíỉĩịòóỏõọùúủũụ]');
-      for (final s in SessionScene.values) {
-        expect(s.label, isNotEmpty);
-        expect(s.description, isNotEmpty);
-        expect(
-          viet.hasMatch(s.label + s.description),
-          isFalse,
-          reason: 'còn tiếng Việt trong ${s.id}',
-        );
-      }
-    });
+    test(
+      'nhãn và mô tả có ở cả hai ngôn ngữ; bản tiếng Anh không lẫn tiếng Việt',
+      () {
+        final viet = RegExp('[ăâđêôơưàáảãạèéẻẽẹìíỉĩịòóỏõọùúủũụ]');
+        final vi = lookupAppLocalizations(const Locale('vi'));
+        for (final s in SessionScene.values) {
+          final label = s.label(english);
+          final description = s.description(english);
+          expect(label, isNotEmpty);
+          expect(description, isNotEmpty);
+          expect(
+            viet.hasMatch(label + description),
+            isFalse,
+            reason: 'còn tiếng Việt trong ${s.id}',
+          );
+          expect(s.label(vi), isNot(label));
+          expect(s.description(vi), isNot(description));
+        }
+      },
+    );
   });
 }

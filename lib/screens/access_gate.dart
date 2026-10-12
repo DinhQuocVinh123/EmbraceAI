@@ -6,6 +6,7 @@ import '../core/theme.dart';
 import '../data/pending_sync_queue.dart';
 import '../data/prefs_journal_repository.dart';
 import '../data/session_sync_journal_repository.dart';
+import '../l10n/l10n.dart';
 import '../services/staff_portal_service.dart';
 import '../state/auth_store.dart';
 import '../state/journal_store.dart';
@@ -96,17 +97,16 @@ class _WrongPortalScreen extends StatelessWidget {
                   Gap.m,
                   Text(
                     forStaff
-                        ? 'The staff portal has its own address'
-                        : 'This is the staff portal',
+                        ? context.l10n.gateStaffElsewhereTitle
+                        : context.l10n.gateStaffPortalTitle,
                     textAlign: TextAlign.center,
                     style: theme.textTheme.headlineSmall,
                   ),
                   Gap.s,
                   Text(
                     forStaff
-                        ? 'Staff accounts sign in at the address below.'
-                        : 'Participants sign in to EmbraceAI at the address '
-                              'below.',
+                        ? context.l10n.gateStaffElsewhereBody
+                        : context.l10n.gateParticipantsElsewhereBody,
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
@@ -124,7 +124,7 @@ class _WrongPortalScreen extends StatelessWidget {
                   FilledButton.icon(
                     onPressed: onSignOut,
                     icon: const Icon(Icons.logout),
-                    label: const Text('Sign out'),
+                    label: Text(context.l10n.homeSignOut),
                   ),
                 ],
               ),
@@ -144,7 +144,7 @@ class _LoadingScreen extends StatelessWidget {
     return Scaffold(
       body: Center(
         child: Semantics(
-          label: 'Checking access',
+          label: context.l10n.gateChecking,
           child: const CircularProgressIndicator(),
         ),
       ),

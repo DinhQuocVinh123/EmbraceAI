@@ -1,4 +1,6 @@
 import 'package:embrace_ai/core/theme.dart';
+import 'package:embrace_ai/l10n/l10n.dart';
+import 'package:embrace_ai/l10n/labels.dart';
 import 'package:embrace_ai/models/journal_entry.dart';
 import 'package:embrace_ai/models/mood.dart';
 import 'package:embrace_ai/screens/home_screen.dart';
@@ -118,7 +120,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('How was today?'), findsOneWidget);
 
-    await tester.tap(find.text(Mood.great.label));
+    await tester.tap(find.text(Mood.great.label(english)));
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextField), 'An easier day.');
@@ -150,7 +152,7 @@ void main() {
     await tester.tap(find.byIcon(Icons.edit_outlined));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text(Mood.good.label));
+    await tester.tap(find.text(Mood.good.label(english)));
     await tester.pumpAndSettle();
     await _tapAfterScroll(tester, find.text('Save changes'));
 

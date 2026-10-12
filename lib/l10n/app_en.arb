@@ -1,0 +1,1042 @@
+{
+  "@@locale": "en",
+  "languageTitle": "Language",
+  "languagePhone": "Same as my phone",
+  "@languagePhone": {
+    "description": "Follow the phone's language setting."
+  },
+  "languageButtonTooltip": "Language",
+  "languageVoiceNote": "The guide's voice, the captions and the rest of the app follow the language you choose.",
+  "commonOpen": "Open",
+  "commonCancel": "Cancel",
+  "commonSave": "Save",
+  "commonBack": "Back",
+  "commonNext": "Next",
+  "commonDone": "Done",
+  "commonTryAgain": "Try again",
+  "commonClose": "Close",
+  "homeSignOut": "Sign out",
+  "homeNewEntry": "New entry",
+  "@homeNewEntry": {
+    "description": "Button that starts a free journal entry. The privacy text refers to it by this name."
+  },
+  "homeTabSession": "Session",
+  "homeTabJournal": "Journal",
+  "homeTabInsights": "Insights",
+  "homeFinalReady": "Final questionnaire is ready",
+  "welcomeTitle": "A quiet moment",
+  "welcomeIntro": "A guided relaxation for the time around appointments and test results. All you need to do is sit still and follow along.",
+  "welcomeSessionSaved": "Session saved to your journal",
+  "journalLineQuestion": "Question for the team: {question}",
+  "@journalLineQuestion": {
+    "description": "Line written into the journal entry of a session.",
+    "placeholders": {
+      "question": {
+        "type": "String"
+      }
+    }
+  },
+  "journalLineStress": "Stress: {before} → {after}",
+  "@journalLineStress": {
+    "placeholders": {
+      "before": {
+        "type": "int"
+      },
+      "after": {
+        "type": "int"
+      }
+    }
+  },
+  "welcomeAskTitle": "Ask EmbraceAI (preview)",
+  "welcomeAskSubtitle": "Questions about the exercises or the app",
+  "welcomeBegin": "Begin",
+  "welcomeStopAnyTime": "You can stop at any time.",
+  "welcomeEasierTitle": "Easier to see",
+  "welcomeEasierBody": "If small text is hard to read, or the picture looks hazy, turn this on.",
+  "welcomeEasierOn": "Easier view is on",
+  "welcomeEasierTurnOn": "Turn on easier view",
+  "welcomeExpectTimeTitle": "Choose 3 or 5 to 6 minutes",
+  "welcomeExpectTimeBody": "A little time for yourself",
+  "welcomeExpectFlowTitle": "Before and after",
+  "welcomeExpectFlowBody": "A check-in, uninterrupted practice, then time to reflect",
+  "welcomeExpectHeadphonesTitle": "Headphones help",
+  "welcomeExpectHeadphonesBody": "But are not required",
+  "welcomeExpectStopTitle": "Stop any time",
+  "welcomeExpectStopBody": "Nothing is lost",
+  "welcomeSceneTitle": "Setting",
+  "welcomeSceneBody": "Choose what you would like to look at. The practice itself is the same.",
+  "welcomeSoundDisplayTitle": "Sound and display",
+  "welcomeTextSize": "Text size",
+  "percentValue": "{percent}%",
+  "@percentValue": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "welcomeShowCaptions": "Show captions",
+  "welcomeShowCaptionsBody": "Writes out what is being said, at the size you chose",
+  "welcomeReduceMotion": "Reduce motion",
+  "welcomeReduceMotionBody": "Removes non-essential fades and page movement",
+  "durationMinSec": "{minutes} min {seconds} sec",
+  "@durationMinSec": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      },
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "welcomeDurations": "Short {short} · Full {full} with grounding or {breathing} with breathing",
+  "@welcomeDurations": {
+    "placeholders": {
+      "short": {
+        "type": "String"
+      },
+      "full": {
+        "type": "String"
+      },
+      "breathing": {
+        "type": "String"
+      }
+    }
+  },
+  "welcomeSummaryVoiceOn": "Voice on",
+  "welcomeSummaryVoiceOff": "Voice off",
+  "welcomeSummaryText": "Text {percent}%",
+  "@welcomeSummaryText": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "welcomeSummaryCaptionsOn": "Captions on",
+  "welcomeSummaryCaptionsOff": "Captions off",
+  "sceneCountryside": "Vietnamese countryside",
+  "sceneCountrysideDescription": "Sunrise courtyards, still water and a quiet village lane",
+  "sceneBeach": "Beach, dawn to night",
+  "sceneBeachDescription": "Open horizon, slow waves, the light changing through the day",
+  "soundMatchVideo": "Match video",
+  "soundMatchVideoDescription": "Countryside music or ocean waves chosen with the picture",
+  "soundNone": "None",
+  "soundNoneDescription": "Narration without a background sound",
+  "soundCountryside": "Countryside",
+  "soundCountrysideDescription": "Soft instrumental countryside ambience",
+  "soundOcean": "Ocean waves",
+  "soundOceanDescription": "Slow waves and a light sea breeze",
+  "soundRain": "Gentle rain",
+  "soundRainDescription": "Steady rain without thunder",
+  "levelQuiet": "Quiet",
+  "levelQuietDescription": "Soft volume",
+  "levelNormal": "Normal",
+  "levelNormalDescription": "Comfortable volume",
+  "levelLouder": "Louder",
+  "levelLouderDescription": "Full volume",
+  "moodAwful": "Really hard",
+  "moodLow": "Not great",
+  "moodNeutral": "Okay",
+  "moodGood": "Quite good",
+  "moodGreat": "Really good",
+  "feelingCalm": "Calm",
+  "feelingStressed": "Stressed",
+  "feelingTired": "Tired",
+  "feelingUpset": "Upset",
+  "feelingDistracted": "Distracted",
+  "safetyYes": "Yes, I can sit quietly",
+  "safetyUnsure": "I'm not sure",
+  "safetyNo": "Not right now",
+  "practiceGrounding": "Grounding",
+  "practiceGroundingDescription": "Notice the support beneath you, then follow your breath",
+  "practiceBreathing": "Follow the breath",
+  "practiceBreathingDescription": "Go straight to the breathing practice",
+  "lengthShort": "Short practice",
+  "lengthShortDescription": "About 3 minutes",
+  "lengthFull": "Full practice",
+  "lengthFullDescription": "About 5 to 6 minutes",
+  "breatheIn": "Breathe in",
+  "breatheOut": "Breathe out",
+  "commonContinue": "Continue",
+  "promptSkipQuestion": "Skip this question",
+  "disclaimerTitle": "Medical disclaimer",
+  "@disclaimerTitle": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "disclaimerSubtitle": "Please read this before every practice.",
+  "@disclaimerSubtitle": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "disclaimerBody": "This is not a medical intervention. If you experience any discomfort, please stop immediately and seek help from your medical team.",
+  "@disclaimerBody": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "disclaimerAccept": "I understand, continue",
+  "disclaimerLeave": "Leave session",
+  "safetyTitle": "Are you feeling comfortable enough to continue?",
+  "@safetyTitle": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "safetyBody": "This practice needs you somewhere safe. Please do not do it while driving or operating machinery.",
+  "@safetyBody": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "checkInFeelingTitle": "How are you feeling right now?",
+  "checkInStressTitle": "How stressed do you feel right now?",
+  "checkInStressSubtitle": "0 is completely at ease, 10 is the most stressed.",
+  "checkInSlowerTitle": "Let's take this a little slower",
+  "checkInChooseTitle": "What would you like to practise?",
+  "checkInSlowerBody": "You are carrying a lot right now. Grounding often settles things faster.",
+  "checkInLengthTitle": "How much time would you like?",
+  "checkInLengthSubtitle": "Both options end with time to reflect.",
+  "questionTitle": "Is there one question you would like answered?",
+  "questionSubtitle": "Write it down here to take to your next appointment.",
+  "questionLabel": "Question for your care team",
+  "questionHint": "For example: how will this affect my daily life?",
+  "questionSave": "Save and continue",
+  "feedbackMoodTitle": "How do you feel now?",
+  "feedbackMoodSubtitle": "Choose the answer that feels closest. There is no right answer.",
+  "feedbackStressTitle": "And where is your stress now?",
+  "feedbackStressStarted": "You started at {value}.",
+  "@feedbackStressStarted": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "feedbackNoticeTitle": "What did you notice during the practice?",
+  "feedbackNoticeSubtitle": "One sentence is plenty. There is no right answer.",
+  "feedbackNoticeLabel": "What you noticed",
+  "feedbackNoticeHint": "For example: my shoulders softened, my breathing slowed towards the end.",
+  "stressLevel": "Stress level",
+  "stressOutOfTen": "{value} out of 10",
+  "@stressOutOfTen": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "stressScaleLow": "0 · at ease",
+  "stressScaleHigh": "10 · very stressed",
+  "helpTitle": "Help",
+  "helpClose": "Close help",
+  "helpBody": "Take your time. Find a comfortable position and let your breathing stay natural. You can leave the practice whenever you need to.",
+  "helpEasierView": "Easier view",
+  "helpBrighterPicture": "Brighter picture",
+  "helpReturn": "Return to practice",
+  "helpEnd": "End practice",
+  "soundGuidedVoice": "Guided voice",
+  "soundGuidedVoiceBody": "Spoken narration during the practice",
+  "soundVoiceVolume": "Voice volume",
+  "soundBackground": "Background sound",
+  "soundBackgroundBody": "Plays separately from the guided voice",
+  "soundStopPreview": "Stop preview",
+  "soundPreview": "Preview sound",
+  "soundBackgroundVolume": "Background volume",
+  "soundLow": "Low",
+  "soundMedium": "Medium",
+  "soundHigh": "High",
+  "soundPreviewFailed": "Sound preview could not be played.",
+  "reflectAnother": "Another question",
+  "reflectAwful1": "What feels heaviest right now? Try naming it.",
+  "reflectAwful2": "If a friend were in this situation, what would you say to them?",
+  "reflectAwful3": "Is there one small thing you could do now to lighten it a little?",
+  "reflectLow1": "What happened today that took something out of you?",
+  "reflectLow2": "What is your body telling you — tired, hungry, short on sleep?",
+  "reflectLow3": "Is there anything you are expecting of yourself that could wait?",
+  "reflectNeutral1": "What small detail of today is worth remembering?",
+  "reflectNeutral2": "Where did most of your time go today?",
+  "reflectNeutral3": "If tomorrow were just like today, what would you change?",
+  "reflectGood1": "What went smoothly today?",
+  "reflectGood2": "Who helped make today feel easier?",
+  "reflectGood3": "Which of your habits is actually working for you?",
+  "reflectGreat1": "Which moment made the day?",
+  "reflectGreat2": "What would you like to keep from today for the harder days?",
+  "reflectGreat3": "What did you manage that surprised even you?",
+  "tagAppointment": "Appointment",
+  "tagFamily": "Family",
+  "tagFriends": "Friends",
+  "tagHealth": "Health",
+  "tagWork": "Work",
+  "tagRest": "Rest",
+  "tagExercise": "Exercise",
+  "tagAlone": "Alone",
+  "tagSession": "Session",
+  "tagSynced": "Synced",
+  "closingStressDown": "Your stress went from {before} down to {after}.",
+  "@closingStressDown": {
+    "placeholders": {
+      "before": {
+        "type": "int"
+      },
+      "after": {
+        "type": "int"
+      }
+    }
+  },
+  "closingStressEased": "Your stress eased a little, from {before} to {after}.",
+  "@closingStressEased": {
+    "placeholders": {
+      "before": {
+        "type": "int"
+      },
+      "after": {
+        "type": "int"
+      }
+    }
+  },
+  "closingStressSame": "Your stress stayed at {value}. That happens — one session does not always shift things right away.",
+  "@closingStressSame": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "closingStressUp": "You feel more tense than when you started. Thank you for being honest about that.",
+  "closingNextBodyScan": "Next time, a short body scan may suit you.",
+  "closingNextGrounding": "Next time, try adding the grounding part at the start and see whether it helps you settle.",
+  "closingQuestionSaved": "The question you wrote down has been saved for your next appointment.",
+  "closingThanks": "Thank you for making time for this practice.",
+  "sessionBeforeTitle": "Before you begin",
+  "sessionAfterTitle": "After your practice",
+  "sessionStopTitle": "Stop the session?",
+  "sessionStopBody": "You can come back to it any time.",
+  "sessionKeepGoing": "Keep going",
+  "sessionStop": "Stop",
+  "sessionSummaryQuestion": "Question for your appointment",
+  "sessionSaveToJournal": "Save to journal",
+  "sessionSkipSaving": "Skip saving",
+  "sessionPrivacyNote": "Either way, the research team receives the session time and your mood rating, never what you write.",
+  "@sessionPrivacyNote": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "sessionVideoError": "Could not open the session video",
+  "sessionCaptionSemantics": "Caption: {text}",
+  "@sessionCaptionSemantics": {
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "sessionPartSemantics": "Part {number} of {total}. {title}",
+  "@sessionPartSemantics": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "sessionPartLabel": "Part {number} of {total} · {title}",
+  "@sessionPartLabel": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "timeMinutes": "{count, plural, =1{1 minute} other{{count} minutes}}",
+  "@timeMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeSeconds": "{count, plural, =1{1 second} other{{count} seconds}}",
+  "@timeSeconds": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sessionPause": "Pause",
+  "sessionResume": "Resume",
+  "sessionProgress": "Session progress",
+  "sessionProgressValue": "{position} of {total}",
+  "@sessionProgressValue": {
+    "placeholders": {
+      "position": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "sessionBreathingGuide": "Breathing guide: {cue}",
+  "@sessionBreathingGuide": {
+    "placeholders": {
+      "cue": {
+        "type": "String"
+      }
+    }
+  },
+  "journalErrorTitle": "Could not open your journal",
+  "journalEmptyTitle": "Nothing here yet",
+  "journalEmptyBody": "Write a line about today. One sentence is enough — this is for looking back, not for writing well.",
+  "journalEmptyAction": "Write the first line",
+  "journalTodayCount": "{count, plural, =1{You have 1 journal entry today.} other{You have {count} journal entries today.}}",
+  "@journalTodayCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "journalHowToday": "How are you feeling today?",
+  "journalStreak": "{count} days in a row",
+  "@journalStreak": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "greetingMorning": "Good morning",
+  "greetingAfternoon": "Good afternoon",
+  "greetingEvening": "Good evening",
+  "dayToday": "Today",
+  "dayYesterday": "Yesterday",
+  "insightsEmptyTitle": "Nothing to show yet",
+  "insightsEmptyBody": "Come back after a few days — a trend only means something once there is a little history.",
+  "insightsDays": "days",
+  "insightsStreak": "Current streak",
+  "insightsEntries": "entries",
+  "insightsWritten": "Written so far",
+  "insightsAverage": "30-day average",
+  "insightsTrendTitle": "Mood over 14 days",
+  "insightsTrendBody": "Tap the chart to read a single day. Days with no entry are left blank.",
+  "insightsDistributionTitle": "Where you usually sit",
+  "insightsTagsTitle": "Mentioned most",
+  "editorEditTitle": "Edit entry",
+  "editorNewTitle": "How was today?",
+  "editorDelete": "Delete",
+  "editorNoteLabel": "Journal note",
+  "editorNoteHint": "Write a few lines… (you can leave this empty)",
+  "editorRelatedTo": "Related to",
+  "editorSaveChanges": "Save changes",
+  "editorSaveFailed": "Could not save: {error}",
+  "@editorSaveFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "editorDiscardTitle": "Discard what you wrote?",
+  "editorDiscardBody": "Anything unsaved will be lost.",
+  "editorKeepWriting": "Keep writing",
+  "editorDiscard": "Discard",
+  "editorDeleteTitle": "Delete this entry?",
+  "editorDeleteBody": "This cannot be undone.",
+  "editorChange": "Change",
+  "entryEdit": "Edit",
+  "moodNotRecorded": "Mood not recorded",
+  "entryMoodOnly": "That day you only logged a mood, with nothing written.",
+  "entryLastEdited": "Last edited {date}",
+  "@entryLastEdited": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "entryRemoteSession": "Session completed on another device.",
+  "entryTags": "Tags: {tags}",
+  "@entryTags": {
+    "placeholders": {
+      "tags": {
+        "type": "String"
+      }
+    }
+  },
+  "chartLabel": "Mood trend chart",
+  "chartHint": "Use left and right arrows, or adjust, to read each day.",
+  "chartNoDays": "No recorded days",
+  "chartDayValue": "{date}, {value} out of 5",
+  "@chartDayValue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "distributionRow": "{mood}: {count} times, {percent} percent",
+  "@distributionRow": {
+    "placeholders": {
+      "mood": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      },
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "askTitle": "Ask EmbraceAI",
+  "askIntroTitle": "Ask about the exercises or the app",
+  "askIntroBody": "Answers come only from the study materials. For anything about your health, medicines or test results, please ask your care team. Please don't include your name or other personal details.",
+  "@askIntroBody": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "askTryAsking": "Try asking",
+  "askExampleLength": "How long does a session take?",
+  "@askExampleLength": {
+    "description": "Example question chip; tapping it sends the question as written."
+  },
+  "askExampleCaptions": "How do I turn on captions?",
+  "askExampleJournal": "Who can see my journal?",
+  "askYouAsked": "You asked: {text}",
+  "@askYouAsked": {
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "askLooking": "Looking this up…",
+  "askMedicalTitle": "A question for your care team",
+  "@askMedicalTitle": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "askMedicalBody": "This is a question for your doctor or care team. You can save it to ask at your next appointment.",
+  "@askMedicalBody": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "askOutOfScope": "I can only help with the relaxation exercises and using the app.",
+  "askNotFound": "There's no information about this yet. You could ask the research team.",
+  "askBusy": "Ask EmbraceAI is busy right now. Please try again in a moment.",
+  "askError": "Something went wrong. Please try again.",
+  "askAlsoAsked": "You also asked about something else. Please ask that part on its own.",
+  "askSaved": "Saved to your journal",
+  "askSaveForAppointment": "Save for my appointment",
+  "askSources": "Sources",
+  "askAiLabel": "AI-generated from study materials. Not medical advice.",
+  "@askAiLabel": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "askEmergencyTitle": "If this is an emergency, get help now",
+  "@askEmergencyTitle": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "askEmergencyBody": "Call your local emergency number straight away. If you feel unwell but it is not an emergency, contact your care team. Stop any exercise you are doing.",
+  "@askEmergencyBody": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "askHint": "Ask a question",
+  "askSend": "Send",
+  "askAppointmentNote": "Question for my appointment: {question}",
+  "@askAppointmentNote": {
+    "description": "Journal note saved from a medical question in Ask EmbraceAI.",
+    "placeholders": {
+      "question": {
+        "type": "String"
+      }
+    }
+  },
+  "authLinkExpired": "This sign-in link has expired or has already been used. Sign in with your Participant ID and access key, or ask the research team for a new link.",
+  "authAccountNotActive": "This account is not active for EmbraceAI.",
+  "authQrSignedOutOther": "This QR code is for {participant}. A different saved account was signed out. Scan the QR code again to continue safely.",
+  "@authQrSignedOutOther": {
+    "placeholders": {
+      "participant": {
+        "type": "String"
+      }
+    }
+  },
+  "authServiceUnreachable": "The access service could not be reached.",
+  "authServiceUnreachableRetry": "The access service could not be reached. Please try again.",
+  "authCheckDetails": "Check the Participant ID and access key, then try again.",
+  "authPageForOther": "This page was opened for {participant}. Use that Participant ID or open the main app address again.",
+  "@authPageForOther": {
+    "placeholders": {
+      "participant": {
+        "type": "String"
+      }
+    }
+  },
+  "authInvalidDetails": "The access details are invalid.",
+  "authParticipantInactive": "This participant account is expired or inactive.",
+  "authQrOtherNotOpened": "This QR code is for {participant}. The other account was not opened.",
+  "@authQrOtherNotOpened": {
+    "placeholders": {
+      "participant": {
+        "type": "String"
+      }
+    }
+  },
+  "authNoStaffAccess": "This account does not have staff portal access.",
+  "authTooManyAttempts": "Too many attempts. Wait a moment before trying again.",
+  "authSuspended": "This account has been suspended.",
+  "authNotVerified": "The credentials could not be verified.",
+  "authThisParticipant": "this participant",
+  "loginIntro": "Enter the access details provided by your research team.",
+  "loginIdLabel": "Participant ID",
+  "loginIdMissing": "Enter your Participant ID",
+  "loginKeyLabel": "Access key",
+  "loginShowKey": "Show access key",
+  "loginHideKey": "Hide access key",
+  "loginKeyMissing": "Enter your access key",
+  "loginChecking": "Checking access...",
+  "loginPrivacy": "EmbraceAI does not ask for your name, personal email, phone number, or medical record number.",
+  "gateStaffElsewhereTitle": "The staff portal has its own address",
+  "gateStaffElsewhereBody": "Staff accounts sign in at the address below.",
+  "gateStaffPortalTitle": "This is the staff portal",
+  "gateParticipantsElsewhereBody": "Participants sign in to EmbraceAI at the address below.",
+  "gateChecking": "Checking access",
+  "studyLoadFailed": "Your study information could not be loaded. Check your connection and try again.",
+  "consentAppBar": "Study information and consent",
+  "@consentAppBar": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "consentTitle": "Before you take part",
+  "@consentTitle": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "consentIntro": "Please read this information carefully. Taking part is voluntary, and choosing not to take part will not affect your healthcare.",
+  "@consentIntro": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "consentPurposeTitle": "Purpose",
+  "@consentPurposeTitle": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "consentPurposeBody": "This prototype provides an AI-guided relaxation exercise and asks about your experience so the research team can evaluate and improve it.",
+  "@consentPurposeBody": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "consentChoiceTitle": "Your choice",
+  "@consentChoiceTitle": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "consentChoiceBody": "You may stop a session at any time, leave optional questions unanswered, or contact the research team member who gave you access if you wish to withdraw.",
+  "@consentChoiceBody": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "consentSafetyTitle": "Medical safety",
+  "@consentSafetyTitle": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "consentDataTitle": "Information collected",
+  "@consentDataTitle": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "consentDataBody": "Your responses are linked to your study-issued Participant ID. The app collects the approved demographic and health form, session activity, mood ratings and study questionnaires. It does not ask for your name, personal email, phone number or medical record number.",
+  "@consentDataBody": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "consentConfirmEach": "Please confirm each statement",
+  "@consentConfirmEach": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "consentRead": "I have read and understood the information above.",
+  "@consentRead": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "consentVoluntary": "I understand that taking part is voluntary and that I may stop at any time.",
+  "@consentVoluntary": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "consentNotTreatment": "I understand that this relaxation exercise is not medical treatment.",
+  "@consentNotTreatment": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "consentDataUse": "I consent to the research team collecting and using the information described above for this study.",
+  "@consentDataUse": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "consentAccept": "I consent and continue",
+  "@consentAccept": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "consentExit": "Exit without consenting",
+  "@consentExit": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "consentVersion": "Consent record version: {version}",
+  "@consentVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "consentSaving": "Saving your consent...",
+  "consentSaveFailed": "Your consent could not be recorded. Try again.",
+  "consentStudyAccess": "Study access",
+  "consentWithdrawnTitle": "Consent has been withdrawn",
+  "@consentWithdrawnTitle": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "consentWithdrawnBody": "This study account cannot be used. Contact the research team member who provided your access if you believe this is incorrect.",
+  "@consentWithdrawnBody": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "demoAppBar": "About you",
+  "demoQuestionAge": "Age in years",
+  "@demoQuestionAge": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "demoQuestionGender": "Gender",
+  "@demoQuestionGender": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "demoQuestionEthnicity": "Ethnic background",
+  "@demoQuestionEthnicity": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "demoQuestionCountry": "Country of birth",
+  "@demoQuestionCountry": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "demoQuestionRelationship": "Relationship status",
+  "@demoQuestionRelationship": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "demoQuestionDiagnosis": "Cardiovascular diagnosis",
+  "@demoQuestionDiagnosis": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "demoQuestionComorbidities": "Other health conditions / comorbidities",
+  "@demoQuestionComorbidities": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "genderFemale": "Female",
+  "@genderFemale": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "genderMale": "Male",
+  "@genderMale": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "optionPreferNotToSay": "Prefer not to say",
+  "@optionPreferNotToSay": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "ethnicityAsian": "Asian",
+  "@ethnicityAsian": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "ethnicityIndigenous": "Indigenous",
+  "@ethnicityIndigenous": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "ethnicityLatinAmerican": "Latin American",
+  "@ethnicityLatinAmerican": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "ethnicityMiddleEastern": "Middle Eastern",
+  "@ethnicityMiddleEastern": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "ethnicityWhite": "White",
+  "@ethnicityWhite": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "ethnicityMixed": "Mixed / multiple backgrounds",
+  "@ethnicityMixed": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "ethnicityOther": "Other",
+  "@ethnicityOther": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "relationshipSingle": "Single, including separated, divorced, or widowed",
+  "@relationshipSingle": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "relationshipPartnered": "In a relationship / partnered, including married",
+  "@relationshipPartnered": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "demoReviewAnswers": "Review answers",
+  "demoQuestionOf": "Question {number} of {total}",
+  "@demoQuestionOf": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "demoIntroTitle": "Participant information",
+  "@demoIntroTitle": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "demoIntroBody": "Please complete this once before beginning the program. Your record uses only your study-issued Participant ID.",
+  "@demoIntroBody": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "demoHealthInfo": "Health information",
+  "demoPersonalInfo": "Personal information",
+  "demoPleaseSpecify": "Please specify",
+  "demoOptional": "Optional",
+  "demoOptionalNote": "This question is optional.",
+  "demoCheckTitle": "Check your answers",
+  "demoCheckBody": "You can change any answer before saving.",
+  "demoNotAnswered": "Not answered",
+  "demoOtherValue": "Other: {value}",
+  "@demoOtherValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "demoEnterAge": "Enter age in years.",
+  "demoValidAge": "Enter a valid age.",
+  "demoSelectOption": "Select an option.",
+  "demoDescribeBackground": "Please describe your background.",
+  "demoSelectCountry": "Select a country.",
+  "demoRequired": "This answer is required.",
+  "demoSaveFailed": "Your information could not be saved. Try again.",
+  "demoCountryHint": "Search or select a country",
+  "changeSemantics": "Change {label}",
+  "@changeSemantics": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "finalAppBar": "Final questionnaire",
+  "finalSubmit": "Submit",
+  "finalDoLater": "Do this later",
+  "finalSectionWellbeing": "Emotional well-being",
+  "@finalSectionWellbeing": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "finalSectionExperience": "Your experience",
+  "@finalSectionExperience": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "finalSectionOwnWords": "In your own words",
+  "@finalSectionOwnWords": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "gadStem": "Over the last 2 weeks, how often have you been bothered by the following problems?",
+  "@gadStem": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants. GAD-7 instruction. Replace the Vietnamese with the validated Vietnamese GAD-7 wording."
+  },
+  "gad1": "Feeling nervous, anxious, or on edge",
+  "@gad1": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants. GAD-7 item. Use the validated Vietnamese wording."
+  },
+  "gad2": "Difficulty controlling worrying",
+  "@gad2": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants. GAD-7 item. Use the validated Vietnamese wording."
+  },
+  "gad3": "Worrying too much about different things",
+  "@gad3": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants. GAD-7 item. Use the validated Vietnamese wording."
+  },
+  "gad4": "Difficulty relaxing",
+  "@gad4": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants. GAD-7 item. Use the validated Vietnamese wording."
+  },
+  "gad5": "Restlessness / difficulty sitting still",
+  "@gad5": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants. GAD-7 item. Use the validated Vietnamese wording."
+  },
+  "gad6": "Becoming easily annoyed or irritable",
+  "@gad6": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants. GAD-7 item. Use the validated Vietnamese wording."
+  },
+  "gad7": "Feeling afraid as if something awful might happen",
+  "@gad7": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants. GAD-7 item. Use the validated Vietnamese wording."
+  },
+  "gadNotAtAll": "Not at all",
+  "@gadNotAtAll": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "gadSeveralDays": "Several days",
+  "@gadSeveralDays": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "gadMoreThanHalf": "More than half the days",
+  "@gadMoreThanHalf": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "gadNearlyEveryDay": "Nearly every day",
+  "@gadNearlyEveryDay": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "wellbeingQuestion": "How would you rate your overall emotional well-being right now?",
+  "@wellbeingQuestion": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "wellbeingVeryPoor": "Very poor",
+  "@wellbeingVeryPoor": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "wellbeingPoor": "Poor",
+  "@wellbeingPoor": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "wellbeingFair": "Fair",
+  "@wellbeingFair": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "wellbeingGood": "Good",
+  "@wellbeingGood": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "wellbeingVeryGood": "Very good",
+  "@wellbeingVeryGood": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "premStem": "Please indicate how much you agree or disagree.",
+  "@premStem": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "prem1": "The instructions were easy to understand.",
+  "@prem1": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "prem2": "I felt comfortable using the system.",
+  "@prem2": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "prem3": "The experience was calming and relaxing.",
+  "@prem3": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "prem4": "The system was easy to interact with.",
+  "@prem4": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "prem5": "I felt safe during the experience.",
+  "@prem5": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "prem6": "The experience was helpful for my well-being.",
+  "@prem6": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "prem7": "I would be willing to use this system again.",
+  "@prem7": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "prem8": "Overall, I am satisfied with the experience.",
+  "@prem8": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "premStronglyDisagree": "Strongly disagree",
+  "@premStronglyDisagree": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "premDisagree": "Disagree",
+  "@premDisagree": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "premNeutral": "Neutral",
+  "@premNeutral": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "premAgree": "Agree",
+  "@premAgree": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "premStronglyAgree": "Strongly agree",
+  "@premStronglyAgree": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "open1": "What did you like most about the experience?",
+  "@open1": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "open2": "What did you find difficult or uncomfortable, if anything?",
+  "@open2": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "open3": "How could the system be improved?",
+  "@open3": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "open4": "Would you use this system again? Please explain why or why not.",
+  "@open4": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "finalClearAnswer": "Clear answer",
+  "finalOpenIntro": "You may leave this blank. Please do not include your name or contact details.",
+  "finalOpenHint": "Your answer (optional)",
+  "finalReviewTitle": "Review and submit",
+  "finalReviewBody": "Your answers will be linked only to your study-issued Participant ID. You can go back and change them before submitting.",
+  "@finalReviewBody": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "finalReviewAnxiety": "Anxiety questions",
+  "finalAnsweredOf": "{count} of {total} answered",
+  "@finalAnsweredOf": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "finalOutOfFive": "{value} of 5",
+  "@finalOutOfFive": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "finalReviewExperience": "Experience questions",
+  "finalReviewWritten": "Written feedback",
+  "finalScreeningTotals": "Recorded screening totals",
+  "finalGadTotals": "GAD-2: {gad2}/6  |  GAD-7: {gad7}/21",
+  "@finalGadTotals": {
+    "placeholders": {
+      "gad2": {
+        "type": "int"
+      },
+      "gad7": {
+        "type": "int"
+      }
+    }
+  },
+  "finalGadIncomplete": "GAD-2: {gad2}/6  |  GAD-7 incomplete",
+  "@finalGadIncomplete": {
+    "placeholders": {
+      "gad2": {
+        "type": "int"
+      }
+    }
+  },
+  "finalScreeningNote": "These are screening scores, not a diagnosis.",
+  "@finalScreeningNote": {
+    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  },
+  "finalSaveFailed": "Your answers could not be saved. Try again."
+}

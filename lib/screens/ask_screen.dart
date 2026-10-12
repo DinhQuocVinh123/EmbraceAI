@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../core/motion.dart';
 import '../core/theme.dart';
+import '../l10n/l10n.dart';
+import '../l10n/source_names.dart';
 import '../models/ask_result.dart';
 import '../models/journal_entry.dart';
 import '../services/ask_service.dart';
@@ -46,12 +48,6 @@ class _Exchange {
 }
 
 class _AskScreenState extends State<AskScreen> {
-  static const _examples = [
-    'How long does a session take?',
-    'How do I turn on captions?',
-    'Who can see my journal?',
-  ];
-
   final _controller = TextEditingController();
   final _scroll = ScrollController();
   final _exchanges = <_Exchange>[];
@@ -69,12 +65,13 @@ class _AskScreenState extends State<AskScreen> {
     final question = (text ?? _controller.text).trim();
     if (question.isEmpty || _waiting) return;
     final exchange = _Exchange(question);
+    final language = context.l10n.localeName;
     setState(() {
       _exchanges.add(exchange);
       _controller.clear();
     });
     _scrollToEnd();
-    final result = await widget.service.ask(question);
+    final result = await widget.service.ask(question, language: language);
     if (!mounted) return;
     setState(() => exchange.result = result);
     _scrollToEnd();
@@ -103,7 +100,7 @@ class _AskScreenState extends State<AskScreen> {
     await context.read<JournalStore>().save(
       JournalEntry(
         mood: null,
-        note: 'Question for my appointment: ${exchange.question}',
+        note: context.l10n.askAppointmentNote(exchange.question),
         tags: const ['Appointment'],
         createdAt: now,
         updatedAt: now,
@@ -116,7 +113,7 @@ class _AskScreenState extends State<AskScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Ask EmbraceAI')),
+      appBar: AppBar(title: Text(context.l10n.askTitle)),
       body: SafeArea(
         child: Column(
           children: [
@@ -126,7 +123,13 @@ class _AskScreenState extends State<AskScreen> {
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
                 children: [
                   _Intro(
-                    examples: _exchanges.isEmpty ? _examples : const [],
+                    examples: _exchanges.isEmpty
+                        ? [
+                            context.l10n.askExampleLength,
+                            context.l10n.askExampleCaptions,
+                            context.l10n.askExampleJournal,
+                          ]
+                        : const [],
                     onExample: _waiting ? null : (q) => _send(q),
                   ),
                   for (final exchange in _exchanges) ...[
@@ -175,15 +178,13 @@ class _Intro extends StatelessWidget {
         Semantics(
           header: true,
           child: Text(
-            'Ask about the exercises or the app',
+            context.l10n.askIntroTitle,
             style: theme.textTheme.titleLarge,
           ),
         ),
         Gap.s,
         Text(
-          'Answers come only from the study materials. For anything about '
-          'your health, medicines or test results, please ask your care '
-          'team. Please don\'t include your name or other personal details.',
+          context.l10n.askIntroBody,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
             height: 1.5,
@@ -192,7 +193,7 @@ class _Intro extends StatelessWidget {
         if (examples.isNotEmpty) ...[
           Gap.m,
           Text(
-            'Try asking',
+            context.l10n.askTryAsking,
             style: theme.textTheme.labelLarge?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -241,7 +242,7 @@ class _QuestionBubble extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Text(
                 text,
-                semanticsLabel: 'You asked: $text',
+                semanticsLabel: context.l10n.askYouAsked(text),
                 style: theme.textTheme.bodyLarge?.copyWith(
                   color: theme.colorScheme.onSurface,
                 ),
@@ -274,7 +275,7 @@ class _Thinking extends StatelessWidget {
         ),
         Gap.s,
         Text(
-          'Looking this up…',
+          context.l10n.askLooking,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
@@ -300,37 +301,42 @@ class _ResultCard extends StatelessWidget {
     if (result.type == AskResultType.emergency) return const _EmergencyCard();
 
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final (icon, title, fallback) = switch (result.type) {
       AskResultType.answer => (Icons.chat_bubble_outline, null, ''),
       AskResultType.medicalRedirect => (
         Icons.medical_information_outlined,
-        'A question for your care team',
-        'This is a question for your doctor or care team. You can save it '
-            'to ask at your next appointment.',
+        l10n.askMedicalTitle,
+        l10n.askMedicalBody,
       ),
       AskResultType.outOfScope => (
         Icons.info_outline,
         null,
-        'I can only help with the relaxation exercises and using the app.',
+        l10n.askOutOfScope,
       ),
       AskResultType.notFound => (
         Icons.search_off,
         null,
-        'There\'s no information about this yet. You could ask the research '
-            'team.',
+        l10n.askNotFound,
       ),
       AskResultType.busy => (
         Icons.hourglass_empty,
         null,
-        'Ask EmbraceAI is busy right now. Please try again in a moment.',
+        l10n.askBusy,
       ),
       AskResultType.error || AskResultType.emergency => (
         Icons.error_outline,
         null,
-        'Something went wrong. Please try again.',
+        l10n.askError,
       ),
     };
-    final body = result.answer.isNotEmpty ? result.answer : fallback;
+    // Ở ngôn ngữ khác tiếng Anh, chỉ câu trả lời thật mới dùng chữ của model.
+    // Các trường hợp còn lại hiện câu soạn sẵn của app: ít chữ do AI tự viết
+    // hơn, và câu báo bận hay lỗi của máy chủ vốn viết bằng tiếng Anh.
+    final showsModelText =
+        result.answer.isNotEmpty &&
+        (l10n.localeName == 'en' || result.type == AskResultType.answer);
+    final body = showsModelText ? result.answer : fallback;
 
     return Card(
       margin: EdgeInsets.zero,
@@ -364,8 +370,7 @@ class _ResultCard extends StatelessWidget {
                       if (result.alsoAsked) ...[
                         Gap.s,
                         Text(
-                          'You also asked about something else. Please ask '
-                          'that part on its own.',
+                          l10n.askAlsoAsked,
                           style: theme.textTheme.bodyLarge?.copyWith(
                             height: 1.5,
                           ),
@@ -389,7 +394,7 @@ class _ResultCard extends StatelessWidget {
                     Gap.s,
                     Expanded(
                       child: Text(
-                        'Saved to your journal',
+                        l10n.askSaved,
                         style: theme.textTheme.bodyMedium,
                       ),
                     ),
@@ -399,13 +404,13 @@ class _ResultCard extends StatelessWidget {
                 FilledButton.tonalIcon(
                   onPressed: onSave,
                   icon: const Icon(Icons.bookmark_add_outlined),
-                  label: const Text('Save for my appointment'),
+                  label: Text(l10n.askSaveForAppointment),
                 ),
             ],
             if (result.sources.isNotEmpty) ...[
               Gap.m,
               Text(
-                'Sources',
+                l10n.askSources,
                 style: theme.textTheme.labelLarge?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -426,8 +431,9 @@ class _ResultCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           source.title.isEmpty
-                              ? source.heading
-                              : '${source.heading} · ${source.title}',
+                              ? sourceName(source.heading, l10n.localeName)
+                              : '${sourceName(source.heading, l10n.localeName)}'
+                                    ' · ${sourceName(source.title, l10n.localeName)}',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
@@ -437,7 +443,10 @@ class _ResultCard extends StatelessWidget {
                   ),
                 ),
             ],
-            if (result.writtenByAi) ...[Gap.m, const _AiLabel()],
+            if (showsModelText && result.writtenByAi) ...[
+              Gap.m,
+              const _AiLabel(),
+            ],
           ],
         ),
       ),
@@ -461,7 +470,7 @@ class _AiLabel extends StatelessWidget {
         Gap.xs,
         Expanded(
           child: Text(
-            'AI-generated from study materials. Not medical advice.',
+            context.l10n.askAiLabel,
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -498,16 +507,14 @@ class _EmergencyCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'If this is an emergency, get help now',
+                    context.l10n.askEmergencyTitle,
                     style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   Gap.xs,
                   Text(
-                    'Call your local emergency number straight away. If you '
-                    'feel unwell but it is not an emergency, contact your '
-                    'care team. Stop any exercise you are doing.',
+                    context.l10n.askEmergencyBody,
                     style: theme.textTheme.bodyLarge?.copyWith(height: 1.5),
                   ),
                 ],
@@ -552,15 +559,15 @@ class _Composer extends StatelessWidget {
                 maxLength: AskService.maxQuestionLength,
                 textInputAction: TextInputAction.send,
                 onSubmitted: (_) => onSend(),
-                decoration: const InputDecoration(
-                  hintText: 'Ask a question',
+                decoration: InputDecoration(
+                  hintText: context.l10n.askHint,
                   counterText: '',
                 ),
               ),
             ),
             Gap.s,
             IconButton.filled(
-              tooltip: 'Send',
+              tooltip: context.l10n.askSend,
               onPressed: canSend ? onSend : null,
               icon: const Icon(Icons.send_rounded),
             ),

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/theme.dart';
+import '../l10n/l10n.dart';
+import '../l10n/labels.dart';
 import '../models/mood.dart';
 import '../state/journal_store.dart';
 import '../widgets/empty_state.dart';
@@ -16,18 +18,17 @@ class InsightsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final store = context.watch<JournalStore>();
+    final l10n = context.l10n;
 
     if (store.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
     if (store.entries.isEmpty) {
-      return const EmptyState(
+      return EmptyState(
         icon: Icons.insights_outlined,
-        title: 'Nothing to show yet',
-        message:
-            'Come back after a few days — a trend only means '
-            'something once there is a little history.',
+        title: l10n.insightsEmptyTitle,
+        message: l10n.insightsEmptyBody,
       );
     }
 
@@ -39,7 +40,7 @@ class InsightsScreen extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
           Text(
-            'Insights',
+            l10n.homeTabInsights,
             style: Theme.of(
               context,
             ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w600),
@@ -53,16 +54,16 @@ class InsightsScreen extends StatelessWidget {
                 Expanded(
                   child: StatTile(
                     value: '${store.streak}',
-                    suffix: 'days',
-                    label: 'Current streak',
+                    suffix: l10n.insightsDays,
+                    label: l10n.insightsStreak,
                   ),
                 ),
                 Gap.s,
                 Expanded(
                   child: StatTile(
                     value: '${store.entries.length}',
-                    suffix: 'entries',
-                    label: 'Written so far',
+                    suffix: l10n.insightsEntries,
+                    label: l10n.insightsWritten,
                   ),
                 ),
                 Gap.s,
@@ -70,7 +71,7 @@ class InsightsScreen extends StatelessWidget {
                   child: StatTile(
                     value: average == null ? '—' : average.toStringAsFixed(1),
                     suffix: average == null ? null : '/5',
-                    label: '30-day average',
+                    label: l10n.insightsAverage,
                     accent: average == null
                         ? null
                         : Mood.colorForAverage(
@@ -84,27 +85,29 @@ class InsightsScreen extends StatelessWidget {
           ),
           Gap.m,
           _Section(
-            title: 'Mood over 14 days',
-            subtitle:
-                'Tap the chart to read a single day. Days with no '
-                'entry are left blank.',
+            title: l10n.insightsTrendTitle,
+            subtitle: l10n.insightsTrendBody,
             child: MoodTrendChart(data: store.dailyAverages(days: 14)),
           ),
           Gap.m,
           _Section(
-            title: 'Where you usually sit',
+            title: l10n.insightsDistributionTitle,
             child: MoodDistribution(counts: store.moodDistribution),
           ),
           if (tags.isNotEmpty) ...[
             Gap.m,
             _Section(
-              title: 'Mentioned most',
+              title: l10n.insightsTagsTitle,
               child: Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: [
                   for (final tag in tags)
-                    Chip(label: Text('${tag.key}  ·  ${tag.value}')),
+                    Chip(
+                      label: Text(
+                        '${tagLabel(l10n, tag.key)}  ·  ${tag.value}',
+                      ),
+                    ),
                 ],
               ),
             ),

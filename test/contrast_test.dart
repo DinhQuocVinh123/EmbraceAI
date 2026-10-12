@@ -75,8 +75,8 @@ void main() {
         final c = mood.colorOn(brightness);
         // Thanh trong biểu đồ phân bố nằm ngay trên nền rãnh, nên đó mới là
         // màu cần so, chứ không phải nền thẻ.
-        ui('Thanh "${mood.label}" trên rãnh', c, s.surfaceContainerHighest);
-        ui('Chấm "${mood.label}" trên thẻ', c, s.surfaceContainerLow);
+        ui('Thanh "${mood.name}" trên rãnh', c, s.surfaceContainerHighest);
+        ui('Chấm "${mood.name}" trên thẻ', c, s.surfaceContainerLow);
       }
 
       test('Chữ trên vệt màu tâm trạng 22% vẫn đọc được — SC 1.4.3', () {
@@ -85,7 +85,7 @@ void main() {
             mood.colorOn(brightness).withValues(alpha: 0.22),
             s.surfaceContainerLow,
           );
-          expectRatio(s.onSurface, tint, 4.5, 'chữ trên vệt ${mood.label}');
+          expectRatio(s.onSurface, tint, 4.5, 'chữ trên vệt ${mood.name}');
         }
       });
     });
@@ -144,7 +144,7 @@ void main() {
         expect(
           mood.onLight,
           isNot(mood.onDark),
-          reason: '${mood.label} chưa tách sắc cho nền sáng',
+          reason: '${mood.name} chưa tách sắc cho nền sáng',
         );
       }
     });

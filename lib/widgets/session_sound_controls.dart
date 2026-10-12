@@ -5,6 +5,8 @@ import 'package:video_player/video_player.dart';
 
 import '../core/motion.dart';
 import '../core/theme.dart';
+import '../l10n/l10n.dart';
+import '../l10n/labels.dart';
 import '../models/session_audio.dart';
 import '../state/settings_store.dart';
 
@@ -69,17 +71,20 @@ class _SessionSoundControlsState extends State<SessionSoundControls> {
                 ? Icons.volume_up_outlined
                 : Icons.volume_off_outlined,
           ),
-          title: const Text('Guided voice'),
+          title: Text(context.l10n.soundGuidedVoice),
           subtitle: widget.showDescription
               ? Text(
-                  'Spoken narration during the practice',
+                  context.l10n.soundGuidedVoiceBody,
                   style: theme.textTheme.bodySmall,
                 )
               : null,
         ),
         if (settings.soundOn) ...[
           Gap.s,
-          Text('Voice volume', style: theme.textTheme.labelLarge),
+          Text(
+            context.l10n.soundVoiceVolume,
+            style: theme.textTheme.labelLarge,
+          ),
           Gap.s,
           Wrap(
             spacing: 8,
@@ -87,7 +92,7 @@ class _SessionSoundControlsState extends State<SessionSoundControls> {
             children: [
               for (final level in SoundLevel.values)
                 ChoiceChip(
-                  label: Text(level.label),
+                  label: Text(level.label(context.l10n)),
                   selected: settings.soundLevel == level,
                   onSelected: (_) =>
                       _apply(() => settings.setSoundLevel(level)),
@@ -96,11 +101,11 @@ class _SessionSoundControlsState extends State<SessionSoundControls> {
           ),
         ],
         const Divider(height: 32),
-        Text('Background sound', style: theme.textTheme.labelLarge),
+        Text(context.l10n.soundBackground, style: theme.textTheme.labelLarge),
         if (widget.showDescription) ...[
           Gap.xs,
           Text(
-            'Plays separately from the guided voice',
+            context.l10n.soundBackgroundBody,
             style: theme.textTheme.bodySmall,
           ),
         ],
@@ -112,7 +117,7 @@ class _SessionSoundControlsState extends State<SessionSoundControls> {
             for (final sound in BackgroundSound.values)
               ChoiceChip(
                 avatar: Icon(_backgroundIcon(sound), size: 18),
-                label: Text(sound.label),
+                label: Text(sound.label(context.l10n)),
                 selected: settings.backgroundSound == sound,
                 onSelected: (_) => _selectBackground(sound),
               ),
@@ -120,7 +125,7 @@ class _SessionSoundControlsState extends State<SessionSoundControls> {
         ),
         Gap.xs,
         Text(
-          settings.backgroundSound.description,
+          settings.backgroundSound.description(context.l10n),
           style: theme.textTheme.bodySmall,
         ),
         if (settings.backgroundSound != BackgroundSound.none) ...[
@@ -141,13 +146,18 @@ class _SessionSoundControlsState extends State<SessionSoundControls> {
             label: AnimatedSwitcher(
               duration: AppMotion.duration(context, AppMotion.fast),
               child: Text(
-                _isPreviewing ? 'Stop preview' : 'Preview sound',
+                _isPreviewing
+                    ? context.l10n.soundStopPreview
+                    : context.l10n.soundPreview,
                 key: ValueKey(_isPreviewing),
               ),
             ),
           ),
           Gap.s,
-          Text('Background volume', style: theme.textTheme.labelLarge),
+          Text(
+            context.l10n.soundBackgroundVolume,
+            style: theme.textTheme.labelLarge,
+          ),
           Gap.s,
           Wrap(
             spacing: 8,
@@ -175,9 +185,9 @@ class _SessionSoundControlsState extends State<SessionSoundControls> {
   };
 
   String _backgroundLevelLabel(SoundLevel level) => switch (level) {
-    SoundLevel.quiet => 'Low',
-    SoundLevel.normal => 'Medium',
-    SoundLevel.louder => 'High',
+    SoundLevel.quiet => context.l10n.soundLow,
+    SoundLevel.normal => context.l10n.soundMedium,
+    SoundLevel.louder => context.l10n.soundHigh,
   };
 
   Future<void> _selectBackground(BackgroundSound sound) async {
@@ -226,7 +236,7 @@ class _SessionSoundControlsState extends State<SessionSoundControls> {
       await next.dispose();
       if (!mounted || generation != _previewGeneration) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sound preview could not be played.')),
+        SnackBar(content: Text(context.l10n.soundPreviewFailed)),
         snackBarAnimationStyle: AppMotion.style(context),
       );
     }

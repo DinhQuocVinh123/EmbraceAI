@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../core/motion.dart';
 import '../core/theme.dart';
+import '../l10n/l10n.dart';
+import '../l10n/labels.dart';
 import '../models/mood.dart';
 
 /// Hàng năm khuôn mặt để chọn tâm trạng.
@@ -58,7 +60,7 @@ class _MoodOption extends StatelessWidget {
       container: true,
       selected: isSelected,
       button: true,
-      label: mood.label,
+      label: mood.label(context.l10n),
       onTap: onTap,
       child: ExcludeSemantics(
         child: InkWell(
@@ -98,7 +100,7 @@ class _MoodOption extends StatelessWidget {
                 ),
                 Gap.xs,
                 Text(
-                  mood.label,
+                  mood.label(context.l10n),
                   textAlign: TextAlign.center,
                   style: textStyle?.copyWith(
                     color: isSelected

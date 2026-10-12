@@ -7,9 +7,4 @@ class BreathingCue {
 
   /// Progress through the current five-second inhale or exhale phase.
   final double progress;
-
-  String get label => switch (phase) {
-    BreathingPhase.inhale => 'Breathe in',
-    BreathingPhase.exhale => 'Breathe out',
-  };
 }

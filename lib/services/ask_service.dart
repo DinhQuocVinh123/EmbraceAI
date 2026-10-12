@@ -12,7 +12,9 @@ abstract class AskService {
   /// Tài khoản này có được dùng thử trợ lý không (`participants.ai_enabled`).
   Future<bool> isEnabled();
 
-  Future<AskResult> ask(String question);
+  /// [language] là ngôn ngữ app đang dùng (`en` hoặc `vi`): câu trả lời viết
+  /// bằng ngôn ngữ đó, gọi tên nút đúng như trên màn hình.
+  Future<AskResult> ask(String question, {String language = 'en'});
 }
 
 class SupabaseAskService implements AskService {
@@ -37,11 +39,11 @@ class SupabaseAskService implements AskService {
   }
 
   @override
-  Future<AskResult> ask(String question) async {
+  Future<AskResult> ask(String question, {String language = 'en'}) async {
     try {
       final response = await _client.functions.invoke(
         'ask-embrace',
-        body: {'question': question},
+        body: {'question': question, 'language': language},
       );
       final data = response.data;
       return data is Map<String, dynamic>

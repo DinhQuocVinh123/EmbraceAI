@@ -1,4 +1,5 @@
 import 'package:embrace_ai/core/theme.dart';
+import 'package:embrace_ai/l10n/app_localizations.dart';
 import 'package:embrace_ai/models/ask_result.dart';
 import 'package:embrace_ai/screens/ask_screen.dart';
 import 'package:embrace_ai/screens/welcome_screen.dart';
@@ -19,13 +20,15 @@ class FakeAskService implements AskService {
   final Map<String, AskResult> results;
   final bool enabled;
   final asked = <String>[];
+  final languages = <String>[];
 
   @override
   Future<bool> isEnabled() async => enabled;
 
   @override
-  Future<AskResult> ask(String question) async {
+  Future<AskResult> ask(String question, {String language = 'en'}) async {
     asked.add(question);
+    languages.add(language);
     return results[question] ?? AskResult.error;
   }
 }
@@ -45,6 +48,7 @@ Future<FakeRepository> _pumpAsk(
   WidgetTester tester,
   FakeAskService service, {
   double textScale = 1,
+  Locale locale = const Locale('en'),
 }) async {
   final repository = FakeRepository();
   await tester.pumpWidget(
@@ -52,6 +56,9 @@ Future<FakeRepository> _pumpAsk(
       create: (_) => JournalStore(repository),
       child: MaterialApp(
         theme: AppTheme.light,
+        locale: locale,
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(
             context,
@@ -65,9 +72,13 @@ Future<FakeRepository> _pumpAsk(
   return repository;
 }
 
-Future<void> _ask(WidgetTester tester, String question) async {
+Future<void> _ask(
+  WidgetTester tester,
+  String question, {
+  String send = 'Send',
+}) async {
   await tester.enterText(find.byType(TextField), question);
-  await tester.tap(find.byTooltip('Send'));
+  await tester.tap(find.byTooltip(send));
   await tester.pumpAndSettle();
 }
 
@@ -106,6 +117,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(service.asked, ['How long does a session take?']);
+    expect(service.languages, ['en']);
     expect(find.textContaining('5 to 10 minutes'), findsOneWidget);
     expect(find.text('Sources'), findsOneWidget);
     expect(
@@ -222,6 +234,48 @@ void main() {
       find.text('AI-generated from study materials. Not medical advice.'),
       findsNothing,
     );
+  });
+
+  testWidgets('in Vietnamese, only a real answer shows the model text', (
+    tester,
+  ) async {
+    final vi = lookupAppLocalizations(const Locale('vi'));
+    final service = FakeAskService({
+      vi.askExampleCaptions: const AskResult(
+        type: AskResultType.answer,
+        answer: 'Trong buổi tập, nhấn "Trợ giúp" rồi chọn "Hiện phụ đề".',
+        sources: [
+          AskSource(
+            title: 'EmbraceAI Prototype User Guide (participant sections)',
+            heading: 'Participant app: a guided session',
+          ),
+        ],
+      ),
+      'Thời tiết ngày mai thế nào?': const AskResult(
+        type: AskResultType.outOfScope,
+        answer: 'Xin lỗi, tôi chỉ trả lời về app và nghiên cứu.',
+      ),
+    });
+    await _pumpAsk(tester, service, locale: const Locale('vi'));
+
+    await tester.tap(find.text(vi.askExampleCaptions));
+    await tester.pumpAndSettle();
+    expect(service.languages, ['vi']);
+    expect(find.textContaining('"Hiện phụ đề"'), findsOneWidget);
+    expect(
+      find.text(
+        'App người tham gia: một buổi tập · '
+        'Hướng dẫn sử dụng EmbraceAI (phần người tham gia)',
+      ),
+      findsOneWidget,
+    );
+
+    // Ngoài phạm vi: hiện câu soạn sẵn của app, không mang nhãn AI.
+    await _ask(tester, 'Thời tiết ngày mai thế nào?', send: vi.askSend);
+    expect(find.text(vi.askOutOfScope), findsOneWidget);
+    expect(find.textContaining('Xin lỗi, tôi chỉ'), findsNothing);
+    expect(find.text(vi.askAiLabel), findsOneWidget);
+    expect(service.languages, ['vi', 'vi']);
   });
 
   testWidgets('stays usable at 200 percent text', (tester) async {

@@ -21,8 +21,9 @@ Future<void> main() async {
       publishableKey: BackendConfig.supabasePublishableKey,
     );
   }
-  // Nạp dữ liệu định dạng ngày trước khi dựng giao diện.
+  // Nạp dữ liệu định dạng ngày của cả hai ngôn ngữ trước khi dựng giao diện.
   await initializeDateFormatting('en');
+  await initializeDateFormatting('vi');
 
   final settings = SettingsStore();
   await settings.load();

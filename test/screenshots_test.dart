@@ -2,6 +2,8 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:embrace_ai/data/session_script.dart';
+import 'package:embrace_ai/l10n/l10n.dart';
+import 'package:embrace_ai/l10n/labels.dart';
 import 'package:embrace_ai/models/ask_result.dart';
 import 'package:embrace_ai/models/mood.dart';
 import 'package:embrace_ai/models/session_answers.dart';
@@ -210,7 +212,7 @@ void main() {
       beatTitle: 'Check-in',
       prompt: CheckInPrompt(onDone: (a, b, c, d) {}, onSkip: () {}),
     );
-    await tester.tap(find.text(CheckInFeeling.stressed.label));
+    await tester.tap(find.text(CheckInFeeling.stressed.label(english)));
     await tester.pumpAndSettle();
     await shoot(tester, '07_thang_cang_thang');
   });
@@ -223,7 +225,7 @@ void main() {
       beatTitle: 'Check-in',
       prompt: CheckInPrompt(onDone: (a, b, c, d) {}, onSkip: () {}),
     );
-    await tester.tap(find.text(CheckInFeeling.stressed.label));
+    await tester.tap(find.text(CheckInFeeling.stressed.label(english)));
     await tester.pumpAndSettle();
     // Kéo thang lên mức cao để thấy app đổi lời dẫn.
     await tester.drag(find.byType(Slider), const Offset(120, 0));
@@ -445,7 +447,7 @@ class _ScriptedAskService implements AskService {
   Future<bool> isEnabled() async => true;
 
   @override
-  Future<AskResult> ask(String question) async =>
+  Future<AskResult> ask(String question, {String language = 'en'}) async =>
       results[question] ?? AskResult.error;
 }
 

@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../core/motion.dart';
 import '../core/theme.dart';
 import '../data/session_script.dart';
+import '../l10n/l10n.dart';
+import '../l10n/labels.dart';
 import '../models/journal_entry.dart';
 import '../models/session_answers.dart';
 import '../models/session_scene.dart';
@@ -25,6 +27,7 @@ class WelcomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final settings = context.watch<SettingsStore>();
+    final l10n = context.l10n;
 
     // Nút Begin ghim ở đáy để luôn nằm trong tầm nhìn: người dùng không phải
     // cuộn qua phần cài đặt mới tìm thấy việc chính. Cài đặt chi tiết gom vào
@@ -39,7 +42,7 @@ class WelcomeScreen extends StatelessWidget {
                 Semantics(
                   header: true,
                   child: Text(
-                    'A quiet moment',
+                    l10n.welcomeTitle,
                     style: theme.textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                       height: 1.2,
@@ -48,9 +51,7 @@ class WelcomeScreen extends StatelessWidget {
                 ),
                 Gap.s,
                 Text(
-                  'A guided relaxation for the time around appointments and '
-                  'test results. All you need to do is sit still and follow '
-                  'along.',
+                  l10n.welcomeIntro,
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                     height: 1.5,
@@ -78,6 +79,7 @@ class WelcomeScreen extends StatelessWidget {
     final store = context.read<JournalStore>();
     final messenger = ScaffoldMessenger.of(context);
     final snackBarAnimationStyle = AppMotion.style(context);
+    final l10n = context.l10n;
     final outcome = await SessionScreen.open(context, scene);
     if (outcome == null) return;
     final answers = outcome.answers;
@@ -94,23 +96,24 @@ class WelcomeScreen extends StatelessWidget {
       return;
     }
 
-    await store.save(_toEntry(answers));
+    await store.save(_toEntry(answers, l10n));
     messenger.showSnackBar(
-      const SnackBar(content: Text('Session saved to your journal')),
+      SnackBar(content: Text(l10n.welcomeSessionSaved)),
       snackBarAnimationStyle: snackBarAnimationStyle,
     );
   }
 
   /// Buổi thiền chảy thẳng vào cuốn nhật ký sẵn có — cùng một dòng thời gian,
-  /// nên biểu đồ tâm trạng phản ánh cả những lần tập.
-  JournalEntry _toEntry(SessionAnswers a) {
+  /// nên biểu đồ tâm trạng phản ánh cả những lần tập. Ghi chú viết bằng ngôn
+  /// ngữ đang dùng lúc lưu; nhãn "Session" là mã nên giữ nguyên.
+  JournalEntry _toEntry(SessionAnswers a, AppLocalizations l10n) {
     final lines = <String>[
       if (a.reflection != null && a.reflection!.trim().isNotEmpty)
         a.reflection!.trim(),
       if (a.question != null && a.question!.trim().isNotEmpty)
-        'Question for the team: ${a.question!.trim()}',
+        l10n.journalLineQuestion(a.question!.trim()),
       if (a.stressBefore != null && a.stressAfter != null)
-        'Stress: ${a.stressBefore} → ${a.stressAfter}',
+        l10n.journalLineStress(a.stressBefore!, a.stressAfter!),
     ];
     return JournalEntry(
       mood: a.moodAfter,
@@ -178,14 +181,14 @@ class _AskEntryState extends State<_AskEntry> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Ask EmbraceAI (preview)',
+                            context.l10n.welcomeAskTitle,
                             style: theme.textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                           Gap.xs,
                           Text(
-                            'Questions about the exercises or the app',
+                            context.l10n.welcomeAskSubtitle,
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
@@ -234,12 +237,12 @@ class _BeginBar extends StatelessWidget {
               child: FilledButton.icon(
                 onPressed: onBegin,
                 icon: const Icon(Icons.play_arrow_rounded),
-                label: const Text('Begin'),
+                label: Text(context.l10n.welcomeBegin),
               ),
             ),
             Gap.xs,
             Text(
-              'You can stop at any time.',
+              context.l10n.welcomeStopAnyTime,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
@@ -277,7 +280,7 @@ class _EasierViewCard extends StatelessWidget {
                 ),
                 Gap.s,
                 Text(
-                  'Easier to see',
+                  context.l10n.welcomeEasierTitle,
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -286,8 +289,7 @@ class _EasierViewCard extends StatelessWidget {
             ),
             Gap.s,
             Text(
-              'If small text is hard to read, or the picture looks hazy, turn '
-              'this on.',
+              context.l10n.welcomeEasierBody,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -304,8 +306,8 @@ class _EasierViewCard extends StatelessWidget {
               ),
               label: Text(
                 settings.isAssisted
-                    ? 'Easier view is on'
-                    : 'Turn on easier view',
+                    ? context.l10n.welcomeEasierOn
+                    : context.l10n.welcomeEasierTurnOn,
               ),
             ),
           ],
@@ -318,27 +320,35 @@ class _EasierViewCard extends StatelessWidget {
 class _ExpectationList extends StatelessWidget {
   const _ExpectationList();
 
-  static const _items = [
-    (
-      Icons.schedule,
-      'Choose 3 or 5 to 6 minutes',
-      'A little time for yourself',
-    ),
-    (
-      Icons.touch_app_outlined,
-      'Before and after',
-      'A check-in, uninterrupted practice, then time to reflect',
-    ),
-    (Icons.headphones_outlined, 'Headphones help', 'But are not required'),
-    (Icons.pause_circle_outline, 'Stop any time', 'Nothing is lost'),
-  ];
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
+    final items = [
+      (
+        Icons.schedule,
+        l10n.welcomeExpectTimeTitle,
+        l10n.welcomeExpectTimeBody,
+      ),
+      (
+        Icons.touch_app_outlined,
+        l10n.welcomeExpectFlowTitle,
+        l10n.welcomeExpectFlowBody,
+      ),
+      (
+        Icons.headphones_outlined,
+        l10n.welcomeExpectHeadphonesTitle,
+        l10n.welcomeExpectHeadphonesBody,
+      ),
+      (
+        Icons.pause_circle_outline,
+        l10n.welcomeExpectStopTitle,
+        l10n.welcomeExpectStopBody,
+      ),
+    ];
     return Column(
       children: [
-        for (final (icon, title, sub) in _items)
+        for (final (icon, title, sub) in items)
           Padding(
             padding: const EdgeInsets.only(bottom: 14),
             child: Row(
@@ -401,7 +411,7 @@ class _ScenePicker extends StatelessWidget {
                 ),
                 Gap.s,
                 Text(
-                  'Setting',
+                  context.l10n.welcomeSceneTitle,
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -410,8 +420,7 @@ class _ScenePicker extends StatelessWidget {
             ),
             Gap.s,
             Text(
-              'Choose what you would like to look at. The practice itself is '
-              'the same.',
+              context.l10n.welcomeSceneBody,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -447,12 +456,13 @@ class _SceneOption extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final l10n = context.l10n;
     return Semantics(
       container: true,
       button: true,
       selected: selected,
-      label: scene.label,
-      hint: scene.description,
+      label: scene.label(l10n),
+      hint: scene.description(l10n),
       onTap: onTap,
       child: ExcludeSemantics(
         child: AnimatedContainer(
@@ -502,7 +512,7 @@ class _SceneOption extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            scene.label,
+                            scene.label(l10n),
                             style: theme.textTheme.titleSmall?.copyWith(
                               fontWeight: selected
                                   ? FontWeight.w600
@@ -510,7 +520,7 @@ class _SceneOption extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            scene.description,
+                            scene.description(l10n),
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: scheme.onSurfaceVariant,
                             ),
@@ -550,24 +560,25 @@ class _SoundAndDisplayCard extends StatelessWidget {
 
   final SettingsStore settings;
 
-  static String _duration(Duration d) =>
-      '${d.inMinutes} min ${d.inSeconds % 60} sec';
+  static String _duration(AppLocalizations l10n, Duration d) =>
+      l10n.durationMinSec(d.inMinutes, d.inSeconds % 60);
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     return Card(
       clipBehavior: Clip.antiAlias,
       child: ExpansionTile(
         leading: Icon(Icons.tune, color: theme.colorScheme.primary),
         title: Text(
-          'Sound and display',
+          l10n.welcomeSoundDisplayTitle,
           style: theme.textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.w600,
           ),
         ),
         subtitle: Text(
-          _summary(settings),
+          _summary(l10n, settings),
           style: theme.textTheme.bodySmall?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
@@ -581,14 +592,14 @@ class _SoundAndDisplayCard extends StatelessWidget {
         children: [
           SessionSoundControls(settings: settings),
           const Divider(height: 32),
-          Text('Text size', style: theme.textTheme.labelLarge),
+          Text(l10n.welcomeTextSize, style: theme.textTheme.labelLarge),
           Gap.s,
           Wrap(
             spacing: 8,
             children: [
               for (final s in SettingsStore.textScaleSteps)
                 ChoiceChip(
-                  label: Text('${(s * 100).round()}%'),
+                  label: Text(l10n.percentValue((s * 100).round())),
                   selected: settings.textScale == s,
                   onSelected: (_) => settings.setTextScale(s),
                 ),
@@ -599,9 +610,9 @@ class _SoundAndDisplayCard extends StatelessWidget {
             contentPadding: EdgeInsets.zero,
             value: settings.captionsOn,
             onChanged: settings.setCaptionsOn,
-            title: const Text('Show captions'),
+            title: Text(l10n.welcomeShowCaptions),
             subtitle: Text(
-              'Writes out what is being said, at the size you chose',
+              l10n.welcomeShowCaptionsBody,
               style: theme.textTheme.bodySmall,
             ),
           ),
@@ -609,17 +620,22 @@ class _SoundAndDisplayCard extends StatelessWidget {
             contentPadding: EdgeInsets.zero,
             value: settings.reduceMotion,
             onChanged: settings.setReduceMotion,
-            title: const Text('Reduce motion'),
+            title: Text(l10n.welcomeReduceMotion),
             subtitle: Text(
-              'Removes non-essential fades and page movement',
+              l10n.welcomeReduceMotionBody,
               style: theme.textTheme.bodySmall,
             ),
           ),
           Gap.s,
           Text(
-            'Short ${_duration(SessionScript.practiceDuration(short: true))} · '
-            'Full ${_duration(SessionScript.practiceDuration())} with grounding '
-            'or ${_duration(SessionScript.practiceDuration(breathingOnly: true))} with breathing',
+            l10n.welcomeDurations(
+              _duration(l10n, SessionScript.practiceDuration(short: true)),
+              _duration(l10n, SessionScript.practiceDuration()),
+              _duration(
+                l10n,
+                SessionScript.practiceDuration(breathingOnly: true),
+              ),
+            ),
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -629,10 +645,12 @@ class _SoundAndDisplayCard extends StatelessWidget {
     );
   }
 
-  static String _summary(SettingsStore s) => [
-    s.soundOn ? 'Voice on' : 'Voice off',
-    s.backgroundSound.label,
-    'Text ${(s.textScale * 100).round()}%',
-    s.captionsOn ? 'Captions on' : 'Captions off',
+  static String _summary(AppLocalizations l10n, SettingsStore s) => [
+    s.soundOn ? l10n.welcomeSummaryVoiceOn : l10n.welcomeSummaryVoiceOff,
+    s.backgroundSound.label(l10n),
+    l10n.welcomeSummaryText((s.textScale * 100).round()),
+    s.captionsOn
+        ? l10n.welcomeSummaryCaptionsOn
+        : l10n.welcomeSummaryCaptionsOff,
   ].join(' · ');
 }

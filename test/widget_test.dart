@@ -1,3 +1,5 @@
+import 'package:embrace_ai/l10n/l10n.dart';
+import 'package:embrace_ai/l10n/labels.dart';
 import 'package:embrace_ai/models/mood.dart';
 import 'package:embrace_ai/widgets/mood_picker.dart';
 import 'package:flutter/material.dart';
@@ -21,10 +23,10 @@ void main() {
     );
 
     for (final mood in Mood.values) {
-      expect(find.text(mood.label), findsOneWidget);
+      expect(find.text(mood.label(english)), findsOneWidget);
     }
 
-    await tester.tap(find.text(Mood.great.label));
+    await tester.tap(find.text(Mood.great.label(english)));
     expect(picked, Mood.great);
   });
 }

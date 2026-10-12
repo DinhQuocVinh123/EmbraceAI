@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../core/theme.dart';
+import '../l10n/l10n.dart';
+import '../l10n/labels.dart';
 import '../models/journal_entry.dart';
 
 /// Một dòng nhật ký trong danh sách.
@@ -15,14 +17,17 @@ class EntryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final time = DateFormat.Hm('en').format(entry.createdAt);
+    final l10n = context.l10n;
+    final time = DateFormat.Hm(l10n.localeName).format(entry.createdAt);
     final mood = entry.mood;
+    final note = entryNote(l10n, entry);
+    final tags = [for (final tag in entry.tags) tagLabel(l10n, tag)];
 
     final semanticsLabel = [
-      mood?.label ?? 'Mood not recorded',
+      mood?.label(l10n) ?? l10n.moodNotRecorded,
       time,
-      if (entry.note.trim().isNotEmpty) entry.note.trim(),
-      if (entry.tags.isNotEmpty) 'Tags: ${entry.tags.join(', ')}',
+      if (note.trim().isNotEmpty) note.trim(),
+      if (tags.isNotEmpty) l10n.entryTags(tags.join(', ')),
     ].join('. ');
 
     return Semantics(
@@ -65,7 +70,7 @@ class EntryCard extends StatelessWidget {
                         Row(
                           children: [
                             Text(
-                              mood?.label ?? 'Mood not recorded',
+                              mood?.label(l10n) ?? l10n.moodNotRecorded,
                               style: theme.textTheme.titleSmall?.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
@@ -79,10 +84,10 @@ class EntryCard extends StatelessWidget {
                             ),
                           ],
                         ),
-                        if (entry.note.trim().isNotEmpty) ...[
+                        if (note.trim().isNotEmpty) ...[
                           Gap.xs,
                           Text(
-                            entry.note.trim(),
+                            note.trim(),
                             maxLines: 3,
                             overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.bodyMedium?.copyWith(
@@ -97,8 +102,7 @@ class EntryCard extends StatelessWidget {
                             spacing: 6,
                             runSpacing: 6,
                             children: [
-                              for (final tag in entry.tags)
-                                _TagPill(label: tag),
+                              for (final tag in tags) _TagPill(label: tag),
                             ],
                           ),
                         ],

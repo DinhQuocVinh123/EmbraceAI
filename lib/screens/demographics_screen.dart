@@ -3,9 +3,12 @@ import 'package:flutter/services.dart';
 
 import '../core/theme.dart';
 import '../data/countries.dart';
+import '../data/countries_vi.dart';
+import '../l10n/l10n.dart';
 import '../models/study_assessment.dart';
 import '../services/study_assessment_service.dart';
 import '../widgets/choice_tile.dart';
+import '../widgets/language_picker.dart';
 import '../widgets/step_actions.dart';
 
 /// Phụ lục A, mỗi màn hình một câu hỏi.
@@ -13,7 +16,9 @@ import '../widgets/step_actions.dart';
 /// Một câu mỗi màn giúp người ít quen công nghệ tập trung vào đúng một việc,
 /// bấm trúng dễ hơn trên điện thoại và thấy rõ còn bao nhiêu câu. Mỗi lần
 /// sang câu mới, câu trả lời được lưu nháp; trang cuối cho xem lại và sửa
-/// trước khi gửi. Nội dung câu hỏi giữ nguyên như bản đã duyệt.
+/// trước khi gửi. Nội dung câu hỏi giữ nguyên như bản đã duyệt; bản tiếng Việt
+/// là bản dịch nháp chờ nhóm nghiên cứu duyệt. Câu trả lời lưu bằng mã (hoặc
+/// tên quốc gia tiếng Anh), không phụ thuộc ngôn ngữ đang dùng.
 class DemographicsScreen extends StatefulWidget {
   const DemographicsScreen({
     super.key,
@@ -31,40 +36,48 @@ class DemographicsScreen extends StatefulWidget {
 }
 
 enum _Question {
-  age('Age in years'),
-  gender('Gender'),
-  ethnicity('Ethnic background'),
-  country('Country of birth'),
-  relationship('Relationship status'),
-  diagnosis('Cardiovascular diagnosis'),
-  comorbidities('Other health conditions / comorbidities');
+  age,
+  gender,
+  ethnicity,
+  country,
+  relationship,
+  diagnosis,
+  comorbidities;
 
-  const _Question(this.title);
-  final String title;
+  String title(AppLocalizations l) => switch (this) {
+    age => l.demoQuestionAge,
+    gender => l.demoQuestionGender,
+    ethnicity => l.demoQuestionEthnicity,
+    country => l.demoQuestionCountry,
+    relationship => l.demoQuestionRelationship,
+    diagnosis => l.demoQuestionDiagnosis,
+    comorbidities => l.demoQuestionComorbidities,
+  };
 
   bool get isHealth => this == diagnosis || this == comorbidities;
 }
 
 class _DemographicsScreenState extends State<DemographicsScreen> {
-  static const _genders = {
-    'female': 'Female',
-    'male': 'Male',
-    'prefer_not_to_say': 'Prefer not to say',
+  // Khoá là mã lưu xuống, giá trị là chữ hiện ra.
+  static Map<String, String> _genders(AppLocalizations l) => {
+    'female': l.genderFemale,
+    'male': l.genderMale,
+    'prefer_not_to_say': l.optionPreferNotToSay,
   };
-  static const _ethnicities = {
-    'asian': 'Asian',
-    'indigenous': 'Indigenous',
-    'latin_american': 'Latin American',
-    'middle_eastern': 'Middle Eastern',
-    'white': 'White',
-    'mixed_multiple': 'Mixed / multiple backgrounds',
-    'other': 'Other',
-    'prefer_not_to_say': 'Prefer not to say',
+  static Map<String, String> _ethnicities(AppLocalizations l) => {
+    'asian': l.ethnicityAsian,
+    'indigenous': l.ethnicityIndigenous,
+    'latin_american': l.ethnicityLatinAmerican,
+    'middle_eastern': l.ethnicityMiddleEastern,
+    'white': l.ethnicityWhite,
+    'mixed_multiple': l.ethnicityMixed,
+    'other': l.ethnicityOther,
+    'prefer_not_to_say': l.optionPreferNotToSay,
   };
-  static const _relationships = {
-    'single': 'Single, including separated, divorced, or widowed',
-    'partnered': 'In a relationship / partnered, including married',
-    'prefer_not_to_say': 'Prefer not to say',
+  static Map<String, String> _relationships(AppLocalizations l) => {
+    'single': l.relationshipSingle,
+    'partnered': l.relationshipPartnered,
+    'prefer_not_to_say': l.optionPreferNotToSay,
   };
   static const _questions = _Question.values;
 
@@ -129,12 +142,14 @@ class _DemographicsScreenState extends State<DemographicsScreen> {
   @override
   Widget build(BuildContext context) {
     final lastQuestion = _step == _questions.length - 1;
+    final l10n = context.l10n;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('About you'),
+        title: Text(l10n.demoAppBar),
         actions: [
+          const LanguageButton(),
           IconButton(
-            tooltip: 'Sign out',
+            tooltip: l10n.homeSignOut,
             onPressed: widget.onSignOut,
             icon: const Icon(Icons.logout),
           ),
@@ -159,13 +174,15 @@ class _DemographicsScreenState extends State<DemographicsScreen> {
                   ),
                   StepActions(
                     nextLabel: _onReview
-                        ? 'Save and continue'
+                        ? l10n.questionSave
                         : _fromReview || lastQuestion
-                        ? 'Review answers'
-                        : 'Next',
+                        ? l10n.demoReviewAnswers
+                        : l10n.commonNext,
                     nextIcon: _onReview ? Icons.check : Icons.arrow_forward,
                     onNext: _onReview ? _submit : _next,
-                    backLabel: _step == 0 && !_fromReview ? null : 'Back',
+                    backLabel: _step == 0 && !_fromReview
+                        ? null
+                        : l10n.commonBack,
                     onBack: _back,
                     busy: _saving,
                   ),
@@ -177,26 +194,23 @@ class _DemographicsScreenState extends State<DemographicsScreen> {
 
   List<Widget> _question(BuildContext context, _Question question) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     // Dòng tiến độ đứng đầu để luôn nhìn thấy, kể cả ở cỡ chữ lớn khi phần
     // giới thiệu chiếm gần hết màn hình đầu tiên.
     return [
       Text(
-        'Question ${question.index + 1} of ${_questions.length}',
+        l10n.demoQuestionOf(question.index + 1, _questions.length),
         style: theme.textTheme.labelLarge?.copyWith(
           color: theme.colorScheme.primary,
         ),
       ),
       Gap.s,
       if (question == _Question.age) ...[
-        const _FormIntro(
-          title: 'Participant information',
-          body:
-              'Please complete this once before beginning the program. Your record uses only your study-issued Participant ID.',
-        ),
+        _FormIntro(title: l10n.demoIntroTitle, body: l10n.demoIntroBody),
         Gap.l,
       ],
       Text(
-        question.isHealth ? 'Health information' : 'Personal information',
+        question.isHealth ? l10n.demoHealthInfo : l10n.demoPersonalInfo,
         style: theme.textTheme.bodyMedium?.copyWith(
           color: theme.colorScheme.onSurfaceVariant,
         ),
@@ -204,7 +218,7 @@ class _DemographicsScreenState extends State<DemographicsScreen> {
       Gap.s,
       Semantics(
         header: true,
-        child: Text(question.title, style: theme.textTheme.titleLarge),
+        child: Text(question.title(l10n), style: theme.textTheme.titleLarge),
       ),
       Gap.m,
       ..._field(context, question),
@@ -222,20 +236,20 @@ class _DemographicsScreenState extends State<DemographicsScreen> {
             onSubmitted: (_) => _next(),
             onChanged: (_) => _clearError(),
             decoration: InputDecoration(
-              labelText: 'Age in years',
+              labelText: context.l10n.demoQuestionAge,
               prefixIcon: const Icon(Icons.cake_outlined),
               errorText: _error,
             ),
           ),
         ],
         _Question.gender => _choices(
-          _genders,
+          _genders(context.l10n),
           _gender,
           (value) => _gender = value,
         ),
         _Question.ethnicity => [
           ..._choices(
-            _ethnicities,
+            _ethnicities(context.l10n),
             _ethnicity,
             (value) => _ethnicity = value,
             showError: _ethnicity != 'other',
@@ -247,7 +261,7 @@ class _DemographicsScreenState extends State<DemographicsScreen> {
               maxLength: 200,
               onChanged: (_) => _clearError(),
               decoration: InputDecoration(
-                labelText: 'Please specify',
+                labelText: context.l10n.demoPleaseSpecify,
                 errorText: _error,
               ),
             ),
@@ -264,7 +278,7 @@ class _DemographicsScreenState extends State<DemographicsScreen> {
           ),
         ],
         _Question.relationship => _choices(
-          _relationships,
+          _relationships(context.l10n),
           _relationship,
           (value) => _relationship = value,
         ),
@@ -286,10 +300,10 @@ class _DemographicsScreenState extends State<DemographicsScreen> {
             maxLines: 6,
             maxLength: 1000,
             textCapitalization: TextCapitalization.sentences,
-            decoration: const InputDecoration(hintText: 'Optional'),
+            decoration: InputDecoration(hintText: context.l10n.demoOptional),
           ),
           Text(
-            'This question is optional.',
+            context.l10n.demoOptionalNote,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -327,15 +341,15 @@ class _DemographicsScreenState extends State<DemographicsScreen> {
   }
 
   List<Widget> _review(BuildContext context) => [
-    const _FormIntro(
-      title: 'Check your answers',
-      body: 'You can change any answer before saving.',
+    _FormIntro(
+      title: context.l10n.demoCheckTitle,
+      body: context.l10n.demoCheckBody,
     ),
     Gap.l,
     for (final question in _questions) ...[
       _ReviewRow(
-        label: question.title,
-        value: _display(question),
+        label: question.title(context.l10n),
+        value: _display(context.l10n, question),
         onChange: () => setState(() {
           _error = null;
           _fromReview = true;
@@ -346,49 +360,54 @@ class _DemographicsScreenState extends State<DemographicsScreen> {
     ],
   ];
 
-  String _display(_Question question) {
-    String text(String value) => value.trim().isEmpty ? 'Not answered' : value;
+  String _display(AppLocalizations l, _Question question) {
+    final none = l.demoNotAnswered;
+    String text(String value) => value.trim().isEmpty ? none : value;
     return switch (question) {
       _Question.age => text(_age.text),
-      _Question.gender => _genders[_gender] ?? 'Not answered',
+      _Question.gender => _genders(l)[_gender] ?? none,
       _Question.ethnicity =>
         _ethnicity == 'other'
-            ? 'Other: ${_ethnicOther.text.trim()}'
-            : _ethnicities[_ethnicity] ?? 'Not answered',
-      _Question.country => _country ?? 'Not answered',
-      _Question.relationship => _relationships[_relationship] ?? 'Not answered',
+            ? l.demoOtherValue(_ethnicOther.text.trim())
+            : _ethnicities(l)[_ethnicity] ?? none,
+      _Question.country => switch (_country) {
+        final country? => countryName(country, l.localeName),
+        null => none,
+      },
+      _Question.relationship => _relationships(l)[_relationship] ?? none,
       _Question.diagnosis => text(_diagnosis.text),
       _Question.comorbidities => text(_comorbidities.text),
     };
   }
 
-  String? _validate(_Question question) => switch (question) {
-    _Question.age => switch (int.tryParse(_age.text)) {
-      null => 'Enter age in years.',
-      final age when age < 0 || age > 120 => 'Enter a valid age.',
-      _ => null,
-    },
-    _Question.gender => _gender == null ? 'Select an option.' : null,
-    _Question.ethnicity =>
-      _ethnicity == null
-          ? 'Select an option.'
-          : _ethnicity == 'other' && _ethnicOther.text.trim().isEmpty
-          ? 'Please describe your background.'
-          : null,
-    _Question.country => _country == null ? 'Select a country.' : null,
-    _Question.relationship =>
-      _relationship == null ? 'Select an option.' : null,
-    _Question.diagnosis =>
-      _diagnosis.text.trim().isEmpty ? 'This answer is required.' : null,
-    _Question.comorbidities => null,
-  };
+  String? _validate(AppLocalizations l, _Question question) =>
+      switch (question) {
+        _Question.age => switch (int.tryParse(_age.text)) {
+          null => l.demoEnterAge,
+          final age when age < 0 || age > 120 => l.demoValidAge,
+          _ => null,
+        },
+        _Question.gender => _gender == null ? l.demoSelectOption : null,
+        _Question.ethnicity =>
+          _ethnicity == null
+              ? l.demoSelectOption
+              : _ethnicity == 'other' && _ethnicOther.text.trim().isEmpty
+              ? l.demoDescribeBackground
+              : null,
+        _Question.country => _country == null ? l.demoSelectCountry : null,
+        _Question.relationship =>
+          _relationship == null ? l.demoSelectOption : null,
+        _Question.diagnosis =>
+          _diagnosis.text.trim().isEmpty ? l.demoRequired : null,
+        _Question.comorbidities => null,
+      };
 
   void _clearError() {
     if (_error != null) setState(() => _error = null);
   }
 
   void _next() {
-    final error = _validate(_questions[_step]);
+    final error = _validate(context.l10n, _questions[_step]);
     if (error != null) {
       setState(() => _error = error);
       return;
@@ -432,7 +451,7 @@ class _DemographicsScreenState extends State<DemographicsScreen> {
   Future<void> _submit() async {
     // Bản nháp cũ có thể thiếu câu: đưa người dùng về đúng câu cần sửa.
     for (final question in _questions) {
-      final error = _validate(question);
+      final error = _validate(context.l10n, question);
       if (error != null) {
         setState(() {
           _step = question.index;
@@ -449,11 +468,9 @@ class _DemographicsScreenState extends State<DemographicsScreen> {
       await widget.onSubmitted();
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Your information could not be saved. Try again.'),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.demoSaveFailed)));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -482,12 +499,29 @@ class _CountryField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final entries = <DropdownMenuEntry<String>>[
-      if (value != null && !countries.contains(value))
-        DropdownMenuEntry(value: value!, label: value!),
-      for (final country in countries)
-        DropdownMenuEntry(value: country, label: country),
-    ];
+    final l10n = context.l10n;
+    // Giá trị là tên tiếng Anh (lưu xuống), nhãn theo ngôn ngữ đang dùng; xếp
+    // theo nhãn đã bỏ dấu.
+    final entries =
+        <DropdownMenuEntry<String>>[
+          for (final country in countries)
+            DropdownMenuEntry(
+              value: country,
+              label: countryName(country, l10n.localeName),
+            ),
+        ]..sort(
+          (a, b) => foldDiacritics(a.label).compareTo(foldDiacritics(b.label)),
+        );
+    if (value != null && !countries.contains(value)) {
+      entries.insert(0, DropdownMenuEntry(value: value!, label: value!));
+    }
+    // Tìm theo cả tên đang hiện lẫn tên tiếng Anh, không phân biệt dấu.
+    bool matches(DropdownMenuEntry<String> entry, String query) {
+      final q = foldDiacritics(query.trim());
+      return foldDiacritics(entry.label).contains(q) ||
+          foldDiacritics(entry.value).contains(q);
+    }
+
     return DropdownMenu<String>(
       initialSelection: value,
       expandedInsets: EdgeInsets.zero,
@@ -495,8 +529,15 @@ class _CountryField extends StatelessWidget {
       enableFilter: true,
       enableSearch: true,
       requestFocusOnTap: true,
-      label: const Text('Country of birth'),
-      hintText: 'Search or select a country',
+      filterCallback: (entries, filter) =>
+          entries.where((entry) => matches(entry, filter)).toList(),
+      searchCallback: (entries, query) {
+        if (query.trim().isEmpty) return null;
+        final index = entries.indexWhere((entry) => matches(entry, query));
+        return index < 0 ? null : index;
+      },
+      label: Text(l10n.demoQuestionCountry),
+      hintText: l10n.demoCountryHint,
       leadingIcon: const Icon(Icons.public),
       trailingIcon: const Icon(Icons.arrow_drop_down),
       selectedTrailingIcon: const Icon(Icons.arrow_drop_up),
@@ -542,7 +583,10 @@ class _ReviewRow extends StatelessWidget {
         Gap.s,
         TextButton(
           onPressed: onChange,
-          child: Text('Change', semanticsLabel: 'Change $label'),
+          child: Text(
+            context.l10n.editorChange,
+            semanticsLabel: context.l10n.changeSemantics(label),
+          ),
         ),
       ],
     );

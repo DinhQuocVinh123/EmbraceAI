@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:embrace_ai/core/theme.dart';
 import 'package:embrace_ai/data/countries.dart';
+import 'package:embrace_ai/l10n/l10n.dart';
 import 'package:embrace_ai/models/consent.dart';
 import 'package:embrace_ai/models/study_assessment.dart';
 import 'package:embrace_ai/screens/demographics_screen.dart';
@@ -19,6 +20,7 @@ void main() {
     WidgetTester tester,
     Widget child, {
     double textScale = 1,
+    Locale locale = const Locale('en'),
   }) async {
     tester.view.physicalSize = const Size(400, 869);
     tester.view.devicePixelRatio = 1;
@@ -27,6 +29,9 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light,
+        locale: locale,
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
         home: MediaQuery(
           data: MediaQueryData(
             size: const Size(400, 869),
@@ -126,6 +131,76 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets(
+    'in Vietnamese, the country search ignores accents and saves the English name',
+    (tester) async {
+      final service = _FakeStudyAssessmentService();
+      final vi = lookupAppLocalizations(const Locale('vi'));
+      await pump(
+        tester,
+        DemographicsScreen(
+          service: service,
+          onSubmitted: () async {},
+          onSignOut: () async {},
+        ),
+        locale: const Locale('vi'),
+      );
+      await tester.enterText(find.byType(TextField), '67');
+      await tapText(tester, vi.commonNext);
+      await tester.tap(find.text(vi.genderFemale));
+      await tapText(tester, vi.commonNext);
+      await tester.tap(find.text(vi.ethnicityAsian));
+      await tapText(tester, vi.commonNext);
+
+      await tester.tap(countryDropdown);
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.descendant(of: countryDropdown, matching: find.byType(TextField)),
+        'viet',
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Việt Nam').last);
+      await tester.pumpAndSettle();
+      await tapText(tester, vi.commonNext);
+
+      // Câu trả lời vẫn lưu tên tiếng Anh, như khi trả lời bằng tiếng Anh.
+      expect(service.lastDemographics?.countryOfBirth, 'Vietnam');
+      expect(service.lastDemographics?.gender, 'female');
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('Vietnamese forms still fit at 200 percent text', (tester) async {
+    final vi = lookupAppLocalizations(const Locale('vi'));
+    await pump(
+      tester,
+      DemographicsScreen(
+        service: _FakeStudyAssessmentService(),
+        onSubmitted: () async {},
+        onSignOut: () async {},
+      ),
+      textScale: 2,
+      locale: const Locale('vi'),
+    );
+    expect(find.text(vi.demoQuestionOf(1, 7)), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await pump(
+      tester,
+      FinalAssessmentScreen(
+        service: _FakeStudyAssessmentService(),
+        onSubmitted: () async {},
+        onDefer: () {},
+        onSignOut: () async {},
+      ),
+      textScale: 2,
+      locale: const Locale('vi'),
+    );
+    expect(find.text(vi.finalDoLater), findsOneWidget);
+    expect(find.text(vi.commonNext), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('demographics saves drafts, then submits after the review', (
     tester,
   ) async {
@@ -218,7 +293,59 @@ void main() {
     await tester.tap(button);
     await tester.pumpAndSettle();
     expect(service.acceptedConsent, isTrue);
+    expect(service.acceptedConsentVersion, studyConsentVersion);
   });
+
+  testWidgets(
+    'consent read in Vietnamese records the Vietnamese draft version',
+    (tester) async {
+      final service = _FakeStudyAssessmentService();
+      final vi = lookupAppLocalizations(const Locale('vi'));
+      await pump(
+        tester,
+        ParticipantConsentScreen(
+          service: service,
+          onAccepted: () async {},
+          onSignOut: () async {},
+        ),
+        locale: const Locale('vi'),
+      );
+      expect(find.text(vi.consentTitle), findsOneWidget);
+
+      final statements = [
+        vi.consentRead,
+        vi.consentVoluntary,
+        vi.consentNotTreatment,
+        vi.consentDataUse,
+      ];
+      for (final statement in statements) {
+        final text = find.text(statement);
+        await tester.scrollUntilVisible(
+          text,
+          300,
+          scrollable: find.byType(Scrollable).first,
+          maxScrolls: 20,
+        );
+        await tester.tap(text);
+        await tester.pump();
+      }
+      final button = find.widgetWithText(FilledButton, vi.consentAccept);
+      await tester.scrollUntilVisible(
+        button,
+        300,
+        scrollable: find.byType(Scrollable).first,
+        maxScrolls: 20,
+      );
+      expect(
+        find.text(vi.consentVersion('$studyConsentVersion-vi-draft')),
+        findsOneWidget,
+      );
+      await tester.tap(button);
+      await tester.pumpAndSettle();
+      expect(service.acceptedConsentVersion, '$studyConsentVersion-vi-draft');
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('consent shows a blocking progress indicator while saving', (
     tester,
@@ -422,6 +549,7 @@ class _FakeStudyAssessmentService extends StudyAssessmentService {
   DemographicAnswers? lastDemographics;
   bool? lastDemographicsSubmit;
   bool acceptedConsent = false;
+  String? acceptedConsentVersion;
   final Completer<void>? consentCompleter;
 
   @override
@@ -434,7 +562,8 @@ class _FakeStudyAssessmentService extends StudyAssessmentService {
   }
 
   @override
-  Future<void> acceptConsent() async {
+  Future<void> acceptConsent({String version = studyConsentVersion}) async {
+    acceptedConsentVersion = version;
     await consentCompleter?.future;
     acceptedConsent = true;
   }

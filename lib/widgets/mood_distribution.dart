@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../core/theme.dart';
+import '../l10n/l10n.dart';
+import '../l10n/labels.dart';
 import '../models/mood.dart';
 
 /// Số lần mỗi mức tâm trạng xuất hiện, dạng thanh ngang.
@@ -67,7 +69,11 @@ class _Row extends StatelessWidget {
     final percent = total == 0 ? 0 : (count * 100 / total).round();
 
     return Semantics(
-      label: '${mood.label}: $count times, $percent percent',
+      label: context.l10n.distributionRow(
+        mood.label(context.l10n),
+        count,
+        percent,
+      ),
       excludeSemantics: true,
       child: Row(
         children: [
@@ -78,7 +84,7 @@ class _Row extends StatelessWidget {
           SizedBox(
             width: 92,
             child: Text(
-              mood.label,
+              mood.label(context.l10n),
               style: labelStyle?.copyWith(color: mutedColor),
             ),
           ),

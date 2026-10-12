@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../core/motion.dart';
 import '../core/theme.dart';
+import '../l10n/l10n.dart';
+import '../l10n/labels.dart';
 import '../models/breathing_cue.dart';
 
 /// Các lớp phủ của màn hình thiền, tách riêng để vừa dùng trong app vừa dùng
@@ -92,7 +94,7 @@ class SessionCaption extends StatelessWidget {
           ? const SizedBox(key: ValueKey('empty'), height: 0)
           : Semantics(
               liveRegion: true,
-              label: 'Caption: $text',
+              label: context.l10n.sessionCaptionSemantics(text!),
               excludeSemantics: true,
               child: Container(
                 key: ValueKey(text),
@@ -164,26 +166,34 @@ class SessionTopBar extends StatelessWidget {
                 child: Semantics(
                   liveRegion: true,
                   header: true,
-                  label: 'Part $beatNumber of $totalBeats. $beatTitle',
+                  label: context.l10n.sessionPartSemantics(
+                    beatNumber,
+                    totalBeats,
+                    beatTitle,
+                  ),
                   excludeSemantics: true,
                   child: Text(
-                    'Part $beatNumber of $totalBeats · $beatTitle',
+                    context.l10n.sessionPartLabel(
+                      beatNumber,
+                      totalBeats,
+                      beatTitle,
+                    ),
                     style: const TextStyle(color: Colors.white, fontSize: 14),
                   ),
                 ),
               ),
             ),
             IconButton(
-              tooltip: 'Help',
+              tooltip: context.l10n.helpTitle,
               onPressed: onHelp,
               icon: const Icon(Icons.help_outline, color: Colors.white),
             ),
             TextButton.icon(
               onPressed: onStop,
               icon: const Icon(Icons.close, color: Colors.white),
-              label: const Text(
-                'Stop',
-                style: TextStyle(color: Colors.white, fontSize: 16),
+              label: Text(
+                context.l10n.sessionStop,
+                style: const TextStyle(color: Colors.white, fontSize: 16),
               ),
             ),
           ],
@@ -211,16 +221,12 @@ class SessionBottomBar extends StatelessWidget {
   static String fmt(Duration d) =>
       '${d.inMinutes}:${(d.inSeconds % 60).toString().padLeft(2, '0')}';
 
-  static String semanticTime(Duration duration) {
+  static String semanticTime(AppLocalizations l10n, Duration duration) {
     final minutes = duration.inMinutes;
     final seconds = duration.inSeconds % 60;
     final parts = <String>[];
-    if (minutes > 0) {
-      parts.add('$minutes ${minutes == 1 ? "minute" : "minutes"}');
-    }
-    if (seconds > 0 || parts.isEmpty) {
-      parts.add('$seconds ${seconds == 1 ? "second" : "seconds"}');
-    }
+    if (minutes > 0) parts.add(l10n.timeMinutes(minutes));
+    if (seconds > 0 || parts.isEmpty) parts.add(l10n.timeSeconds(seconds));
     return parts.join(' ');
   }
 
@@ -249,7 +255,9 @@ class SessionBottomBar extends StatelessWidget {
             IconButton(
               iconSize: 36,
               color: Colors.white,
-              tooltip: isPlaying ? 'Pause' : 'Resume',
+              tooltip: isPlaying
+                  ? context.l10n.sessionPause
+                  : context.l10n.sessionResume,
               onPressed: onTogglePlay,
               icon: AnimatedSwitcher(
                 duration: AppMotion.duration(context, AppMotion.fast),
@@ -268,8 +276,11 @@ class SessionBottomBar extends StatelessWidget {
             Gap.s,
             Expanded(
               child: Semantics(
-                label: 'Session progress',
-                value: '${semanticTime(position)} of ${semanticTime(total)}',
+                label: context.l10n.sessionProgress,
+                value: context.l10n.sessionProgressValue(
+                  semanticTime(context.l10n, position),
+                  semanticTime(context.l10n, total),
+                ),
                 excludeSemantics: true,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -437,7 +448,7 @@ class BreathingGuide extends StatelessWidget {
 
     return Semantics(
       liveRegion: true,
-      label: 'Breathing guide: ${cue.label}',
+      label: context.l10n.sessionBreathingGuide(cue.label(context.l10n)),
       excludeSemantics: true,
       child: Transform.scale(
         key: const ValueKey('breathing-guide-ring'),
@@ -455,7 +466,7 @@ class BreathingGuide extends StatelessWidget {
             ],
           ),
           child: Text(
-            cue.label,
+            cue.label(context.l10n),
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: Colors.white,

@@ -1,11 +1,11 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
 import 'core/app_surface.dart';
 import 'core/theme.dart';
+import 'l10n/l10n.dart';
 import 'screens/home_screen.dart';
 import 'state/settings_store.dart';
 
@@ -28,13 +28,13 @@ class EmbraceApp extends StatelessWidget {
           ? Duration.zero
           : kThemeAnimationDuration,
       themeMode: ThemeMode.system,
-      locale: const Locale('en'),
-      supportedLocales: const [Locale('en')],
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
+      // App người tham gia có tiếng Anh và tiếng Việt, mặc định theo điện thoại
+      // (locale null); cổng nhân viên luôn bằng tiếng Anh.
+      locale: AppSurface.current == AppSurface.staff
+          ? const Locale('en')
+          : settings.language.locale,
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
       // Cỡ chữ người dùng chọn áp cho TOÀN app, không riêng màn hình thiền —
       // góp ý "text sizes should be bigger" là về cả giao diện.
       builder: (context, child) {

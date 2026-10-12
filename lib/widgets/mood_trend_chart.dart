@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart' show DateFormat;
 
+import '../l10n/l10n.dart';
 import '../models/mood.dart';
 import '../state/journal_store.dart';
 
@@ -31,11 +32,11 @@ class _MoodTrendChartState extends State<MoodTrendChart> {
         builder: (context, constraints) {
           return Semantics(
             container: true,
-            label: 'Mood trend chart',
+            label: context.l10n.chartLabel,
             value: _semanticValue(),
             increasedValue: _semanticAdjacentValue(1),
             decreasedValue: _semanticAdjacentValue(-1),
-            hint: 'Use left and right arrows, or adjust, to read each day.',
+            hint: context.l10n.chartHint,
             onIncrease: _recordedIndexes.isEmpty
                 ? null
                 : () => _moveSelection(1),
@@ -134,12 +135,14 @@ class _MoodTrendChartState extends State<MoodTrendChart> {
       return _semanticDayValue(selected);
     }
     final recorded = widget.data.where((day) => day.average != null).toList();
-    if (recorded.isEmpty) return 'No recorded days';
+    final l10n = context.l10n;
+    if (recorded.isEmpty) return l10n.chartNoDays;
     return recorded
         .map(
-          (day) =>
-              '${DateFormat('d MMM').format(day.date)}, '
-              '${day.average!.toStringAsFixed(1)} out of 5',
+          (day) => l10n.chartDayValue(
+            DateFormat('d MMM', l10n.localeName).format(day.date),
+            day.average!.toStringAsFixed(1),
+          ),
         )
         .join('; ');
   }
@@ -156,8 +159,11 @@ class _MoodTrendChartState extends State<MoodTrendChart> {
 
   String _semanticDayValue(int index) {
     final day = widget.data[index];
-    return '${DateFormat('d MMMM').format(day.date)}, '
-        '${day.average!.toStringAsFixed(1)} out of 5';
+    final l10n = context.l10n;
+    return l10n.chartDayValue(
+      DateFormat('d MMMM', l10n.localeName).format(day.date),
+      day.average!.toStringAsFixed(1),
+    );
   }
 }
 

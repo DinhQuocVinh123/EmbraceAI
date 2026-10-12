@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../core/motion.dart';
 import '../core/theme.dart';
 import '../data/session_script.dart';
+import '../l10n/l10n.dart';
+import '../l10n/labels.dart';
 import '../models/mood.dart';
 import '../models/session_answers.dart';
 
@@ -77,7 +79,7 @@ class PromptCard extends StatelessWidget {
               Center(
                 child: TextButton(
                   onPressed: onSkip,
-                  child: const Text('Skip this question'),
+                  child: Text(context.l10n.promptSkipQuestion),
                 ),
               ),
             ],
@@ -205,8 +207,8 @@ class MedicalDisclaimerPrompt extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     return PromptCard(
-      title: 'Medical disclaimer',
-      subtitle: 'Please read this before every practice.',
+      title: context.l10n.disclaimerTitle,
+      subtitle: context.l10n.disclaimerSubtitle,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -227,9 +229,7 @@ class MedicalDisclaimerPrompt extends StatelessWidget {
                   Gap.m,
                   Expanded(
                     child: Text(
-                      'This is not a medical intervention. If you experience '
-                      'any discomfort, please stop immediately and seek help '
-                      'from your medical team.',
+                      context.l10n.disclaimerBody,
                       style: theme.textTheme.bodyLarge?.copyWith(
                         color: scheme.onErrorContainer,
                         height: 1.5,
@@ -245,13 +245,13 @@ class MedicalDisclaimerPrompt extends StatelessWidget {
           FilledButton.icon(
             onPressed: onAccept,
             icon: const Icon(Icons.check_circle_outline),
-            label: const Text('I understand, continue'),
+            label: Text(context.l10n.disclaimerAccept),
           ),
           Gap.s,
           TextButton.icon(
             onPressed: onLeave,
             icon: const Icon(Icons.close),
-            label: const Text('Leave session'),
+            label: Text(context.l10n.disclaimerLeave),
           ),
         ],
       ),
@@ -268,15 +268,16 @@ class SafetyPrompt extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PromptCard(
-      title: 'Are you feeling comfortable enough to continue?',
-      subtitle:
-          'This practice needs you somewhere safe. Please do not do it '
-          'while driving or operating machinery.',
+      title: context.l10n.safetyTitle,
+      subtitle: context.l10n.safetyBody,
       onSkip: onSkip,
       child: Column(
         children: [
           for (final a in SafetyAnswer.values) ...[
-            ChoiceButton(label: a.label, onPressed: () => onAnswer(a)),
+            ChoiceButton(
+              label: a.label(context.l10n),
+              onPressed: () => onAnswer(a),
+            ),
             if (a != SafetyAnswer.values.last) Gap.s,
           ],
         ],
@@ -310,20 +311,21 @@ class _CheckInPromptState extends State<CheckInPrompt> {
   double _stress = 5;
   int _step = 0;
 
-  static String _duration(Duration duration) =>
-      '${duration.inMinutes} min ${duration.inSeconds % 60} sec';
+  static String _duration(AppLocalizations l10n, Duration duration) =>
+      l10n.durationMinSec(duration.inMinutes, duration.inSeconds % 60);
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final content = switch (_step) {
       0 => PromptCard(
-        title: 'How are you feeling right now?',
+        title: l10n.checkInFeelingTitle,
         onSkip: widget.onSkip,
         child: Column(
           children: [
             for (final f in CheckInFeeling.values) ...[
               ChoiceButton(
-                label: f.label,
+                label: f.label(l10n),
                 selected: _feeling == f,
                 leading: Text(f.emoji, style: const TextStyle(fontSize: 26)),
                 onPressed: () => setState(() {
@@ -337,8 +339,8 @@ class _CheckInPromptState extends State<CheckInPrompt> {
         ),
       ),
       1 => PromptCard(
-        title: 'How stressed do you feel right now?',
-        subtitle: '0 is completely at ease, 10 is the most stressed.',
+        title: l10n.checkInStressTitle,
+        subtitle: l10n.checkInStressSubtitle,
         onSkip: widget.onSkip,
         child: Column(
           children: [
@@ -349,26 +351,23 @@ class _CheckInPromptState extends State<CheckInPrompt> {
             Gap.l,
             FilledButton(
               onPressed: () => setState(() => _step = 2),
-              child: const Text('Continue'),
+              child: Text(l10n.commonContinue),
             ),
           ],
         ),
       ),
       2 => PromptCard(
         title: _stress >= 7
-            ? "Let's take this a little slower"
-            : 'What would you like to practise?',
-        subtitle: _stress >= 7
-            ? 'You are carrying a lot right now. Grounding often settles '
-                  'things faster.'
-            : null,
+            ? l10n.checkInSlowerTitle
+            : l10n.checkInChooseTitle,
+        subtitle: _stress >= 7 ? l10n.checkInSlowerBody : null,
         onSkip: widget.onSkip,
         child: Column(
           children: [
             for (final p in PracticeChoice.values) ...[
               ChoiceButton(
-                label: p.label,
-                description: p.description,
+                label: p.label(l10n),
+                description: p.description(l10n),
                 onPressed: () => setState(() {
                   _practice = p;
                   _step = 3;
@@ -380,15 +379,16 @@ class _CheckInPromptState extends State<CheckInPrompt> {
         ),
       ),
       _ => PromptCard(
-        title: 'How much time would you like?',
-        subtitle: 'Both options end with time to reflect.',
+        title: l10n.checkInLengthTitle,
+        subtitle: l10n.checkInLengthSubtitle,
         onSkip: widget.onSkip,
         child: Column(
           children: [
             for (final length in PracticeLength.values) ...[
               ChoiceButton(
-                label: length.label,
+                label: length.label(l10n),
                 description: _duration(
+                  l10n,
                   SessionScript.practiceDuration(
                     breathingOnly: _practice == PracticeChoice.breathing,
                     short: length == PracticeLength.short,
@@ -436,8 +436,8 @@ class _QuestionPromptState extends State<QuestionPrompt> {
   @override
   Widget build(BuildContext context) {
     return PromptCard(
-      title: 'Is there one question you would like answered?',
-      subtitle: 'Write it down here to take to your next appointment.',
+      title: context.l10n.questionTitle,
+      subtitle: context.l10n.questionSubtitle,
       onSkip: widget.onSkip,
       child: Column(
         children: [
@@ -446,15 +446,15 @@ class _QuestionPromptState extends State<QuestionPrompt> {
             minLines: 3,
             maxLines: 5,
             textCapitalization: TextCapitalization.sentences,
-            decoration: const InputDecoration(
-              labelText: 'Question for your care team',
-              hintText: 'For example: how will this affect my daily life?',
+            decoration: InputDecoration(
+              labelText: context.l10n.questionLabel,
+              hintText: context.l10n.questionHint,
             ),
           ),
           Gap.m,
           FilledButton(
             onPressed: () => widget.onAnswer(_controller.text.trim()),
-            child: const Text('Save and continue'),
+            child: Text(context.l10n.questionSave),
           ),
         ],
       ),
@@ -498,17 +498,17 @@ class _FeedbackPromptState extends State<FeedbackPrompt> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final content = switch (_step) {
       0 => PromptCard(
-        title: 'How do you feel now?',
-        subtitle:
-            'Choose the answer that feels closest. There is no right answer.',
+        title: l10n.feedbackMoodTitle,
+        subtitle: l10n.feedbackMoodSubtitle,
         onSkip: _next,
         child: Column(
           children: [
             for (final mood in Mood.values) ...[
               ChoiceButton(
-                label: mood.label,
+                label: mood.label(l10n),
                 selected: _mood == mood,
                 leading: Text(mood.emoji, style: const TextStyle(fontSize: 26)),
                 onPressed: () => setState(() {
@@ -522,9 +522,9 @@ class _FeedbackPromptState extends State<FeedbackPrompt> {
         ),
       ),
       1 => PromptCard(
-        title: 'And where is your stress now?',
+        title: l10n.feedbackStressTitle,
         subtitle: widget.stressBefore != null
-            ? 'You started at ${widget.stressBefore}.'
+            ? l10n.feedbackStressStarted(widget.stressBefore!)
             : null,
         onSkip: _next,
         child: Column(
@@ -539,14 +539,14 @@ class _FeedbackPromptState extends State<FeedbackPrompt> {
                 _stressAfter = _stress.round();
                 _step = 2;
               }),
-              child: const Text('Continue'),
+              child: Text(l10n.commonContinue),
             ),
           ],
         ),
       ),
       _ => PromptCard(
-        title: 'What did you notice during the practice?',
-        subtitle: 'One sentence is plenty. There is no right answer.',
+        title: l10n.feedbackNoticeTitle,
+        subtitle: l10n.feedbackNoticeSubtitle,
         onSkip: _finish,
         child: Column(
           children: [
@@ -555,17 +555,15 @@ class _FeedbackPromptState extends State<FeedbackPrompt> {
               minLines: 3,
               maxLines: 5,
               textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                labelText: 'What you noticed',
-                hintText:
-                    'For example: my shoulders softened, my breathing '
-                    'slowed towards the end.',
+              decoration: InputDecoration(
+                labelText: l10n.feedbackNoticeLabel,
+                hintText: l10n.feedbackNoticeHint,
               ),
             ),
             Gap.m,
             FilledButton(
               onPressed: () => _finish(_controller.text),
-              child: const Text('Continue'),
+              child: Text(l10n.commonContinue),
             ),
           ],
         ),
@@ -597,14 +595,15 @@ class _StressSlider extends StatelessWidget {
           ),
         ),
         Semantics(
-          label: 'Stress level',
+          label: context.l10n.stressLevel,
           child: Slider(
             value: value,
             min: 0,
             max: 10,
             divisions: 10,
             label: '${value.round()}',
-            semanticFormatterCallback: (value) => '${value.round()} out of 10',
+            semanticFormatterCallback: (value) =>
+                context.l10n.stressOutOfTen(value.round()),
             onChanged: onChanged,
           ),
         ),
@@ -612,12 +611,15 @@ class _StressSlider extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Expanded(
-              child: Text('0 · at ease', style: theme.textTheme.bodySmall),
+              child: Text(
+                context.l10n.stressScaleLow,
+                style: theme.textTheme.bodySmall,
+              ),
             ),
             Gap.m,
             Expanded(
               child: Text(
-                '10 · very stressed',
+                context.l10n.stressScaleHigh,
                 textAlign: TextAlign.end,
                 style: theme.textTheme.bodySmall,
               ),

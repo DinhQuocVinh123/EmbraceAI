@@ -18,6 +18,36 @@ python tools\voice\verify_voice.py
 python -m piper.download_voices --download-dir D:\VideoProjects\voice\piper_models en_US-amy-medium
 ```
 
+## Giọng tiếng Việt
+
+Giọng tiếng Việt không trộn vào video. Nó là một file riêng,
+`assets/audio/narration_vi.m4a`. Khi người dùng chọn tiếng Việt, app tắt tiếng
+video, phát file này và giữ nó khớp với vị trí của video. Làm vậy đỡ phải giữ
+thêm hai video, mỗi cái khoảng 200 MB.
+
+Giọng đọc lấy từ **VieNeu-TTS v3 Turbo**. Mô hình này có giấy phép Apache 2.0,
+chạy offline bằng CPU, và những người đọc cho các giọng có sẵn đã đồng ý cho
+dùng. Nó tự gắn một dấu nước không nghe thấy được để đánh dấu đây là giọng máy.
+Cài một lần vào một môi trường riêng nằm ngoài repo:
+
+```powershell
+py -3.11 -m venv D:\VideoProjects\voice\venv-vieneu
+D:\VideoProjects\voice\venv-vieneu\Scripts\python -m pip install vieneu
+```
+
+Mỗi khi sửa câu tiếng Việt trong `lib/data/session_script.dart`, tạo lại giọng:
+
+```powershell
+python tools\voice\extract_captions.py
+$env:HF_HOME = "D:\VideoProjects\voice\hf-cache"
+D:\VideoProjects\voice\venv-vieneu\Scripts\python tools\voice\synth_narration_vi.py "Kim Thanh"
+```
+
+Muốn đổi giọng thì thay tên ở cuối lệnh. Năm giọng nữ đọc truyện là Ngọc Linh,
+Quỳnh Anh (giọng Bắc), Kim Thanh, Mỹ Duyên và Thục Đoan (giọng Nam). Script
+đưa giọng về đúng độ to của bản tiếng Anh (−14,7 LUFS). Câu nào đọc nhanh hay
+chậm bất thường sẽ được đọc lại, vì đó thường là dấu hiệu mô hình đọc sót chữ.
+
 ## Vì sao chia ra bốn bước
 
 | Script | Việc |
