@@ -5,7 +5,9 @@
   "description": "Local RAG experiment for Ask EmbraceAI: the shelf, the safety checks and a self-hosted model.",
   "scripts": {
     "ingest": "node ingest.mjs",
-    "ask": "node ask.mjs"
+    "ask": "node ask.mjs",
+    "test": "node --test \"test/*.test.mjs\"",
+    "capacity": "node capacity.mjs"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.3.16",

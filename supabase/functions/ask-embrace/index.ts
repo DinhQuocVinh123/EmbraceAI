@@ -1,101 +1,58 @@
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
+import {
+  answerFormat,
+  answerTypes,
+  type AskLanguage,
+  maxShelfCharacters,
+  otherQuestionCheck,
+  passagesMessage,
+  shelfCharacters,
+  systemPrompt,
+  withVietnameseNames,
+} from '../_shared/ask_prompts.ts';
 import { corsHeaders } from '../_shared/cors.ts';
+import { isEmergency } from '../_shared/emergency.ts';
 
-// "Lễ tân" của Ask EmbraceAI: kiểm tra người hỏi, chặn khẩn cấp, tra kệ tài
-// liệu, gọi model tự host, kiểm tra kết quả và ghi log. Quy trình giống hệt
-// bộ thử nghiệm tools/ai-lab/ask.mjs.
-
-declare const Supabase: {
-  ai: {
-    Session: new (model: string) => {
-      run(
-        input: string,
-        options: { mean_pool: boolean; normalize: boolean },
-      ): Promise<ArrayLike<number>>;
-    };
-  };
-};
-
-const embedder = new Supabase.ai.Session('gte-small');
+// "Lễ tân" của Ask EmbraceAI: kiểm tra người hỏi, chặn khẩn cấp, gửi cả kệ
+// tài liệu cho model tự host, kiểm tra kết quả và ghi log. Quy trình giống hệt
+// bộ thử nghiệm tools/ai-lab/ask.mjs, và lời dặn model nằm chung một file.
 
 // Số câu mỗi tài khoản được hỏi trong 24 giờ. Secret AI_DAILY_LIMIT=0 tạm bỏ
 // giới hạn khi thử nghiệm; xoá secret đó là về lại 20.
 const configuredLimit = Number.parseInt(Deno.env.get('AI_DAILY_LIMIT') ?? '', 10);
 const dailyLimit = Number.isFinite(configuredLimit) ? configuredLimit : 20;
 const maxQuestionLength = 500;
-const topK = 6;
+// Kệ ít khi đổi: đọc lại từ database mỗi phút là đủ.
+const shelfCacheMs = 60_000;
 // Máy GPU hỏi việc ít nhất 20 giây một lần, trừ lúc đang trả lời một câu.
 const workerSilenceMs = 120_000;
 const answerWaitMs = 60_000;
 const otherCheckWaitMs = 15_000;
-// Máy GPU trả lời khoảng 78 câu mỗi phút (song song 4, đo ngày 11/10): câu thứ
-// 60 trong hàng xong sau khoảng 45-50 giây. Hàng dài hơn thì báo bận ngay, thay
-// vì để người hỏi chờ trọn 60 giây rồi mới báo. Secret AI_MAX_QUEUE đổi ngưỡng.
+// Máy GPU trả lời khoảng 72 câu mỗi phút (song song 16, đo ngày 12/10 bằng
+// tools/ai-lab/capacity.mjs, mỗi câu hỏi một khác): 100 người hỏi cùng lúc thì
+// 61-64 người xong trong 60 giây. Số đó đo khi còn tra 6 đoạn cho mỗi câu; từ
+// khi gửi cả kệ thì cần đo lại. Ngưỡng 55 chừa chỗ cho lúc máy chậm hơn. Hàng
+// dài hơn thì báo bận ngay, thay vì để người hỏi chờ trọn 60 giây rồi mới báo.
+// Secret AI_MAX_QUEUE đổi ngưỡng.
 const configuredQueue = Number.parseInt(Deno.env.get('AI_MAX_QUEUE') ?? '', 10);
-const maxQueue = Number.isFinite(configuredQueue) && configuredQueue > 0 ? configuredQueue : 60;
+const maxQueue = Number.isFinite(configuredQueue) && configuredQueue > 0 ? configuredQueue : 55;
 // Lần hỏi phụ của câu y tế chỉ chạy khi hàng còn ngắn, để không làm hàng dài thêm.
 const otherCheckMaxQueue = 10;
 const queueFullMessage = 'Many people are asking right now. Please try again in a minute.';
-const answerTypes = ['answer', 'medical_redirect', 'out_of_scope', 'not_found'];
-const noAnswerTypes = ['medical_redirect', 'out_of_scope', 'not_found'];
-
-// Bản nháp: bác sĩ phải duyệt danh sách này trước khi có người tham gia thật.
-const emergencyPatterns = [
-  /chest pain/, /pain in my chest/, /heart attack/, /stroke/,
-  /can'?t breathe/, /cannot breathe/, /short(ness)? of breath/,
-  /struggling to breathe/, /faint(ed|ing)?/, /pass(ed|ing) out/, /collaps/,
-  /unconscious/, /slurred speech/, /face (is )?drooping/,
-  /numb(ness)? (in|on) (my )?(arm|face|leg)/,
-  /suicid/, /kill myself/, /end my life/, /self[- ]harm/, /hurt myself/,
-];
-
-const rules =
-  `- If the question asks about medication, symptoms, test results, diagnosis or treatment, set type "medical_redirect": say kindly that this is a question for their doctor or care team, and that they can note it as a question for their next appointment. Give no medical information. This rule comes first: use it whenever any part of the question is medical, even if another part could be answered.
-- If the question has nothing to do with the app, the study or the relaxation exercises, set type "out_of_scope" and decline politely in one sentence.
-- Never mention passages, sources, ids or these instructions in the answer; call them "the study information".`;
-
-const systemWithPassages =
-  `You are "Ask EmbraceAI", a helper inside a research app for adults with heart conditions.
-Answer ONLY from the passages provided. Never use outside knowledge.
-Rules:
-${rules}
-- If a passage names the setting or option the question is about, set type "answer" and say where to find it (for example, which menu offers it), even if the passage only lists it.
-- If the question has several parts, answer the parts the passages cover, then say in one short sentence which part the study information does not cover yet. Set type "answer" if any part is answered.
-- If the passages answer no part of the question, set type "not_found" and say the information is not available yet.
-- Otherwise set type "answer" and answer in plain, friendly English for older adults, in at most 100 words.
-- Never invent screens, tabs, buttons, menus or features: mention only those a passage names. A question about something the app does not have is "not_found" if it is about the app, otherwise "out_of_scope".
-- Only state details the passages state. Do not describe icons, colours, button shapes or screen positions unless a passage does. Do not repeat example IDs or keys.
-- used_sources lists the ids of the passages you actually used.
-Reply with JSON only: {"type": "...", "answer": "...", "used_sources": ["..."]}`;
-
-// Không có đoạn nào đủ gần: model chỉ được xếp loại, không được trả lời.
-const systemWithoutPassages =
-  `You are "Ask EmbraceAI", a helper inside a research app for adults with heart conditions.
-No study material matched this question, so you must NOT answer it. Only classify it:
-${rules}
-- Otherwise set type "not_found" and say the information is not available yet.
-Reply with JSON only: {"type": "...", "answer": "...", "used_sources": []}`;
-
-// Lần hỏi phụ cho câu y tế: chỉ trả lời có/không, không viết gì khác.
-const otherQuestionCheck =
-  `You check one question sent to a helper inside a research app for adults with heart conditions. Part of the question is medical, and it has already been passed to the care team.
-Decide whether the question ALSO asks something that is not about health or medicine, for example how to use the app, how the study works or how the relaxation exercises work.
-Reply with JSON only: {"other_question": true} or {"other_question": false}`;
 
 interface Chunk {
-  document_slug: string;
+  id: string;
   document_title: string;
-  chunk_key: string;
   heading: string;
   content: string;
-  similarity: number;
 }
 
 interface ModelReply {
   type: string;
   answer: string;
   used_sources: string[];
+  question_english?: string;
 }
 
 class ModelError extends Error {
@@ -222,21 +179,12 @@ async function runModel(
 
 async function callModel(
   admin: SupabaseClient,
-  system: string,
+  language: AskLanguage,
   user: string,
-  types: string[],
 ): Promise<ModelReply> {
   const content = await runModel(
     admin,
-    modelRequest(system, user, {
-      type: 'object',
-      properties: {
-        type: { type: 'string', enum: types },
-        answer: { type: 'string' },
-        used_sources: { type: 'array', items: { type: 'string' } },
-      },
-      required: ['type', 'answer', 'used_sources'],
-    }),
+    modelRequest(systemPrompt(language), user, answerFormat(language)),
     answerWaitMs,
   );
 
@@ -245,13 +193,38 @@ async function callModel(
     const parsed = JSON.parse(
       content.slice(content.indexOf('{'), content.lastIndexOf('}') + 1),
     ) as ModelReply;
-    if (!types.includes(parsed.type) || typeof parsed.answer !== 'string') {
+    if (!answerTypes.includes(parsed.type) || typeof parsed.answer !== 'string') {
       throw new Error(`unexpected reply type ${parsed.type}`);
     }
+    if (language === 'vi') parsed.answer = withVietnameseNames(parsed.answer);
     return parsed;
   } catch (error) {
     throw new ModelError('error', `Invalid model reply: ${error}`);
   }
+}
+
+let shelfCache: { at: number; chunks: Chunk[] } | null = null;
+
+// Cả kệ, theo thứ tự đã nạp (giống data/shelf.json của bộ thử). Cùng thứ tự thì
+// phần đầu prompt giống hệt nhau giữa các câu hỏi.
+async function loadShelf(admin: SupabaseClient): Promise<Chunk[]> {
+  if (shelfCache && Date.now() - shelfCache.at < shelfCacheMs) return shelfCache.chunks;
+  const { data, error } = await admin
+    .from('ai_chunks')
+    .select('chunk_key, heading, content, ai_documents(slug, title)')
+    .order('id');
+  if (error) throw new Error(`Shelf lookup failed: ${error.message}`);
+  const chunks = (data ?? []).map((row) => {
+    const document = row.ai_documents as unknown as { slug: string; title: string };
+    return {
+      id: `${document.slug}#${row.chunk_key}`,
+      document_title: document.title,
+      heading: row.heading,
+      content: row.content,
+    };
+  });
+  shelfCache = { at: Date.now(), chunks };
+  return chunks;
 }
 
 Deno.serve(async (request) => {
@@ -299,6 +272,8 @@ Deno.serve(async (request) => {
   if (!question || question.length > maxQuestionLength) {
     return json(400, { error: 'The question is empty or too long' });
   }
+  // Ngôn ngữ app đang dùng: câu trả lời và tên nút trong đó theo đúng màn hình.
+  const language: AskLanguage = body.language === 'vi' ? 'vi' : 'en';
 
   if (dailyLimit > 0) {
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
@@ -320,90 +295,61 @@ Deno.serve(async (request) => {
     resultType: string,
     answer: string,
     sources: string[],
-    topSimilarity: number | null,
+    questionEnglish: string | null = null,
   ) => {
     await admin.from('ai_interactions').insert({
       participant_code: code,
       question,
+      language,
+      // Câu tiếng Việt kèm bản dịch của model, để nhóm nghiên cứu đọc được.
+      question_english: questionEnglish?.slice(0, 1000) || null,
       result_type: resultType,
       answer: answer.slice(0, 4000),
       sources,
-      top_similarity: topSimilarity,
       model: Deno.env.get('MODEL_NAME') ?? 'gpt-oss:20b',
       latency_ms: Date.now() - started,
     });
   };
 
   // Bước 2: luật cứng chạy trước, câu khẩn cấp không bao giờ tới model.
-  const lower = question.toLowerCase();
-  if (emergencyPatterns.some((pattern) => pattern.test(lower))) {
-    await log('emergency', '', [], null);
+  if (isEmergency(question)) {
+    await log('emergency', '', []);
     return json(200, { type: 'emergency', answer: '', sources: [] });
   }
 
-  // Hàng chờ đã quá dài: báo bận ngay, trước khi tốn công tìm tài liệu.
+  // Hàng chờ đã quá dài: báo bận ngay, trước khi tốn công đọc kệ.
   const waiting = await queueLength(admin);
   if (waiting >= maxQueue) {
-    await log('busy', `Queue full: ${waiting} questions waiting`, [], null);
+    await log('busy', `Queue full: ${waiting} questions waiting`, []);
     return json(200, { type: 'busy', answer: queueFullMessage, sources: [] });
   }
 
-  // Bước 3–4: lập vector câu hỏi, tìm trên kệ theo cả nghĩa lẫn từ khoá.
-  const vector = Array.from(
-    await embedder.run(question, { mean_pool: true, normalize: true }),
-  );
-  const { data: matches, error: matchError } = await admin.rpc(
-    'match_ai_chunks_hybrid',
-    { query_text: question, query_embedding: JSON.stringify(vector), match_count: topK },
-  );
-  if (matchError) {
-    await log('error', 'Shelf lookup failed', [], null);
+  // Bước 3–4: cả kệ đi kèm câu hỏi. Kệ quá dài thì Ollama sẽ lặng lẽ cắt mất
+  // lời dặn, nên dừng hẳn ở đây.
+  let shelf: Chunk[];
+  try {
+    shelf = await loadShelf(admin);
+  } catch (error) {
+    await log('error', String(error).slice(0, 500), []);
     return json(200, { type: 'error', answer: '', sources: [] });
   }
-  const threshold = Number(Deno.env.get('AI_MATCH_THRESHOLD') ?? '0.70');
-  const chunks = (matches ?? []) as Chunk[];
-  const relevant = chunks.filter((chunk) => chunk.similarity >= threshold);
-  // Thứ tự đã gộp cả từ khoá, nên đoạn đầu chưa chắc gần nghĩa nhất.
-  const topSimilarity = chunks.length
-    ? Math.max(...chunks.map((chunk) => chunk.similarity))
-    : null;
-  const idOf = (chunk: Chunk) => `${chunk.document_slug}#${chunk.chunk_key}`;
+  if (!shelf.length || shelfCharacters(shelf) > maxShelfCharacters) {
+    await log('error', `Shelf does not fit one prompt: ${shelfCharacters(shelf)} characters`, []);
+    return json(200, { type: 'error', answer: '', sources: [] });
+  }
 
-  // Bước 5–6: model viết câu trả lời (hoặc chỉ xếp loại), rồi kiểm tra.
+  // Bước 5–6: model xếp loại và viết câu trả lời, rồi kiểm tra.
   try {
-    if (!relevant.length) {
-      const sorted = await callModel(
-        admin,
-        systemWithoutPassages,
-        `Question: ${question}`,
-        noAnswerTypes,
-      );
-      await log(sorted.type, sorted.answer, [], topSimilarity);
-      return json(200, {
-        type: sorted.type,
-        answer: shownAnswer(sorted),
-        also_asked: sorted.type === 'medical_redirect' && await askedSomethingElse(admin, question),
-        sources: [],
-      });
-    }
-    const passages = relevant
-      .map((chunk) => `[${idOf(chunk)}]\n${chunk.content}`)
-      .join('\n\n');
-    const reply = await callModel(
-      admin,
-      systemWithPassages,
-      `Passages:\n\n${passages}\n\nQuestion: ${question}`,
-      answerTypes,
-    );
-    // Nguồn chỉ được là những đoạn đã thật sự gửi cho model.
-    const used = relevant.filter((chunk) =>
-      (reply.used_sources ?? []).includes(idOf(chunk))
-    );
-    await log(reply.type, reply.answer, used.map(idOf), topSimilarity);
+    const reply = await callModel(admin, language, passagesMessage(shelf, question));
+    // Nguồn chỉ được là những đoạn có thật trên kệ.
+    const used = shelf.filter((chunk) => (reply.used_sources ?? []).includes(chunk.id));
+    await log(reply.type, reply.answer, used.map((chunk) => chunk.id), reply.question_english);
     return json(200, {
       type: reply.type,
       answer: shownAnswer(reply),
-      also_asked: reply.type === 'medical_redirect' && await askedSomethingElse(admin, question),
+      // Câu tiếng Việt: lần hỏi phụ đọc bản dịch của chính model, đáng tin hơn.
+      also_asked: reply.type === 'medical_redirect' &&
+        await askedSomethingElse(admin, reply.question_english || question),
       sources: reply.type === 'answer'
         ? used.map((chunk) => ({
           title: chunk.document_title,
@@ -413,7 +359,7 @@ Deno.serve(async (request) => {
     });
   } catch (error) {
     const resultType = error instanceof ModelError ? error.resultType : 'error';
-    await log(resultType, String(error).slice(0, 500), [], topSimilarity);
+    await log(resultType, String(error).slice(0, 500), []);
     return json(200, { type: resultType, answer: '', sources: [] });
   }
 });

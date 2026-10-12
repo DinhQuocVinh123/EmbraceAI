@@ -5,6 +5,7 @@
 //   node upload.mjs
 import { readdir, readFile } from 'node:fs/promises';
 
+import { maxShelfCharacters, shelfCharacters } from '../../supabase/functions/_shared/ask_prompts.ts';
 import { chunkMarkdown } from './shelf.mjs';
 
 const BATCH = 5;
@@ -29,7 +30,24 @@ if (!signIn.ok) {
 const { access_token: token } = await signIn.json();
 
 const manifest = JSON.parse(await readFile('content/manifest.json', 'utf8'));
-for (const file of (await readdir('content')).filter((f) => f.endsWith('.md'))) {
+const files = (await readdir('content')).filter((f) => f.endsWith('.md'));
+
+// ask-embrace gửi cả kệ trong mỗi câu hỏi. Kệ không vừa một prompt thì mọi câu
+// hỏi sẽ báo lỗi, nên không đưa lên, và phải quay lại bước tìm đoạn.
+const shelf = [];
+for (const file of files) {
+  const slug = file.replace(/\.md$/, '');
+  if (!manifest[slug]) continue;
+  for (const c of chunkMarkdown(await readFile(`content/${file}`, 'utf8'), slug)) {
+    shelf.push({ id: c.id, content: c.text });
+  }
+}
+if (shelfCharacters(shelf) > maxShelfCharacters) {
+  console.error(`The shelf would have ${shelfCharacters(shelf)} characters; at most ${maxShelfCharacters} fit in one prompt.`);
+  process.exit(1);
+}
+
+for (const file of files) {
   const slug = file.replace(/\.md$/, '');
   const meta = manifest[slug];
   if (!meta) {
