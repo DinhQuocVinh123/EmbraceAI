@@ -38,6 +38,60 @@ function Send($payload, $timeoutSec) {
         -ContentType 'application/json; charset=utf-8' -Headers @{ Authorization = "Bearer $key" }
 }
 
+# Số đo của máy (nvidia-smi và CPU mà Ollama dùng), đọc 5 giây một lần trên một
+# luồng riêng để không làm chậm việc lấy câu hỏi. Mỗi số đo chỉ gửi kèm một lần
+# hỏi việc, lúc nó còn mới: bài đo sức chứa (tools/ai-lab/capacity.mjs) dựa vào
+# đó để biết GPU đã làm hết sức chưa. Máy không có nvidia-smi thì bỏ phần GPU.
+$readStats = {
+    param($box, $slots)
+    $smi = (Get-Command nvidia-smi -ErrorAction SilentlyContinue).Source
+    $smiDefault = 'C:\Program Files\NVIDIA Corporation\NVSMI\nvidia-smi.exe'
+    if (-not $smi -and (Test-Path $smiDefault)) { $smi = $smiDefault }
+    $names = 'gpu_util', 'gpu_mem_busy', 'gpu_mem_used_mb', 'gpu_mem_total_mb', 'gpu_power_w', 'gpu_power_limit_w',
+        'gpu_clock_mhz', 'gpu_clock_max_mhz', 'gpu_temp_c'
+    $lastCpu = $null
+    $lastAt = $null
+    while ($true) {
+        $fresh = @{ slots = $slots; cpu_count = [Environment]::ProcessorCount }
+        if ($smi) {
+            try {
+                $line = & $smi '--query-gpu=utilization.gpu,utilization.memory,memory.used,memory.total,power.draw,power.limit,clocks.sm,clocks.max.sm,temperature.gpu' '--format=csv,noheader,nounits' |
+                    Select-Object -First 1
+                $values = "$line" -split ','
+                for ($i = 0; $i -lt $names.Count -and $i -lt $values.Count; $i++) {
+                    $number = 0.0
+                    # Vài GPU ghi "[N/A]" cho một số mục: bỏ qua mục đó.
+                    if ([double]::TryParse($values[$i].Trim(), [Globalization.NumberStyles]::Float,
+                            [Globalization.CultureInfo]::InvariantCulture, [ref]$number)) {
+                        $fresh[$names[$i]] = $number
+                    }
+                }
+            } catch { }
+        }
+        # Ollama dùng bao nhiêu nhân CPU từ lần đọc trước (1 = trọn một nhân).
+        $now = Get-Date
+        $cpu = 0.0
+        foreach ($process in @(Get-Process -Name 'ollama*' -ErrorAction SilentlyContinue)) {
+            try { $cpu += $process.TotalProcessorTime.TotalSeconds } catch { }
+        }
+        if ($null -ne $lastCpu -and $cpu -ge $lastCpu) {
+            $fresh.ollama_cpu_cores = [Math]::Round(($cpu - $lastCpu) / ($now - $lastAt).TotalSeconds, 2)
+        }
+        $lastCpu = $cpu
+        $lastAt = $now
+        $box.stats = $fresh
+        $box.seq++
+        Start-Sleep -Seconds 5
+    }
+}
+$statsBox = [hashtable]::Synchronized(@{ seq = 0; stats = $null })
+$statsShell = [PowerShell]::Create()
+[void]$statsShell.AddScript($readStats).AddArgument($statsBox).AddArgument($Slots)
+[void]$statsShell.BeginInvoke()
+# Đợi lần đọc đầu (tối đa 5 giây) để lần hỏi việc đầu tiên đã báo số chỗ.
+for ($i = 0; $i -lt 50 -and $statsBox.seq -eq 0; $i++) { Start-Sleep -Milliseconds 100 }
+$sentSeq = 0
+
 # Một câu: gọi Ollama, gửi kết quả (hoặc báo lỗi) về Supabase, trả về một dòng nhật ký.
 $answerOne = {
     param($id, $body, $endpoint, $key, $ollamaUrl)
@@ -82,7 +136,9 @@ while ($StopAfter -eq 0 -or $handled -lt $StopAfter -or $running.Count -gt 0) {
 
     try {
         # ai-worker giữ yêu cầu tối đa 20 giây; quá 35 giây là kết nối có vấn đề.
-        $reply = Send @{ action = 'next'; max = $free } 35
+        $payload = @{ action = 'next'; max = $free }
+        if ($statsBox.seq -ne $sentSeq) { $payload.stats = $statsBox.stats; $sentSeq = $statsBox.seq }
+        $reply = Send $payload 35
         if ($offline) { Log 'Supabase reachable again'; $offline = $false }
         # ai-worker bản cũ chưa biết "max": trả một việc theo khuôn cũ.
         $jobs = if ($null -ne $reply.jobs) { @($reply.jobs) } elseif ($reply.id) { @($reply) } else { @() }
@@ -101,4 +157,6 @@ while ($StopAfter -eq 0 -or $handled -lt $StopAfter -or $running.Count -gt 0) {
         Start-Sleep -Seconds $retrySeconds
     }
 }
+$statsShell.Stop()
+$statsShell.Dispose()
 $pool.Close()

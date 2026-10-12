@@ -31,6 +31,32 @@ async function sameSecret(a: string, b: string): Promise<boolean> {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// Số đo máy GPU gửi kèm khi hỏi việc (xem model-worker.ps1). Chỉ giữ các con số đã biết.
+const statKeys = [
+  'slots',
+  'gpu_util',
+  'gpu_mem_busy',
+  'gpu_mem_used_mb',
+  'gpu_mem_total_mb',
+  'gpu_power_w',
+  'gpu_power_limit_w',
+  'gpu_clock_mhz',
+  'gpu_clock_max_mhz',
+  'gpu_temp_c',
+  'cpu_count',
+  'ollama_cpu_cores',
+];
+
+function cleanStats(raw: unknown): Record<string, unknown> | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const stats: Record<string, unknown> = {};
+  for (const key of statKeys) {
+    const value = (raw as Record<string, unknown>)[key];
+    if (typeof value === 'number' && Number.isFinite(value)) stats[key] = value;
+  }
+  return Object.keys(stats).length ? { ...stats, at: new Date().toISOString() } : null;
+}
+
 Deno.serve(async (request) => {
   if (request.method !== 'POST') return json(405, { error: 'Method not allowed' });
 
@@ -72,6 +98,9 @@ Deno.serve(async (request) => {
   await admin
     .from('ai_worker_status')
     .upsert({ id: 1, last_seen: new Date().toISOString() });
+  // Ghi riêng, để nhịp "đã thấy" không bao giờ hỏng vì số đo.
+  const stats = cleanStats(body.stats);
+  if (stats) await admin.from('ai_worker_status').update({ stats }).eq('id', 1);
 
   if (body.action === 'next') {
     // max: số chỗ đang trống trên máy GPU; trả về tới chừng đó việc một lần.

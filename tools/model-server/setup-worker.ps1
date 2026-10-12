@@ -36,10 +36,14 @@ try {
         throw 'Ollama is not running. Open the Ollama app from the Start menu, then run this again.'
     }
     Write-Host "Models: $(($tags.models | ForEach-Object { $_.name }) -join ', ')"
-    $parallel = [Environment]::GetEnvironmentVariable('OLLAMA_NUM_PARALLEL', 'User')
-    if ($parallel -ne '4') {
-        Write-Warning 'Ollama answers one question at a time. Run START-HERE.bat again (or set OLLAMA_NUM_PARALLEL to 4) and restart Ollama.'
+    # Chương trình chạy nền lấy đúng số câu mà Ollama trả lời được cùng lúc.
+    $slots = 0
+    if (-not [int]::TryParse([Environment]::GetEnvironmentVariable('OLLAMA_NUM_PARALLEL', 'User'), [ref]$slots) -or $slots -lt 1) { $slots = 1 }
+    $slots = [Math]::Min($slots, 16)
+    if ($slots -lt 2) {
+        Write-Warning 'Ollama answers one question at a time. Run START-HERE.bat again (or set OLLAMA_NUM_PARALLEL to 8), restart Ollama, then run this again.'
     }
+    Write-Host "Ollama answers $slots questions at once."
 
     Step '2/4 Remove the old public address (Funnel and the Caddy gatekeeper)'
     $ts = 'C:\Program Files\Tailscale\tailscale.exe'
@@ -78,7 +82,7 @@ try {
     icacls $workerKey /inheritance:r /grant:r 'Administrators:F' 'SYSTEM:F' | Out-Null
 
     $script = Join-Path $dir 'model-worker.ps1'
-    $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$script`""
+    $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$script`" -Slots $slots"
     $trigger = New-ScheduledTaskTrigger -AtStartup
     $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1)
     Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Settings $settings -User 'SYSTEM' -RunLevel Highest | Out-Null
@@ -96,7 +100,7 @@ try {
         if (Test-Path $log) { Get-Content $log -Tail 10 | Write-Host }
         throw 'The worker started but has not reached Supabase yet.'
     }
-    Write-Host "The worker checked in $seen seconds ago."
+    Write-Host "The worker checked in $seen seconds ago and takes $slots questions at once."
     Write-Host "`nDONE. Questions from the app now reach the model on this PC." -ForegroundColor Green
     Write-Host 'You can delete this folder and the zip: the key is kept in C:\ProgramData\EmbraceAI.' -ForegroundColor Yellow
 }
