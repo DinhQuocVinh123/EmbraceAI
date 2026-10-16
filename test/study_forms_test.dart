@@ -508,10 +508,49 @@ void main() {
     }
     expect(
       find.text(
-        'How would you rate your overall emotional well-being right now?',
+        '8. How would you rate your overall emotional well-being right now?',
       ),
       findsOneWidget,
     );
+  });
+
+  testWidgets('final questions are numbered 1 to 20 like the header', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      FinalAssessmentScreen(
+        service: _FakeStudyAssessmentService(),
+        onSubmitted: () async {},
+        onDefer: () {},
+        onSignOut: () async {},
+      ),
+    );
+
+    // Patrick (khảo sát trên web di động): câu 8 không có số, câu 9–20 lại
+    // đếm từ 1 trong từng phần. Số trước câu hỏi phải khớp dòng "Question X of 20".
+    for (var item = 1; item <= 20; item++) {
+      expect(find.text('Question $item of 20'), findsOneWidget);
+      expect(
+        find.textContaining(RegExp('^$item\\. ')),
+        findsOneWidget,
+        reason: 'question $item',
+      );
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+    }
+
+    // Trang xem lại: ba phần đúng tên và số câu như lúc làm, không hiện điểm GAD.
+    expect(find.text('Review and submit'), findsOneWidget);
+    expect(find.text('Questions 1–8 · 0 of 8 answered'), findsOneWidget);
+    expect(find.text('Questions 9–16 · 0 of 8 answered'), findsOneWidget);
+    expect(find.text('Questions 17–20 · 0 of 4 answered'), findsOneWidget);
+    expect(find.textContaining('GAD'), findsNothing);
+
+    // Sửa một phần là quay lại đúng câu đầu của phần đó.
+    await tester.tap(find.text('Edit').at(1));
+    await tester.pumpAndSettle();
+    expect(find.text('Question 9 of 20'), findsOneWidget);
   });
 
   testWidgets('final questionnaire actions stack at 200 percent text', (

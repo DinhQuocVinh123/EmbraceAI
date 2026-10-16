@@ -216,6 +216,14 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
             Navigator.pop(dialogContext);
             _reissueAccess(context, service, record);
           },
+          onShowSignInLink: () {
+            Navigator.pop(dialogContext);
+            _showSignInLink(context, service, record);
+          },
+          onResetSignInLink: () {
+            Navigator.pop(dialogContext);
+            _resetSignInLink(context, service, record);
+          },
           onOpenFinalAssessment: () {
             Navigator.pop(dialogContext);
             _openFinalAssessment(context, service, record);
@@ -282,6 +290,63 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text(_functionError(error))));
     }
+  }
+
+  Future<void> _showSignInLink(
+    BuildContext context,
+    StaffPortalService service,
+    ParticipantRecord record, {
+    bool reset = false,
+  }) async {
+    try {
+      final link = await _whileLoading(
+        reset
+            ? 'Creating a new sign-in link...'
+            : 'Loading the sign-in link...',
+        () => service.signInLink(record.code, reset: reset),
+      );
+      if (!context.mounted) return;
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => _SignInLinkDialog(link: link, reset: reset),
+      );
+    } on FunctionException catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_functionError(error))));
+    }
+  }
+
+  Future<void> _resetSignInLink(
+    BuildContext context,
+    StaffPortalService service,
+    ParticipantRecord record,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Reset sign-in link?'),
+        content: Text(
+          'The current link for ${_displayCode(record.code)} will stop working '
+          'straight away, and you will need to send the new one. Only do this '
+          'if the link was shared with the wrong person.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Reset link'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    await _showSignInLink(context, service, record, reset: true);
   }
 
   Future<void> _changeStatus(
@@ -1560,6 +1625,71 @@ class _AccessCardDialog extends StatelessWidget {
   }
 }
 
+class _SignInLinkDialog extends StatelessWidget {
+  const _SignInLinkDialog({required this.link, this.reset = false});
+  final SignInLink link;
+  final bool reset;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      icon: const Icon(Icons.link),
+      title: Text(reset ? 'New sign-in link' : 'Sign-in link'),
+      content: SingleChildScrollView(
+        child: SizedBox(
+          width: 460,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Opening this link signs in to ${link.code} on any device, as '
+                'many times as needed, until the account expires on '
+                '${DateFormat.yMMMd().format(link.expiresAt)}.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              Gap.s,
+              Text(
+                reset
+                    ? 'The old link no longer works. Anyone with this link can '
+                          'open the account, so share it privately.'
+                    : 'This link stays the same, so you can come back here to '
+                          'copy it again. Anyone with it can open the account, '
+                          'so share it privately.',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+              ),
+              Gap.l,
+              SelectableText(link.url),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        OutlinedButton.icon(
+          onPressed: () async {
+            await Clipboard.setData(ClipboardData(text: link.url));
+            if (!context.mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Sign-in link copied')),
+            );
+          },
+          icon: const Icon(Icons.copy),
+          label: const Text('Copy link'),
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size.fromHeight(48),
+          ),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Done'),
+        ),
+      ],
+    );
+  }
+}
+
 String buildParticipantInvitation(ParticipantAccessCard card) {
   final accessKey = card.accessKey;
   // Trang đăng nhập là gốc của link, nên không phải viết cứng địa chỉ app.
@@ -1595,6 +1725,8 @@ class _ParticipantDetailPanel extends StatelessWidget {
     required this.onClose,
     required this.onConsentChanged,
     required this.onReissueAccess,
+    required this.onShowSignInLink,
+    required this.onResetSignInLink,
     required this.onOpenFinalAssessment,
   });
 
@@ -1604,6 +1736,8 @@ class _ParticipantDetailPanel extends StatelessWidget {
   final VoidCallback onClose;
   final ValueChanged<ConsentStatus> onConsentChanged;
   final VoidCallback onReissueAccess;
+  final VoidCallback onShowSignInLink;
+  final VoidCallback onResetSignInLink;
   final VoidCallback onOpenFinalAssessment;
 
   @override
@@ -1776,6 +1910,30 @@ class _ParticipantDetailPanel extends StatelessWidget {
                             : null,
                         icon: const Icon(Icons.qr_code_2),
                         label: const Text('Reissue sign-in QR'),
+                      ),
+                    ),
+                    Gap.s,
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed:
+                            record.status == ParticipantStatus.invited ||
+                                record.status == ParticipantStatus.active
+                            ? onShowSignInLink
+                            : null,
+                        icon: const Icon(Icons.link),
+                        label: const Text('Show sign-in link'),
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton(
+                        onPressed:
+                            record.status == ParticipantStatus.invited ||
+                                record.status == ParticipantStatus.active
+                            ? onResetSignInLink
+                            : null,
+                        child: const Text('Reset sign-in link'),
                       ),
                     ),
                     Gap.xl,

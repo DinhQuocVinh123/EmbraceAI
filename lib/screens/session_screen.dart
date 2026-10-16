@@ -8,10 +8,12 @@ import '../core/motion.dart';
 import '../l10n/l10n.dart';
 import '../l10n/labels.dart';
 import '../models/session_answers.dart';
+import '../services/appointment_service.dart';
 import '../models/session_audio.dart';
 import '../state/session_controller.dart';
 import '../models/session_scene.dart';
 import '../state/settings_store.dart';
+import '../widgets/appointment_prep_flow.dart';
 import '../widgets/session_chrome.dart';
 import '../widgets/session_prompts.dart';
 import '../widgets/session_help.dart';
@@ -236,6 +238,14 @@ class _PromptFor extends StatelessWidget {
 
   final SessionController controller;
 
+  static AppointmentService? _appointments(BuildContext context) {
+    try {
+      return context.read<AppointmentService>();
+    } on ProviderNotFoundException {
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return switch (controller.phase) {
@@ -248,24 +258,50 @@ class _PromptFor extends StatelessWidget {
         onSkip: controller.skipQuestion,
       ),
       SessionPhase.checkIn => CheckInPrompt(
-        onDone: (feeling, stress, practice, practiceLength) =>
+        onDone: (feeling, level, practice, practiceLength) =>
             controller.answerCheckIn(
               feeling: feeling,
-              stress: stress,
+              level: level,
               practice: practice,
               practiceLength: practiceLength,
             ),
         onSkip: controller.skipQuestion,
       ),
-      SessionPhase.question => QuestionPrompt(
-        onAnswer: controller.answerQuestion,
-        onSkip: controller.skipQuestion,
-      ),
+      // Thẻ chuẩn bị câu hỏi cho buổi khám (biên bản họp, mục 2). Bản chạy
+      // không có máy chủ thì giữ câu hỏi tự gõ như trước.
+      SessionPhase.question => switch (_appointments(context)) {
+        final service? => AppointmentPrepFlow(
+          service: service,
+          onSkip: controller.skipQuestion,
+          onFinished: (saved) => saved == null
+              ? controller.skipQuestion()
+              : controller.answerQuestion(saved.question),
+          frame:
+              ({
+                required String title,
+                String? subtitle,
+                String? eyebrow,
+                required Widget child,
+                VoidCallback? onSkip,
+              }) => PromptCard(
+                eyebrow: eyebrow,
+                title: title,
+                subtitle: subtitle,
+                onSkip: onSkip,
+                child: child,
+              ),
+        ),
+        null => QuestionPrompt(
+          onAnswer: controller.answerQuestion,
+          onSkip: controller.skipQuestion,
+        ),
+      },
       SessionPhase.feedback => FeedbackPrompt(
-        stressBefore: controller.answers.stressBefore,
+        feeling: controller.answers.feeling,
+        levelBefore: controller.answers.levelBefore,
         onDone: (mood, after, reflection) => controller.answerFeedback(
           mood: mood,
-          stressAfter: after,
+          levelAfter: after,
           reflection: reflection,
         ),
       ),

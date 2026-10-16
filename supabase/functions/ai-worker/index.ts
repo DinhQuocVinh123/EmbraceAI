@@ -1,7 +1,8 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 // Cửa duy nhất mà chương trình trên máy GPU (tools/model-server/model-worker.ps1)
-// dùng: lấy việc trong hàng chờ ai_jobs và gửi câu trả lời của model về.
+// dùng: lấy việc trong hàng chờ ai_jobs và gửi câu trả lời của model về. Có hai
+// loại việc: 'chat' cho Ollama và 'transcribe' (nói thay vì gõ) cho Whisper.
 // Máy GPU chỉ đi ra internet, không mở cổng nào. Khoá MODEL_SERVER_KEY dùng
 // chung với máy GPU; không cần đăng nhập Supabase nên verify_jwt = false.
 
@@ -108,21 +109,49 @@ Deno.serve(async (request) => {
     const max = typeof body.max === 'number' && Number.isInteger(body.max)
       ? Math.min(Math.max(body.max, 1), 8)
       : null;
+    // kinds: loại việc máy GPU làm được lúc này. Chỉ có Whisper chạy thì mới nhận
+    // việc transcribe; bản cũ không gửi kinds nên chỉ nhận việc chat.
+    const kinds = [body.kinds].flat().filter((kind) => kind === 'chat' || kind === 'transcribe');
     // Giữ yêu cầu tối đa 20 giây, cứ mỗi giây xem có việc mới chưa.
     const deadline = Date.now() + longPollMs;
     while (true) {
-      const { data, error } = max
+      const { data, error } = max && kinds.length
+        ? await admin.rpc('claim_ai_jobs', { max_jobs: max, kinds })
+        : max
         ? await admin.rpc('claim_ai_jobs', { max_jobs: max })
         : await admin.rpc('claim_ai_job');
       if (error) return json(500, { error: 'Could not read the queue' });
-      const jobs = ((data ?? []) as { id: string; request: unknown }[])
-        .map((job) => ({ id: job.id, body: JSON.stringify(job.request) }));
+      const jobs = ((data ?? []) as { id: string; request: Record<string, unknown>; kind?: string }[])
+        .map((job) =>
+          job.kind === 'transcribe'
+            // Đoạn ghi âm không đi kèm ở đây (một lần lấy tới 8 việc): máy GPU tải
+            // riêng từng đoạn bằng action 'audio'.
+            ? { id: job.id, kind: 'transcribe', language: job.request.language === 'vi' ? 'vi' : 'en' }
+            : { id: job.id, kind: 'chat', body: JSON.stringify(job.request) }
+        );
       if (jobs.length) return json(200, max ? { jobs } : jobs[0]);
       if (Date.now() + pollEveryMs > deadline) {
         return json(200, max ? { jobs: [] } : { id: null });
       }
       await sleep(pollEveryMs);
     }
+  }
+
+  // Đoạn ghi âm của một việc transcribe máy GPU đang làm, trả về dạng file WAV.
+  if (body.action === 'audio') {
+    const id = String(body.id ?? '');
+    if (!/^[0-9a-f-]{36}$/.test(id)) return json(400, { error: 'Invalid job id' });
+    const { data } = await admin
+      .from('ai_jobs')
+      .select('request')
+      .eq('id', id)
+      .eq('kind', 'transcribe')
+      .eq('status', 'working')
+      .maybeSingle();
+    const audio = typeof data?.request?.audio === 'string' ? data.request.audio : null;
+    if (!audio) return json(404, { error: 'No audio for this job' });
+    const bytes = Uint8Array.from(atob(audio), (char) => char.charCodeAt(0));
+    return new Response(bytes, { status: 200, headers: { 'Content-Type': 'audio/wav' } });
   }
 
   if (body.action === 'result' || body.action === 'fail') {

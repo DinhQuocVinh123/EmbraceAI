@@ -159,7 +159,7 @@ void main() {
     await tap(tester, 'Save to journal');
     expect(outcome?.answers.reflection, 'I noticed my breathing.');
     expect(outcome?.answers.question, 'What happens next?');
-    expect(outcome?.answers.stressAfter, isNotNull);
+    expect(outcome?.answers.levelAfter, isNotNull);
     expect(outcome?.answers.moodAfter, Mood.great);
     expect(outcome?.saveToJournal, isTrue);
     expect(outcome?.answers.practiceStarted, isTrue);
@@ -258,7 +258,7 @@ void main() {
     await tap(tester, 'Save to journal');
 
     expect(outcome?.answers.moodAfter, Mood.great);
-    expect(outcome?.answers.stressAfter, isNotNull);
+    expect(outcome?.answers.levelAfter, isNotNull);
     expect(outcome?.answers.reflection, '');
   });
 

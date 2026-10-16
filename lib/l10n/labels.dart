@@ -29,6 +29,73 @@ extension CheckInFeelingText on CheckInFeeling {
     CheckInFeeling.upset => l.feelingUpset,
     CheckInFeeling.distracted => l.feelingDistracted,
   };
+
+  /// Câu hỏi đo mức độ của cảm xúc này, trước buổi tập.
+  String scaleTitle(AppLocalizations l) => switch (this) {
+    CheckInFeeling.calm => l.checkInCalmScaleTitle,
+    CheckInFeeling.stressed => l.checkInStressedScaleTitle,
+    CheckInFeeling.tired => l.checkInTiredScaleTitle,
+    CheckInFeeling.upset => l.checkInUpsetScaleTitle,
+    CheckInFeeling.distracted => l.checkInDistractedScaleTitle,
+  };
+
+  String scaleLow(AppLocalizations l) => switch (this) {
+    CheckInFeeling.calm => l.checkInCalmScaleLow,
+    CheckInFeeling.stressed => l.checkInStressedScaleLow,
+    CheckInFeeling.tired => l.checkInTiredScaleLow,
+    CheckInFeeling.upset => l.checkInUpsetScaleLow,
+    CheckInFeeling.distracted => l.checkInDistractedScaleLow,
+  };
+
+  String scaleHigh(AppLocalizations l) => switch (this) {
+    CheckInFeeling.calm => l.checkInCalmScaleHigh,
+    CheckInFeeling.stressed => l.checkInStressedScaleHigh,
+    CheckInFeeling.tired => l.checkInTiredScaleHigh,
+    CheckInFeeling.upset => l.checkInUpsetScaleHigh,
+    CheckInFeeling.distracted => l.checkInDistractedScaleHigh,
+  };
+
+  /// Câu hỏi lại cùng thang đó sau buổi tập.
+  String afterTitle(AppLocalizations l) => switch (this) {
+    CheckInFeeling.calm => l.checkInCalmAfterTitle,
+    CheckInFeeling.stressed => l.checkInStressedAfterTitle,
+    CheckInFeeling.tired => l.checkInTiredAfterTitle,
+    CheckInFeeling.upset => l.checkInUpsetAfterTitle,
+    CheckInFeeling.distracted => l.checkInDistractedAfterTitle,
+  };
+
+  /// Tên ngắn của thang, viết hoa đầu câu: dòng nhật ký "Căng thẳng: 8 → 4".
+  String scaleName(AppLocalizations l) => switch (this) {
+    CheckInFeeling.calm => l.checkInCalmName,
+    CheckInFeeling.stressed => l.checkInStressedName,
+    CheckInFeeling.tired => l.checkInTiredName,
+    CheckInFeeling.upset => l.checkInUpsetName,
+    CheckInFeeling.distracted => l.checkInDistractedName,
+  };
+
+  /// Tên thang giữa câu: "Your {measure} went from 8 to 4."
+  String measure(AppLocalizations l) => switch (this) {
+    CheckInFeeling.calm => l.checkInCalmMeasure,
+    CheckInFeeling.stressed => l.checkInStressedMeasure,
+    CheckInFeeling.tired => l.checkInTiredMeasure,
+    CheckInFeeling.upset => l.checkInUpsetMeasure,
+    CheckInFeeling.distracted => l.checkInDistractedMeasure,
+  };
+
+  /// Lời đi kèm bài gợi ý khi cảm xúc mạnh; null khi nhánh không gợi ý.
+  String? strongTitle(AppLocalizations l) => switch (this) {
+    CheckInFeeling.calm => null,
+    CheckInFeeling.tired => l.checkInGentleTitle,
+    _ => l.checkInSlowerTitle,
+  };
+
+  String? strongBody(AppLocalizations l) => switch (this) {
+    CheckInFeeling.calm => null,
+    CheckInFeeling.stressed => l.checkInStressedStrongBody,
+    CheckInFeeling.tired => l.checkInTiredStrongBody,
+    CheckInFeeling.upset => l.checkInUpsetStrongBody,
+    CheckInFeeling.distracted => l.checkInDistractedStrongBody,
+  };
 }
 
 extension SessionSceneText on SessionScene {
@@ -122,16 +189,20 @@ extension SessionAnswersText on SessionAnswers {
   /// vai trò hỗ trợ thực hành, không phải nhà trị liệu.
   String closingMessage(AppLocalizations l) {
     final parts = <String>[];
-    final delta = stressDelta;
-    if (delta != null) {
-      if (delta >= 3) {
-        parts.add(l.closingStressDown(stressBefore!, stressAfter!));
-      } else if (delta > 0) {
-        parts.add(l.closingStressEased(stressBefore!, stressAfter!));
-      } else if (delta == 0) {
-        parts.add(l.closingStressSame(stressBefore!));
+    final change = improvement;
+    final scale = feeling ?? CheckInFeeling.stressed;
+    if (change != null) {
+      final measure = scale.measure(l);
+      if (change >= 3) {
+        parts.add(l.closingLevelBetter(measure, levelBefore!, levelAfter!));
+      } else if (change > 0) {
+        parts.add(
+          l.closingLevelBetterLittle(measure, levelBefore!, levelAfter!),
+        );
+      } else if (change == 0) {
+        parts.add(l.closingLevelSame(measure, levelBefore!));
       } else {
-        parts.add(l.closingStressUp);
+        parts.add(l.closingLevelWorse);
       }
     }
     if (practice == PracticeChoice.grounding) {

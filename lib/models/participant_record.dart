@@ -120,3 +120,17 @@ class ParticipantAccessCard {
   /// Cấp lại cho người tham gia đã có: key mới thay key cũ.
   final bool reissued;
 }
+
+/// Link đăng nhập cố định của một người tham gia, sống tới [expiresAt] hoặc
+/// tới khi nhân viên đặt lại link.
+class SignInLink {
+  const SignInLink({
+    required this.code,
+    required this.url,
+    required this.expiresAt,
+  });
+
+  final String code;
+  final String url;
+  final DateTime expiresAt;
+}

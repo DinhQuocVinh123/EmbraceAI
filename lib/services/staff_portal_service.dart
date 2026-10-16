@@ -84,6 +84,21 @@ class StaffPortalService {
     );
   }
 
+  /// Link đăng nhập cố định của người tham gia: lần đầu máy chủ tạo, các lần
+  /// sau trả lại đúng link đó. [reset] đổi sang link mới, link cũ hết hiệu lực.
+  Future<SignInLink> signInLink(String code, {bool reset = false}) async {
+    final response = await _client.functions.invoke(
+      'participant-sign-in-link',
+      body: {'participantCode': code, if (reset) 'reset': true},
+    );
+    final data = Map<String, dynamic>.from(response.data as Map);
+    return SignInLink(
+      code: data['participantCode'] as String,
+      url: data['linkUrl'] as String,
+      expiresAt: DateTime.parse(data['expiresAt'] as String).toLocal(),
+    );
+  }
+
   Future<void> updateStatus(String code, ParticipantStatus status) async {
     await _client.rpc(
       'set_participant_status',

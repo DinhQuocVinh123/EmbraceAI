@@ -53,6 +53,23 @@ void main() {
         s.primaryContainer,
       );
       text('Nhãn báo lỗi', s.error, s.surface);
+      text('Nút xoá trong hộp hỏi lại', s.onError, s.error);
+      // Câu hỏi vừa đổi chỗ được tô nền primaryContainer 40 %.
+      final moved = Color.alphaBlend(
+        s.primaryContainer.withValues(alpha: 0.4),
+        s.surface,
+      );
+      text('Nhãn câu hỏi vừa đổi chỗ', s.primary, moved);
+      text('Câu hỏi vừa đổi chỗ', s.onSurface, moved);
+      text('Nút xoá trên câu hỏi vừa đổi chỗ', s.error, moved);
+      ui(
+        'Ô đánh dấu chưa chọn',
+        s.onSurfaceVariant,
+        Color.alphaBlend(
+          s.surfaceContainerHighest.withValues(alpha: 0.6),
+          s.surface,
+        ),
+      );
       text('Chữ trong thanh thông báo', s.onInverseSurface, s.inverseSurface);
       text(
         'Chữ trong ô nhập',

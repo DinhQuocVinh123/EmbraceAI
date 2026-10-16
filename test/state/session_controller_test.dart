@@ -55,7 +55,7 @@ void main() {
     await c.answerSafety(SafetyAnswer.yes);
     await c.answerCheckIn(
       feeling: CheckInFeeling.stressed,
-      stress: 8,
+      level: 8,
       practice: practice,
       practiceLength: practiceLength,
     );
@@ -75,7 +75,7 @@ void main() {
       expect(fake.isPlaying, isFalse);
       await c.answerCheckIn(
         feeling: CheckInFeeling.calm,
-        stress: 2,
+        level: 2,
         practice: PracticeChoice.grounding,
         practiceLength: PracticeLength.full,
       );
@@ -235,7 +235,7 @@ void main() {
       await c.skipQuestion();
       await c.skipQuestion();
       expect(c.phase, SessionPhase.practice);
-      expect(c.answers.stressBefore, isNull);
+      expect(c.answers.levelBefore, isNull);
       expect(c.answers.feeling, isNull);
       expect(fake.isPlaying, isTrue);
     });
@@ -338,7 +338,7 @@ void main() {
         expect(c.phase, SessionPhase.feedback);
         await c.answerFeedback(
           mood: Mood.great,
-          stressAfter: 3,
+          levelAfter: 3,
           reflection: 'My shoulders relaxed.',
         );
         expect(c.phase, SessionPhase.question);
@@ -348,7 +348,7 @@ void main() {
         expect(c.answers.reflection, 'My shoulders relaxed.');
         expect(c.answers.moodAfter, Mood.great);
         expect(c.answers.question, 'What should I ask next time?');
-        expect(c.answers.stressDelta, 5);
+        expect(c.answers.improvement, 5);
         expect(c.answers.safety, SafetyAnswer.yes);
         expect(fake.isPlaying, isFalse);
       });
@@ -363,7 +363,7 @@ void main() {
       expect(c.phase, SessionPhase.question);
       await c.skipQuestion();
       expect(c.isFinished, isTrue);
-      expect(c.answers.stressAfter, isNull);
+      expect(c.answers.levelAfter, isNull);
       expect(c.answers.reflection, isNull);
     });
   });

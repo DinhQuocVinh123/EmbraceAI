@@ -7,6 +7,7 @@ import '../data/session_script.dart';
 import '../l10n/l10n.dart';
 import '../l10n/labels.dart';
 import '../models/journal_entry.dart';
+import '../models/mood.dart';
 import '../models/session_answers.dart';
 import '../models/session_scene.dart';
 import '../services/ask_service.dart';
@@ -112,8 +113,12 @@ class WelcomeScreen extends StatelessWidget {
         a.reflection!.trim(),
       if (a.question != null && a.question!.trim().isNotEmpty)
         l10n.journalLineQuestion(a.question!.trim()),
-      if (a.stressBefore != null && a.stressAfter != null)
-        l10n.journalLineStress(a.stressBefore!, a.stressAfter!),
+      if (a.levelBefore != null && a.levelAfter != null)
+        l10n.journalLineLevel(
+          (a.feeling ?? CheckInFeeling.stressed).scaleName(l10n),
+          a.levelBefore!,
+          a.levelAfter!,
+        ),
     ];
     return JournalEntry(
       mood: a.moodAfter,
@@ -325,11 +330,7 @@ class _ExpectationList extends StatelessWidget {
     final theme = Theme.of(context);
     final l10n = context.l10n;
     final items = [
-      (
-        Icons.schedule,
-        l10n.welcomeExpectTimeTitle,
-        l10n.welcomeExpectTimeBody,
-      ),
+      (Icons.schedule, l10n.welcomeExpectTimeTitle, l10n.welcomeExpectTimeBody),
       (
         Icons.touch_app_outlined,
         l10n.welcomeExpectFlowTitle,

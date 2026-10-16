@@ -8,6 +8,7 @@ import 'app.dart';
 import 'core/backend_config.dart';
 import 'screens/access_gate.dart';
 import 'screens/backend_setup_screen.dart';
+import 'services/appointment_service.dart';
 import 'services/ask_service.dart';
 import 'services/study_assessment_service.dart';
 import 'state/auth_store.dart';
@@ -36,6 +37,8 @@ Future<void> main() async {
       Provider(create: (_) => StudyAssessmentService()),
     if (BackendConfig.isConfigured)
       Provider<AskService>(create: (_) => SupabaseAskService()),
+    if (BackendConfig.isConfigured)
+      Provider<AppointmentService>(create: (_) => SupabaseAppointmentService()),
   ];
 
   runApp(

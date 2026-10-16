@@ -43,6 +43,8 @@ dependencies:
   video_player: ^2.11.1
   supabase_flutter: ^2.17.2
   qr_flutter: ^4.1.0
+  # Micro và giải mã âm thanh cho nút nói thay vì gõ (lib/core/voice_recorder_web.dart).
+  web: ^1.1.1
 
 dev_dependencies:
   flutter_test:

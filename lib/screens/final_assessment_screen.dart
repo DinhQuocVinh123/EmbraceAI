@@ -205,6 +205,7 @@ class _FinalAssessmentScreenState extends State<FinalAssessmentScreen> {
       return _ratingPage(
         context,
         section: l10n.finalSectionWellbeing,
+        number: page + 1,
         question: l10n.wellbeingQuestion,
         options: _wellbeingOptions(l10n),
         value: _answers.emotionalWellbeing,
@@ -217,7 +218,8 @@ class _FinalAssessmentScreenState extends State<FinalAssessmentScreen> {
         context,
         section: l10n.finalSectionExperience,
         stem: l10n.premStem,
-        number: index + 1,
+        // Một dãy số cho cả bảng, khớp với "Câu X / 20" ở trên.
+        number: page + 1,
         question: _premQuestions(l10n)[index],
         options: _premOptions(l10n),
         value: _answers.premResponses[index],
@@ -251,7 +253,7 @@ class _FinalAssessmentScreenState extends State<FinalAssessmentScreen> {
     BuildContext context, {
     required String section,
     String? stem,
-    int? number,
+    required int number,
     required String question,
     required Map<int, String> options,
     required int? value,
@@ -273,10 +275,7 @@ class _FinalAssessmentScreenState extends State<FinalAssessmentScreen> {
       ],
       Semantics(
         header: true,
-        child: Text(
-          number == null ? question : '$number. $question',
-          style: theme.textTheme.titleLarge,
-        ),
+        child: Text('$number. $question', style: theme.textTheme.titleLarge),
       ),
       Gap.m,
       for (final option in options.entries) ...[
@@ -325,7 +324,7 @@ class _FinalAssessmentScreenState extends State<FinalAssessmentScreen> {
       Semantics(
         header: true,
         child: Text(
-          '${index + 1}. ${_openQuestions(l10n)[index]}',
+          '${_page + 1}. ${_openQuestions(l10n)[index]}',
           style: theme.textTheme.titleLarge,
         ),
       ),
@@ -341,65 +340,62 @@ class _FinalAssessmentScreenState extends State<FinalAssessmentScreen> {
     ];
   }
 
+  /// Ba phần đúng tên và đúng thứ tự như lúc làm bài, kèm số câu, để người
+  /// tham gia nhận ra ngay. Không hiện điểm sàng lọc GAD: người tham gia tự
+  /// đọc điểm mà không ai giải thích thì dễ hoang mang; nhân viên vẫn xem được.
   List<Widget> _reviewContent(BuildContext context) {
-    final gadAnswered = _answers.gadResponses.whereType<int>().length;
+    final l10n = context.l10n;
+    final wellbeingAnswered =
+        _answers.gadResponses.whereType<int>().length +
+        (_answers.emotionalWellbeing == null ? 0 : 1);
     final premAnswered = _answers.premResponses.whereType<int>().length;
     final openAnswered = _openControllers
         .where((controller) => controller.text.trim().isNotEmpty)
         .length;
-    final gad2 = _answers.gad2Score;
-    final gad7 = _answers.gad7Score;
-    final l10n = context.l10n;
+    const wellbeingCount = _gadCount + 1;
+    const premStart = wellbeingCount;
+    const openStart = premStart + _premCount;
+    _ReviewRow row(
+      IconData icon,
+      String label,
+      int start,
+      int count,
+      int answered,
+    ) => _ReviewRow(
+      icon: icon,
+      label: label,
+      value:
+          '${l10n.finalReviewQuestions(start + 1, start + count)}'
+          ' · ${l10n.finalAnsweredOf(answered, count)}',
+      editLabel: l10n.entryEdit,
+      onEdit: () => setState(() => _page = start),
+    );
     return [
       _Intro(title: l10n.finalReviewTitle, body: l10n.finalReviewBody),
       Gap.xl,
-      _ReviewRow(
-        icon: Icons.psychology_alt_outlined,
-        label: l10n.finalReviewAnxiety,
-        value: l10n.finalAnsweredOf(gadAnswered, _gadCount),
+      row(
+        Icons.favorite_outline,
+        l10n.finalSectionWellbeing,
+        0,
+        wellbeingCount,
+        wellbeingAnswered,
       ),
       const Divider(height: 32),
-      _ReviewRow(
-        icon: Icons.favorite_outline,
-        label: l10n.finalSectionWellbeing,
-        value: _answers.emotionalWellbeing == null
-            ? l10n.demoNotAnswered
-            : l10n.finalOutOfFive(_answers.emotionalWellbeing!),
+      row(
+        Icons.fact_check_outlined,
+        l10n.finalSectionExperience,
+        premStart,
+        _premCount,
+        premAnswered,
       ),
       const Divider(height: 32),
-      _ReviewRow(
-        icon: Icons.fact_check_outlined,
-        label: l10n.finalReviewExperience,
-        value: l10n.finalAnsweredOf(premAnswered, _premCount),
+      row(
+        Icons.notes_outlined,
+        l10n.finalSectionOwnWords,
+        openStart,
+        _openCount,
+        openAnswered,
       ),
-      const Divider(height: 32),
-      _ReviewRow(
-        icon: Icons.notes_outlined,
-        label: l10n.finalReviewWritten,
-        value: l10n.finalAnsweredOf(openAnswered, _openCount),
-      ),
-      if (gad2 != null) ...[
-        Gap.xl,
-        Text(
-          l10n.finalScreeningTotals,
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-        ),
-        Gap.s,
-        Text(
-          gad7 != null
-              ? l10n.finalGadTotals(gad2, gad7)
-              : l10n.finalGadIncomplete(gad2),
-        ),
-        Gap.xs,
-        Text(
-          l10n.finalScreeningNote,
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ],
     ];
   }
 
@@ -482,14 +478,20 @@ class _ReviewRow extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.value,
+    required this.editLabel,
+    required this.onEdit,
   });
 
   final IconData icon;
   final String label;
   final String value;
+  final String editLabel;
+  final VoidCallback onEdit;
 
   @override
   Widget build(BuildContext context) {
+    // Cột chữ giữ trọn chiều ngang; nút sửa nằm dưới, nên ở cỡ chữ 200% không
+    // có gì bị chèn ép.
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -502,6 +504,11 @@ class _ReviewRow extends StatelessWidget {
               Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
               Gap.xs,
               Text(value),
+              TextButton.icon(
+                onPressed: onEdit,
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                label: Text(editLabel, semanticsLabel: '$editLabel: $label'),
+              ),
             ],
           ),
         ),

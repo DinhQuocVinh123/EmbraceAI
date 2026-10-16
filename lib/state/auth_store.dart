@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../core/address_bar.dart';
 import '../models/account_session.dart';
 import '../services/credential_codec.dart';
 
@@ -38,7 +39,8 @@ class AuthStore extends ChangeNotifier {
   AuthStore({SupabaseClient? client, Uri? initialUri})
     : _client = client ?? Supabase.instance.client,
       _expectedParticipantCode = participantCodeFromUri(initialUri ?? Uri.base),
-      _signInTokenHash = signInTokenFromUri(initialUri ?? Uri.base) {
+      _signInTokenHash = signInTokenFromUri(initialUri ?? Uri.base),
+      _signInLink = signInLinkFromUri(initialUri ?? Uri.base) {
     _subscription = _client.auth.onAuthStateChange.listen((event) {
       if (!_manualFlow) unawaited(_handleAuthChange(event.session?.user));
     });
@@ -52,6 +54,11 @@ class AuthStore extends ChangeNotifier {
   /// tham gia. Link nằm trên tên miền của app để người nhận đọc được; app tự
   /// xác thực mã với Supabase thay cho trang xác thực của Supabase.
   final String? _signInTokenHash;
+
+  /// Link dùng lại được `?link=EA1234ABCD.<mã>`: mỗi người tham gia một link,
+  /// sống tới khi tài khoản hết hạn hoặc nhân viên đổi link. Máy chủ đổi nó
+  /// thành một mã đăng nhập một lần, rồi đăng nhập như link một lần ở trên.
+  final String? _signInLink;
   late final StreamSubscription<AuthState> _subscription;
 
   AccountSession? _session;
@@ -66,7 +73,30 @@ class AuthStore extends ChangeNotifier {
   AuthError? get error => _error;
 
   Future<void> _restoreSession() async {
-    final tokenHash = _signInTokenHash;
+    var tokenHash = _signInTokenHash;
+    if (_signInLink case final link?) {
+      // Mã bí mật không ở lại trên thanh địa chỉ, dù đăng nhập được hay không.
+      removeQueryParameter('link');
+      try {
+        final response = await _client.functions.invoke(
+          'link-sign-in',
+          body: {'link': link},
+        );
+        final data = response.data;
+        tokenHash = data is Map ? data['tokenHash'] as String? : null;
+      } catch (_) {
+        tokenHash = null;
+      }
+      if (tokenHash == null) {
+        // Link đã bị đổi hoặc tài khoản hết hạn. Nếu máy vẫn còn phiên đăng
+        // nhập thì cứ dùng tiếp, không báo lỗi.
+        if (_client.auth.currentUser == null) {
+          _error = const AuthError(AuthErrorKind.linkExpired);
+        }
+        await _handleAuthChange(_client.auth.currentUser);
+        return;
+      }
+    }
     if (tokenHash != null) {
       // Tự xử lý sự kiện đăng nhập ở dưới, tránh chạy _handleAuthChange hai lần.
       _manualFlow = true;
@@ -160,9 +190,7 @@ class AuthStore extends ChangeNotifier {
       );
       final user = response.user;
       if (user == null) {
-        throw const AuthFlowException(
-          AuthError(AuthErrorKind.invalidDetails),
-        );
+        throw const AuthFlowException(AuthError(AuthErrorKind.invalidDetails));
       }
       await _client.rpc('activate_participant');
       final loaded = await _loadSession(user);
@@ -198,9 +226,7 @@ class AuthStore extends ChangeNotifier {
       final loaded = user == null ? null : await _loadSession(user);
       if (loaded == null || !loaded.isStaff) {
         await _client.auth.signOut();
-        throw const AuthFlowException(
-          AuthError(AuthErrorKind.noStaffAccess),
-        );
+        throw const AuthFlowException(AuthError(AuthErrorKind.noStaffAccess));
       }
       _session = loaded;
     });
@@ -301,6 +327,15 @@ class AuthStore extends ChangeNotifier {
     final raw = uri.queryParameters['signin']?.trim().toLowerCase();
     if (raw == null) return null;
     return RegExp(r'^[0-9a-f]{20,128}$').hasMatch(raw) ? raw : null;
+  }
+
+  @visibleForTesting
+  static String? signInLinkFromUri(Uri uri) {
+    final raw = uri.queryParameters['link']?.trim();
+    if (raw == null) return null;
+    return RegExp(r'^EA[A-Z0-9]{8}\.[A-Za-z0-9_-]{43}$').hasMatch(raw)
+        ? raw
+        : null;
   }
 
   bool _matchesQrParticipant(AccountSession session) {

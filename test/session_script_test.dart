@@ -191,17 +191,40 @@ void main() {
   });
 
   group('SessionAnswers', () {
-    test('stressDelta cần đủ cả hai lần đo', () {
-      final a = SessionAnswers()..stressBefore = 8;
-      expect(a.stressDelta, isNull);
-      a.stressAfter = 3;
-      expect(a.stressDelta, 5);
+    test('improvement cần đủ cả hai lần đo', () {
+      final a = SessionAnswers()..levelBefore = 8;
+      expect(a.improvement, isNull);
+      a.levelAfter = 3;
+      expect(a.improvement, 5);
+    });
+
+    test('thang bình tâm: điểm tăng là đỡ hơn', () {
+      final a = SessionAnswers()
+        ..feeling = CheckInFeeling.calm
+        ..levelBefore = 4
+        ..levelAfter = 8;
+      expect(a.improvement, 4);
+      expect(a.closingMessage(english), contains('sense of calm'));
+      expect(a.closingMessage(english), isNot(contains('honest')));
+    });
+
+    test('câu chốt nói đúng cảm xúc đã chọn, không mặc định là stress', () {
+      final a = SessionAnswers()
+        ..feeling = CheckInFeeling.tired
+        ..levelBefore = 8
+        ..levelAfter = 4;
+      expect(a.closingMessage(english), contains('tiredness went from 8 to 4'));
+      expect(a.closingMessage(english), isNot(contains('stress')));
+      expect(
+        a.closingMessage(lookupAppLocalizations(const Locale('vi'))),
+        contains('mệt mỏi'),
+      );
     });
 
     test('giảm nhiều thì câu chốt nhắc lại đúng con số', () {
       final a = SessionAnswers()
-        ..stressBefore = 8
-        ..stressAfter = 3
+        ..levelBefore = 8
+        ..levelAfter = 3
         ..practice = PracticeChoice.grounding;
       expect(a.closingMessage(english), contains('8'));
       expect(a.closingMessage(english), contains('3'));
@@ -210,15 +233,15 @@ void main() {
 
     test('không đổi thì trấn an chứ không báo thất bại', () {
       final a = SessionAnswers()
-        ..stressBefore = 5
-        ..stressAfter = 5;
+        ..levelBefore = 5
+        ..levelAfter = 5;
       expect(a.closingMessage(english), contains('does not always shift'));
     });
 
     test('căng hơn lúc đầu vẫn được ghi nhận tử tế', () {
       final a = SessionAnswers()
-        ..stressBefore = 3
-        ..stressAfter = 6;
+        ..levelBefore = 3
+        ..levelAfter = 6;
       expect(a.closingMessage(english), contains('honest'));
     });
 

@@ -40,7 +40,8 @@ if ($KeepKey) {
 
 $zip = Join-Path $PSScriptRoot 'EmbraceAI-model-server.zip'
 $files = 'START-HERE.bat', 'setup-model-server.ps1', '2-CONNECT-TO-SUPABASE.bat', 'setup-worker.ps1',
-    'model-worker.ps1', 'README.txt', 'server-key.txt', 'supabase-url.txt' |
+    'model-worker.ps1', '3-ADD-SPEECH-TO-TEXT.bat', 'setup-speech.ps1', 'speech-test.wav',
+    'README.txt', 'server-key.txt', 'supabase-url.txt' |
     ForEach-Object { Join-Path $PSScriptRoot $_ }
 Compress-Archive -Path $files -DestinationPath $zip -Force
 Write-Host "Done. Copy $zip to the GPU machine, unzip it there and double-click 2-CONNECT-TO-SUPABASE.bat." -ForegroundColor Green

@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../core/motion.dart';
 import '../core/theme.dart';
+import '../data/check_in_paths.dart';
 import '../data/session_script.dart';
 import '../l10n/l10n.dart';
 import '../l10n/labels.dart';
 import '../models/mood.dart';
 import '../models/session_answers.dart';
+import 'dictation_button.dart';
 
 /// Khung chung cho mọi thẻ hỏi chen giữa buổi thiền.
 ///
@@ -19,10 +21,14 @@ class PromptCard extends StatelessWidget {
     required this.child,
     this.subtitle,
     this.onSkip,
+    this.eyebrow,
   });
 
   final String title;
   final String? subtitle;
+
+  /// Dòng nhỏ phía trên tiêu đề, ví dụ "Bước 1/3" của luồng nhiều bước.
+  final String? eyebrow;
   final Widget child;
   final VoidCallback? onSkip;
 
@@ -53,6 +59,16 @@ class PromptCard extends StatelessWidget {
               ),
             ),
             Gap.m,
+            if (eyebrow != null) ...[
+              Text(
+                eyebrow!,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: theme.colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Gap.xs,
+            ],
             Semantics(
               header: true,
               child: Text(
@@ -99,6 +115,7 @@ class ChoiceButton extends StatelessWidget {
     this.description,
     this.selected = false,
     this.leading,
+    this.showCheck = true,
   });
 
   final String label;
@@ -106,6 +123,10 @@ class ChoiceButton extends StatelessWidget {
   final VoidCallback onPressed;
   final bool selected;
   final Widget? leading;
+
+  /// Dấu tích bên phải khi được chọn. Tắt đi khi [leading] đã là ô đánh dấu
+  /// (chọn nhiều mục), để không có hai dấu cho cùng một trạng thái.
+  final bool showCheck;
 
   @override
   Widget build(BuildContext context) {
@@ -171,7 +192,7 @@ class ChoiceButton extends StatelessWidget {
                       height: 24,
                       child: AnimatedSwitcher(
                         duration: AppMotion.duration(context, AppMotion.fast),
-                        child: selected
+                        child: selected && showCheck
                             ? Icon(
                                 Icons.check_circle,
                                 key: const ValueKey('selected'),
@@ -286,7 +307,9 @@ class SafetyPrompt extends StatelessWidget {
   }
 }
 
-/// Beat 3 — hỏi trạng thái hiện tại, đo căng thẳng, rồi chọn bài.
+/// Beat 3 — hỏi trạng thái hiện tại, đo mức độ của chính trạng thái đó, rồi
+/// chọn bài. Mỗi trạng thái có câu hỏi và gợi ý riêng
+/// (lib/data/check_in_paths.dart).
 ///
 /// Các trạng thái này hỗ trợ tailoring và không bị quy đổi thành điểm mood.
 class CheckInPrompt extends StatefulWidget {
@@ -294,7 +317,7 @@ class CheckInPrompt extends StatefulWidget {
 
   final void Function(
     CheckInFeeling feeling,
-    int stress,
+    int level,
     PracticeChoice practice,
     PracticeLength practiceLength,
   )
@@ -308,7 +331,7 @@ class CheckInPrompt extends StatefulWidget {
 class _CheckInPromptState extends State<CheckInPrompt> {
   CheckInFeeling? _feeling;
   PracticeChoice? _practice;
-  double _stress = 5;
+  double _level = 5;
   int _step = 0;
 
   static String _duration(AppLocalizations l10n, Duration duration) =>
@@ -317,6 +340,12 @@ class _CheckInPromptState extends State<CheckInPrompt> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final feeling = _feeling ?? CheckInFeeling.calm;
+    final suggestion = feeling.path.suggestionFor(_level.round());
+    final practices = [
+      ?suggestion,
+      ...PracticeChoice.values.where((p) => p != suggestion),
+    ];
     final content = switch (_step) {
       0 => PromptCard(
         title: l10n.checkInFeelingTitle,
@@ -339,14 +368,15 @@ class _CheckInPromptState extends State<CheckInPrompt> {
         ),
       ),
       1 => PromptCard(
-        title: l10n.checkInStressTitle,
-        subtitle: l10n.checkInStressSubtitle,
+        title: feeling.scaleTitle(l10n),
+        subtitle: l10n.checkInScaleSubtitle,
         onSkip: widget.onSkip,
         child: Column(
           children: [
-            _StressSlider(
-              value: _stress,
-              onChanged: (v) => setState(() => _stress = v),
+            _LevelSlider(
+              feeling: feeling,
+              value: _level,
+              onChanged: (v) => setState(() => _level = v),
             ),
             Gap.l,
             FilledButton(
@@ -357,23 +387,26 @@ class _CheckInPromptState extends State<CheckInPrompt> {
         ),
       ),
       2 => PromptCard(
-        title: _stress >= 7
-            ? l10n.checkInSlowerTitle
+        title: suggestion != null
+            ? feeling.strongTitle(l10n)!
             : l10n.checkInChooseTitle,
-        subtitle: _stress >= 7 ? l10n.checkInSlowerBody : null,
+        subtitle: suggestion != null ? feeling.strongBody(l10n) : null,
         onSkip: widget.onSkip,
         child: Column(
           children: [
-            for (final p in PracticeChoice.values) ...[
+            // Bài được gợi ý đứng đầu và ghi rõ "Gợi ý", không chỉ dựa vào màu.
+            for (final (index, p) in practices.indexed) ...[
+              if (index > 0) Gap.s,
               ChoiceButton(
                 label: p.label(l10n),
-                description: p.description(l10n),
+                description: p == suggestion
+                    ? '${l10n.checkInSuggested} · ${p.description(l10n)}'
+                    : p.description(l10n),
                 onPressed: () => setState(() {
                   _practice = p;
                   _step = 3;
                 }),
               ),
-              if (p != PracticeChoice.values.last) Gap.s,
             ],
           ],
         ),
@@ -395,8 +428,8 @@ class _CheckInPromptState extends State<CheckInPrompt> {
                   ),
                 ),
                 onPressed: () => widget.onDone(
-                  _feeling ?? CheckInFeeling.calm,
-                  _stress.round(),
+                  feeling,
+                  _level.round(),
                   _practice ?? PracticeChoice.grounding,
                   length,
                 ),
@@ -449,6 +482,7 @@ class _QuestionPromptState extends State<QuestionPrompt> {
             decoration: InputDecoration(
               labelText: context.l10n.questionLabel,
               hintText: context.l10n.questionHint,
+              suffixIcon: DictationButton.maybe(_controller),
             ),
           ),
           Gap.m,
@@ -462,32 +496,38 @@ class _QuestionPromptState extends State<QuestionPrompt> {
   }
 }
 
-/// Beat 11 — ghi mood năm mức, đo lại căng thẳng và ghi cảm nhận.
+/// Beat 11 — ghi mood năm mức, đo lại mức độ của cảm xúc đã chọn lúc đầu và
+/// ghi cảm nhận. Bỏ qua bước check-in thì không có gì để đo lại.
 class FeedbackPrompt extends StatefulWidget {
   const FeedbackPrompt({
     super.key,
     required this.onDone,
-    required this.stressBefore,
+    required this.feeling,
+    required this.levelBefore,
   });
 
-  final void Function(Mood? mood, int? stressAfter, String reflection) onDone;
-  final int? stressBefore;
+  final void Function(Mood? mood, int? levelAfter, String reflection) onDone;
+  final CheckInFeeling? feeling;
+  final int? levelBefore;
 
   @override
   State<FeedbackPrompt> createState() => _FeedbackPromptState();
 }
 
 class _FeedbackPromptState extends State<FeedbackPrompt> {
-  late double _stress = (widget.stressBefore ?? 5).toDouble();
+  late double _level = (widget.levelBefore ?? 5).toDouble();
   Mood? _mood;
-  int? _stressAfter;
+  int? _levelAfter;
   final _controller = TextEditingController();
   int _step = 0;
 
-  void _next() => setState(() => _step++);
+  /// Bỏ qua check-in thì không có mức độ lúc đầu, nên không hỏi lại.
+  void _next() => setState(
+    () => _step = _step == 0 && widget.levelBefore == null ? 2 : _step + 1,
+  );
 
   void _finish([String reflection = '']) {
-    widget.onDone(_mood, _stressAfter, reflection.trim());
+    widget.onDone(_mood, _levelAfter, reflection.trim());
   }
 
   @override
@@ -499,6 +539,7 @@ class _FeedbackPromptState extends State<FeedbackPrompt> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final feeling = widget.feeling ?? CheckInFeeling.stressed;
     final content = switch (_step) {
       0 => PromptCard(
         title: l10n.feedbackMoodTitle,
@@ -511,10 +552,10 @@ class _FeedbackPromptState extends State<FeedbackPrompt> {
                 label: mood.label(l10n),
                 selected: _mood == mood,
                 leading: Text(mood.emoji, style: const TextStyle(fontSize: 26)),
-                onPressed: () => setState(() {
+                onPressed: () {
                   _mood = mood;
-                  _step = 1;
-                }),
+                  _next();
+                },
               ),
               if (mood != Mood.values.last) Gap.s,
             ],
@@ -522,21 +563,22 @@ class _FeedbackPromptState extends State<FeedbackPrompt> {
         ),
       ),
       1 => PromptCard(
-        title: l10n.feedbackStressTitle,
-        subtitle: widget.stressBefore != null
-            ? l10n.feedbackStressStarted(widget.stressBefore!)
+        title: feeling.afterTitle(l10n),
+        subtitle: widget.levelBefore != null
+            ? l10n.feedbackLevelStarted(widget.levelBefore!)
             : null,
         onSkip: _next,
         child: Column(
           children: [
-            _StressSlider(
-              value: _stress,
-              onChanged: (v) => setState(() => _stress = v),
+            _LevelSlider(
+              feeling: feeling,
+              value: _level,
+              onChanged: (v) => setState(() => _level = v),
             ),
             Gap.l,
             FilledButton(
               onPressed: () => setState(() {
-                _stressAfter = _stress.round();
+                _levelAfter = _level.round();
                 _step = 2;
               }),
               child: Text(l10n.commonContinue),
@@ -558,6 +600,7 @@ class _FeedbackPromptState extends State<FeedbackPrompt> {
               decoration: InputDecoration(
                 labelText: l10n.feedbackNoticeLabel,
                 hintText: l10n.feedbackNoticeHint,
+                suffixIcon: DictationButton.maybe(_controller),
               ),
             ),
             Gap.m,
@@ -575,16 +618,23 @@ class _FeedbackPromptState extends State<FeedbackPrompt> {
   }
 }
 
-/// Thang 0–10, hiện số to để người thị lực kém vẫn đọc được.
-class _StressSlider extends StatelessWidget {
-  const _StressSlider({required this.value, required this.onChanged});
+/// Thang 0–10 của cảm xúc đã chọn, hiện số to để người thị lực kém vẫn đọc
+/// được. Hai đầu thang ghi rõ 0 và 10 nghĩa là gì với cảm xúc đó.
+class _LevelSlider extends StatelessWidget {
+  const _LevelSlider({
+    required this.feeling,
+    required this.value,
+    required this.onChanged,
+  });
 
+  final CheckInFeeling feeling;
   final double value;
   final ValueChanged<double> onChanged;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     return Column(
       children: [
         Text(
@@ -595,7 +645,7 @@ class _StressSlider extends StatelessWidget {
           ),
         ),
         Semantics(
-          label: context.l10n.stressLevel,
+          label: feeling.scaleName(l10n),
           child: Slider(
             value: value,
             min: 0,
@@ -603,7 +653,7 @@ class _StressSlider extends StatelessWidget {
             divisions: 10,
             label: '${value.round()}',
             semanticFormatterCallback: (value) =>
-                context.l10n.stressOutOfTen(value.round()),
+                l10n.levelOutOfTen(value.round()),
             onChanged: onChanged,
           ),
         ),
@@ -612,14 +662,14 @@ class _StressSlider extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                context.l10n.stressScaleLow,
+                feeling.scaleLow(l10n),
                 style: theme.textTheme.bodySmall,
               ),
             ),
             Gap.m,
             Expanded(
               child: Text(
-                context.l10n.stressScaleHigh,
+                feeling.scaleHigh(l10n),
                 textAlign: TextAlign.end,
                 style: theme.textTheme.bodySmall,
               ),

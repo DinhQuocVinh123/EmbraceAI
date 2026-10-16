@@ -229,13 +229,13 @@ class SessionController extends ChangeNotifier {
 
   Future<void> answerCheckIn({
     required CheckInFeeling feeling,
-    required int stress,
+    required int level,
     required PracticeChoice practice,
     required PracticeLength practiceLength,
   }) async {
     if (_phase != SessionPhase.checkIn) return;
     answers.feeling = feeling;
-    answers.stressBefore = stress;
+    answers.levelBefore = level;
     answers.practice = practice;
     answers.practiceLength = practiceLength;
     await _startPractice();
@@ -262,12 +262,12 @@ class SessionController extends ChangeNotifier {
 
   Future<void> answerFeedback({
     Mood? mood,
-    int? stressAfter,
+    int? levelAfter,
     String? reflection,
   }) async {
     if (_phase != SessionPhase.feedback) return;
     answers.moodAfter = mood;
-    answers.stressAfter = stressAfter;
+    answers.levelAfter = levelAfter;
     answers.reflection = reflection;
     _phase = SessionPhase.question;
     _notify();

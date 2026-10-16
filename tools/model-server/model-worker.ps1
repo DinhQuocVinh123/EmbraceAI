@@ -3,12 +3,17 @@
 # Ollama trả lời rồi gửi kết quả về. Máy này chỉ đi ra internet như một trình
 # duyệt, không mở cổng nào. Nhật ký không ghi nội dung câu hỏi.
 #
+# Khi Whisper (whisper-server, cài bằng 3-ADD-SPEECH-TO-TEXT.bat) đang chạy
+# trên máy này, chương trình nhận thêm việc "transcribe": tải đoạn ghi âm về,
+# đưa cho Whisper rồi gửi chữ về. Đoạn ghi âm bị xoá ngay sau đó.
+#
 # Giữ tối đa $Slots câu cùng lúc, khớp với OLLAMA_NUM_PARALLEL: mỗi câu chạy
 # trong một luồng riêng (gọi Ollama rồi tự gửi kết quả), còn vòng chính chỉ
 # lấy thêm việc khi có chỗ trống.
 param(
     [string]$ConfigDir = $PSScriptRoot,
     [string]$OllamaUrl = 'http://127.0.0.1:11434',
+    [string]$WhisperUrl = 'http://127.0.0.1:8178',
     [int]$Slots = 4,
     # Chỉ dùng khi thử: dừng sau chừng này câu.
     [int]$StopAfter = 0
@@ -114,12 +119,58 @@ $answerOne = {
     }
 }
 
+# Một đoạn ghi âm: tải WAV từ Supabase, đưa cho whisper-server, gửi chữ về.
+# curl.exe (có sẵn từ Windows 10 1803) gửi file dạng multipart, việc mà
+# Invoke-RestMethod của PowerShell 5.1 không làm được. Kết quả đọc từ file theo
+# UTF-8, vì đọc thẳng từ curl thì PowerShell làm hỏng chữ có dấu.
+$transcribeOne = {
+    param($id, $language, $endpoint, $key, $whisperUrl)
+    $ErrorActionPreference = 'Stop'
+    function Post($payload) {
+        $bytes = [Text.Encoding]::UTF8.GetBytes(($payload | ConvertTo-Json -Compress))
+        Invoke-RestMethod $endpoint -Method Post -Body $bytes -TimeoutSec 30 -DisableKeepAlive `
+            -ContentType 'application/json; charset=utf-8' -Headers @{ Authorization = "Bearer $key" } | Out-Null
+    }
+    $started = Get-Date
+    $wav = Join-Path $env:TEMP "embrace-$id.wav"
+    $out = Join-Path $env:TEMP "embrace-$id.json"
+    try {
+        $request = [Text.Encoding]::UTF8.GetBytes((@{ action = 'audio'; id = $id } | ConvertTo-Json -Compress))
+        Invoke-WebRequest $endpoint -Method Post -Body $request -OutFile $wav -TimeoutSec 30 -DisableKeepAlive -UseBasicParsing `
+            -ContentType 'application/json; charset=utf-8' -Headers @{ Authorization = "Bearer $key" }
+        & curl.exe -s -S --max-time 40 -o $out -F "file=@$wav" -F "language=$language" -F 'response_format=json' `
+            -F 'temperature=0' "$whisperUrl/inference"
+        if ($LASTEXITCODE -ne 0) { throw "whisper-server did not answer (curl exit $LASTEXITCODE)" }
+        $reply = [IO.File]::ReadAllText($out, [Text.Encoding]::UTF8) | ConvertFrom-Json
+        if ($null -ne $reply.error) { throw "whisper-server: $($reply.error)" }
+        Post @{ action = 'result'; id = $id; content = [string]$reply.text }
+        "Transcribed $id in $([int]((Get-Date) - $started).TotalMilliseconds) ms"
+    } catch {
+        $reason = "$($_.Exception.Message)"
+        try { Post @{ action = 'fail'; id = $id; error = $reason } } catch { }
+        "Could not transcribe ${id}: $reason"
+    } finally {
+        Remove-Item $wav, $out -Force -ErrorAction SilentlyContinue
+    }
+}
+
+# Whisper có đang chạy không: hỏi lại mỗi phút, để cài hay tắt Whisper thì chương
+# trình tự biết mà không phải khởi động lại.
+function SpeechReady {
+    try {
+        Invoke-WebRequest "$WhisperUrl/" -UseBasicParsing -TimeoutSec 3 -DisableKeepAlive | Out-Null
+        return $true
+    } catch { return $false }
+}
+$speech = SpeechReady
+$speechCheckedAt = Get-Date
+
 $pool = [RunspaceFactory]::CreateRunspacePool(1, $Slots)
 $pool.Open()
 $running = New-Object System.Collections.ArrayList
 $handled = 0
 
-Log "Worker started with $Slots slots"
+Log "Worker started with $Slots slots; speech to text $(if ($speech) { 'on' } else { 'off' })"
 $offline = $false
 while ($StopAfter -eq 0 -or $handled -lt $StopAfter -or $running.Count -gt 0) {
     # Thu các câu đã xong và ghi nhật ký.
@@ -136,7 +187,14 @@ while ($StopAfter -eq 0 -or $handled -lt $StopAfter -or $running.Count -gt 0) {
 
     try {
         # ai-worker giữ yêu cầu tối đa 20 giây; quá 35 giây là kết nối có vấn đề.
-        $payload = @{ action = 'next'; max = $free }
+        if (((Get-Date) - $speechCheckedAt).TotalSeconds -ge 60) {
+            $now = SpeechReady
+            if ($now -ne $speech) { Log "Speech to text is now $(if ($now) { 'on' } else { 'off' })" }
+            $speech = $now
+            $speechCheckedAt = Get-Date
+        }
+        $kinds = if ($speech) { @('chat', 'transcribe') } else { @('chat') }
+        $payload = @{ action = 'next'; max = $free; kinds = $kinds }
         if ($statsBox.seq -ne $sentSeq) { $payload.stats = $statsBox.stats; $sentSeq = $statsBox.seq }
         $reply = Send $payload 35
         if ($offline) { Log 'Supabase reachable again'; $offline = $false }
@@ -145,7 +203,11 @@ while ($StopAfter -eq 0 -or $handled -lt $StopAfter -or $running.Count -gt 0) {
         foreach ($job in $jobs) {
             $shell = [PowerShell]::Create()
             $shell.RunspacePool = $pool
-            [void]$shell.AddScript($answerOne).AddArgument($job.id).AddArgument($job.body).AddArgument($endpoint).AddArgument($key).AddArgument($OllamaUrl)
+            if ($job.kind -eq 'transcribe') {
+                [void]$shell.AddScript($transcribeOne).AddArgument($job.id).AddArgument($job.language).AddArgument($endpoint).AddArgument($key).AddArgument($WhisperUrl)
+            } else {
+                [void]$shell.AddScript($answerOne).AddArgument($job.id).AddArgument($job.body).AddArgument($endpoint).AddArgument($key).AddArgument($OllamaUrl)
+            }
             [void]$running.Add([pscustomobject]@{ Id = $job.id; Shell = $shell; Handle = $shell.BeginInvoke() })
             $handled++
         }

@@ -7,8 +7,12 @@ import '../l10n/l10n.dart';
 import '../l10n/source_names.dart';
 import '../models/ask_result.dart';
 import '../models/journal_entry.dart';
+import '../services/appointment_service.dart';
 import '../services/ask_service.dart';
 import '../state/journal_store.dart';
+import 'appointment_questions_screen.dart';
+import '../widgets/dictation_button.dart';
+import '../widgets/emergency_notice.dart';
 
 /// Hỏi đáp với Ask EmbraceAI (bản thử).
 ///
@@ -53,6 +57,15 @@ class _AskScreenState extends State<AskScreen> {
   final _exchanges = <_Exchange>[];
 
   bool get _waiting => _exchanges.isNotEmpty && _exchanges.last.result == null;
+
+  /// Lối vào "Câu hỏi cho buổi khám"; không có máy chủ thì không hiện.
+  AppointmentService? get _appointments {
+    try {
+      return context.read<AppointmentService>();
+    } on ProviderNotFoundException {
+      return null;
+    }
+  }
 
   @override
   void dispose() {
@@ -132,6 +145,13 @@ class _AskScreenState extends State<AskScreen> {
                         : const [],
                     onExample: _waiting ? null : (q) => _send(q),
                   ),
+                  if (_appointments case final service?) ...[
+                    Gap.l,
+                    _AppointmentEntry(
+                      onTap: () =>
+                          AppointmentQuestionsScreen.open(context, service),
+                    ),
+                  ],
                   for (final exchange in _exchanges) ...[
                     Gap.l,
                     _QuestionBubble(text: exchange.question),
@@ -157,6 +177,53 @@ class _AskScreenState extends State<AskScreen> {
               onSend: _send,
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Lối vào thẻ chuẩn bị câu hỏi cho buổi khám (biên bản họp, mục 2).
+class _AppointmentEntry extends StatelessWidget {
+  const _AppointmentEntry({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Icon(Icons.assignment_outlined, color: theme.colorScheme.primary),
+              Gap.m,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      context.l10n.appointmentEntry,
+                      style: theme.textTheme.titleMedium,
+                    ),
+                    Gap.xs,
+                    Text(
+                      context.l10n.appointmentEntryBody,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right),
+            ],
+          ),
         ),
       ),
     );
@@ -298,7 +365,7 @@ class _ResultCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (result.type == AskResultType.emergency) return const _EmergencyCard();
+    if (result.type == AskResultType.emergency) return const EmergencyNotice();
 
     final theme = Theme.of(context);
     final l10n = context.l10n;
@@ -483,50 +550,6 @@ class _AiLabel extends StatelessWidget {
 
 /// Nội dung cố định, không qua AI. Số khẩn cấp cụ thể chờ nhóm nghiên cứu
 /// xác nhận nước của người tham gia.
-class _EmergencyCard extends StatelessWidget {
-  const _EmergencyCard();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        border: Border.all(color: theme.colorScheme.outline),
-        borderRadius: AppRadius.lg,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(Icons.emergency_outlined, color: theme.colorScheme.error),
-            Gap.s,
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    context.l10n.askEmergencyTitle,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  Gap.xs,
-                  Text(
-                    context.l10n.askEmergencyBody,
-                    style: theme.textTheme.bodyLarge?.copyWith(height: 1.5),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _Composer extends StatelessWidget {
   const _Composer({
     required this.controller,
@@ -562,6 +585,7 @@ class _Composer extends StatelessWidget {
                 decoration: InputDecoration(
                   hintText: context.l10n.askHint,
                   counterText: '',
+                  suffixIcon: DictationButton.maybe(controller),
                 ),
               ),
             ),

@@ -4,14 +4,17 @@ import 'dart:typed_data';
 import 'package:embrace_ai/data/session_script.dart';
 import 'package:embrace_ai/l10n/l10n.dart';
 import 'package:embrace_ai/l10n/labels.dart';
+import 'package:embrace_ai/models/appointment_question.dart';
 import 'package:embrace_ai/models/ask_result.dart';
 import 'package:embrace_ai/models/mood.dart';
 import 'package:embrace_ai/models/session_answers.dart';
 import 'package:embrace_ai/models/session_scene.dart';
+import 'package:embrace_ai/screens/appointment_questions_screen.dart';
 import 'package:embrace_ai/screens/ask_screen.dart';
 import 'package:embrace_ai/screens/journal_screen.dart';
 import 'package:embrace_ai/screens/session_screen.dart';
 import 'package:embrace_ai/screens/welcome_screen.dart';
+import 'package:embrace_ai/services/appointment_service.dart';
 import 'package:embrace_ai/services/ask_service.dart';
 import 'package:embrace_ai/state/journal_store.dart';
 import 'package:embrace_ai/state/settings_store.dart';
@@ -252,7 +255,11 @@ void main() {
       at: 479,
       beatNumber: 11,
       beatTitle: 'After-session feedback',
-      prompt: FeedbackPrompt(stressBefore: 8, onDone: (a, b, c) {}),
+      prompt: FeedbackPrompt(
+        feeling: CheckInFeeling.stressed,
+        levelBefore: 8,
+        onDone: (a, b, c) {},
+      ),
     );
     await shoot(tester, '10_phan_hoi');
   });
@@ -261,8 +268,8 @@ void main() {
     ScreenshotHarness.sizePhone(tester);
     final a = SessionAnswers()
       ..feeling = CheckInFeeling.stressed
-      ..stressBefore = 8
-      ..stressAfter = 4
+      ..levelBefore = 8
+      ..levelAfter = 4
       ..practice = PracticeChoice.grounding
       ..question = 'How will this test result affect my daily life?'
       ..reflection = 'My shoulders softened, my breathing slowed at the end.';
@@ -436,6 +443,90 @@ void main() {
     }
     await shoot(tester, '19_hoi_dap');
   });
+
+  testWidgets('20 câu hỏi cho buổi khám', (tester) async {
+    ScreenshotHarness.sizePhone(tester);
+    await tester.pumpWidget(
+      ScreenshotHarness.wrap(
+        AppointmentQuestionsScreen(service: _ShotAppointments()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    // Đưa câu 2 lên đầu: câu vừa chuyển được tô sáng.
+    await tester.tap(find.text('Move up').first);
+    await tester.pumpAndSettle(const Duration(milliseconds: 300));
+    await shoot(tester, '20_cau_hoi_buoi_kham');
+  });
+
+  testWidgets('21 thẻ chuẩn bị câu hỏi', (tester) async {
+    ScreenshotHarness.sizePhone(tester);
+    await tester.pumpWidget(
+      ScreenshotHarness.wrap(
+        AppointmentQuestionsScreen(service: _ShotAppointments(count: 1)),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add a question'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byType(TextField),
+      'Feeling very tired since my new tablets. Should I stop them?',
+    );
+    await tester.pump();
+    await tester.tap(find.widgetWithText(FilledButton, 'Continue'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Why this may be happening'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Continue'));
+    await tester.pumpAndSettle();
+    await shoot(tester, '21_the_chuan_bi');
+  });
+}
+
+class _ShotAppointments implements AppointmentService {
+  _ShotAppointments({int count = 3})
+    : saved = [
+        for (final (i, q) in const [
+          'I get dizzy after my morning tablets. Why might this be happening?',
+          'My ankles swell in the evenings. What should I watch for?',
+          'Can I go back to swimming?',
+        ].take(count).indexed)
+          AppointmentQuestion(id: '$i', question: q, position: i),
+      ];
+
+  List<AppointmentQuestion> saved;
+
+  @override
+  Future<List<AppointmentQuestion>> load() async => List.of(saved);
+
+  @override
+  Future<PrepResult> rephrase({
+    required String concern,
+    required List<AppointmentTopic> topics,
+    required String language,
+    String? previous,
+  }) async => const PrepResult(
+    PrepOutcome.question,
+    'I have been feeling very tired since I started my new tablets. '
+    'Should I stop them? Why might this be happening?',
+  );
+
+  @override
+  Future<AppointmentQuestion> add({
+    required String question,
+    String concern = '',
+    List<AppointmentTopic> topics = const [],
+  }) async => AppointmentQuestion(id: 'new', question: question);
+
+  @override
+  Future<void> update(String id, String question) async {}
+
+  @override
+  Future<void> remove(String id) async {}
+
+  @override
+  Future<void> reorder(List<AppointmentQuestion> ordered) async =>
+      saved = List.of(ordered);
 }
 
 class _ScriptedAskService implements AskService {

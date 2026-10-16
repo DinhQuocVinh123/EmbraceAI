@@ -230,11 +230,11 @@ abstract class AppLocalizations {
   /// **'Question for the team: {question}'**
   String journalLineQuestion(String question);
 
-  /// No description provided for @journalLineStress.
+  /// No description provided for @journalLineLevel.
   ///
   /// In en, this message translates to:
-  /// **'Stress: {before} → {after}'**
-  String journalLineStress(int before, int after);
+  /// **'{name}: {before} → {after}'**
+  String journalLineLevel(String name, int before, int after);
 
   /// No description provided for @welcomeAskTitle.
   ///
@@ -746,17 +746,227 @@ abstract class AppLocalizations {
   /// **'How are you feeling right now?'**
   String get checkInFeelingTitle;
 
-  /// No description provided for @checkInStressTitle.
+  /// No description provided for @checkInScaleSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Move the slider to the number that fits best.'**
+  String get checkInScaleSubtitle;
+
+  /// No description provided for @checkInSuggested.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested'**
+  String get checkInSuggested;
+
+  /// No description provided for @checkInGentleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Let\'s keep this gentle'**
+  String get checkInGentleTitle;
+
+  /// No description provided for @checkInCalmScaleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How calm do you feel right now?'**
+  String get checkInCalmScaleTitle;
+
+  /// No description provided for @checkInCalmScaleLow.
+  ///
+  /// In en, this message translates to:
+  /// **'0 · not calm at all'**
+  String get checkInCalmScaleLow;
+
+  /// No description provided for @checkInCalmScaleHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'10 · completely calm'**
+  String get checkInCalmScaleHigh;
+
+  /// No description provided for @checkInCalmAfterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'And how calm do you feel now?'**
+  String get checkInCalmAfterTitle;
+
+  /// No description provided for @checkInCalmName.
+  ///
+  /// In en, this message translates to:
+  /// **'Calm'**
+  String get checkInCalmName;
+
+  /// No description provided for @checkInCalmMeasure.
+  ///
+  /// In en, this message translates to:
+  /// **'sense of calm'**
+  String get checkInCalmMeasure;
+
+  /// No description provided for @checkInStressedScaleTitle.
   ///
   /// In en, this message translates to:
   /// **'How stressed do you feel right now?'**
-  String get checkInStressTitle;
+  String get checkInStressedScaleTitle;
 
-  /// No description provided for @checkInStressSubtitle.
+  /// No description provided for @checkInStressedScaleLow.
   ///
   /// In en, this message translates to:
-  /// **'0 is completely at ease, 10 is the most stressed.'**
-  String get checkInStressSubtitle;
+  /// **'0 · at ease'**
+  String get checkInStressedScaleLow;
+
+  /// No description provided for @checkInStressedScaleHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'10 · very stressed'**
+  String get checkInStressedScaleHigh;
+
+  /// No description provided for @checkInStressedAfterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'And where is your stress now?'**
+  String get checkInStressedAfterTitle;
+
+  /// No description provided for @checkInStressedName.
+  ///
+  /// In en, this message translates to:
+  /// **'Stress'**
+  String get checkInStressedName;
+
+  /// No description provided for @checkInStressedMeasure.
+  ///
+  /// In en, this message translates to:
+  /// **'stress'**
+  String get checkInStressedMeasure;
+
+  /// No description provided for @checkInStressedStrongBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You are carrying a lot right now. Grounding often settles things faster.'**
+  String get checkInStressedStrongBody;
+
+  /// No description provided for @checkInTiredScaleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How tired do you feel right now?'**
+  String get checkInTiredScaleTitle;
+
+  /// No description provided for @checkInTiredScaleLow.
+  ///
+  /// In en, this message translates to:
+  /// **'0 · full of energy'**
+  String get checkInTiredScaleLow;
+
+  /// No description provided for @checkInTiredScaleHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'10 · exhausted'**
+  String get checkInTiredScaleHigh;
+
+  /// No description provided for @checkInTiredAfterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'And how tired do you feel now?'**
+  String get checkInTiredAfterTitle;
+
+  /// No description provided for @checkInTiredName.
+  ///
+  /// In en, this message translates to:
+  /// **'Tiredness'**
+  String get checkInTiredName;
+
+  /// No description provided for @checkInTiredMeasure.
+  ///
+  /// In en, this message translates to:
+  /// **'tiredness'**
+  String get checkInTiredMeasure;
+
+  /// No description provided for @checkInTiredStrongBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your energy is low right now. Simply following the breath is often enough.'**
+  String get checkInTiredStrongBody;
+
+  /// No description provided for @checkInUpsetScaleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How strong is this upset feeling right now?'**
+  String get checkInUpsetScaleTitle;
+
+  /// No description provided for @checkInUpsetScaleLow.
+  ///
+  /// In en, this message translates to:
+  /// **'0 · not at all'**
+  String get checkInUpsetScaleLow;
+
+  /// No description provided for @checkInUpsetScaleHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'10 · very strong'**
+  String get checkInUpsetScaleHigh;
+
+  /// No description provided for @checkInUpsetAfterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'And how strong is that feeling now?'**
+  String get checkInUpsetAfterTitle;
+
+  /// No description provided for @checkInUpsetName.
+  ///
+  /// In en, this message translates to:
+  /// **'Upset'**
+  String get checkInUpsetName;
+
+  /// No description provided for @checkInUpsetMeasure.
+  ///
+  /// In en, this message translates to:
+  /// **'upset feeling'**
+  String get checkInUpsetMeasure;
+
+  /// No description provided for @checkInUpsetStrongBody.
+  ///
+  /// In en, this message translates to:
+  /// **'That sounds hard right now. Grounding can help strong feelings settle.'**
+  String get checkInUpsetStrongBody;
+
+  /// No description provided for @checkInDistractedScaleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How hard is it to focus right now?'**
+  String get checkInDistractedScaleTitle;
+
+  /// No description provided for @checkInDistractedScaleLow.
+  ///
+  /// In en, this message translates to:
+  /// **'0 · easy to focus'**
+  String get checkInDistractedScaleLow;
+
+  /// No description provided for @checkInDistractedScaleHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'10 · very hard to focus'**
+  String get checkInDistractedScaleHigh;
+
+  /// No description provided for @checkInDistractedAfterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'And how hard is it to focus now?'**
+  String get checkInDistractedAfterTitle;
+
+  /// No description provided for @checkInDistractedName.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus difficulty'**
+  String get checkInDistractedName;
+
+  /// No description provided for @checkInDistractedMeasure.
+  ///
+  /// In en, this message translates to:
+  /// **'difficulty focusing'**
+  String get checkInDistractedMeasure;
+
+  /// No description provided for @checkInDistractedStrongBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your mind is busy right now. Grounding helps bring your attention back to the here and now.'**
+  String get checkInDistractedStrongBody;
 
   /// No description provided for @checkInSlowerTitle.
   ///
@@ -769,12 +979,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'What would you like to practise?'**
   String get checkInChooseTitle;
-
-  /// No description provided for @checkInSlowerBody.
-  ///
-  /// In en, this message translates to:
-  /// **'You are carrying a lot right now. Grounding often settles things faster.'**
-  String get checkInSlowerBody;
 
   /// No description provided for @checkInLengthTitle.
   ///
@@ -830,17 +1034,11 @@ abstract class AppLocalizations {
   /// **'Choose the answer that feels closest. There is no right answer.'**
   String get feedbackMoodSubtitle;
 
-  /// No description provided for @feedbackStressTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'And where is your stress now?'**
-  String get feedbackStressTitle;
-
-  /// No description provided for @feedbackStressStarted.
+  /// No description provided for @feedbackLevelStarted.
   ///
   /// In en, this message translates to:
   /// **'You started at {value}.'**
-  String feedbackStressStarted(int value);
+  String feedbackLevelStarted(int value);
 
   /// No description provided for @feedbackNoticeTitle.
   ///
@@ -866,29 +1064,11 @@ abstract class AppLocalizations {
   /// **'For example: my shoulders softened, my breathing slowed towards the end.'**
   String get feedbackNoticeHint;
 
-  /// No description provided for @stressLevel.
-  ///
-  /// In en, this message translates to:
-  /// **'Stress level'**
-  String get stressLevel;
-
-  /// No description provided for @stressOutOfTen.
+  /// No description provided for @levelOutOfTen.
   ///
   /// In en, this message translates to:
   /// **'{value} out of 10'**
-  String stressOutOfTen(int value);
-
-  /// No description provided for @stressScaleLow.
-  ///
-  /// In en, this message translates to:
-  /// **'0 · at ease'**
-  String get stressScaleLow;
-
-  /// No description provided for @stressScaleHigh.
-  ///
-  /// In en, this message translates to:
-  /// **'10 · very stressed'**
-  String get stressScaleHigh;
+  String levelOutOfTen(int value);
 
   /// No description provided for @helpTitle.
   ///
@@ -1160,29 +1340,29 @@ abstract class AppLocalizations {
   /// **'Synced'**
   String get tagSynced;
 
-  /// No description provided for @closingStressDown.
+  /// No description provided for @closingLevelBetter.
   ///
   /// In en, this message translates to:
-  /// **'Your stress went from {before} down to {after}.'**
-  String closingStressDown(int before, int after);
+  /// **'Your {measure} went from {before} to {after}.'**
+  String closingLevelBetter(String measure, int before, int after);
 
-  /// No description provided for @closingStressEased.
+  /// No description provided for @closingLevelBetterLittle.
   ///
   /// In en, this message translates to:
-  /// **'Your stress eased a little, from {before} to {after}.'**
-  String closingStressEased(int before, int after);
+  /// **'Your {measure} shifted a little, from {before} to {after}.'**
+  String closingLevelBetterLittle(String measure, int before, int after);
 
-  /// No description provided for @closingStressSame.
+  /// No description provided for @closingLevelSame.
   ///
   /// In en, this message translates to:
-  /// **'Your stress stayed at {value}. That happens — one session does not always shift things right away.'**
-  String closingStressSame(int value);
+  /// **'Your {measure} stayed at {value}. That happens — one session does not always shift things right away.'**
+  String closingLevelSame(String measure, int value);
 
-  /// No description provided for @closingStressUp.
+  /// No description provided for @closingLevelWorse.
   ///
   /// In en, this message translates to:
-  /// **'You feel more tense than when you started. Thank you for being honest about that.'**
-  String get closingStressUp;
+  /// **'Things feel a little harder than when you started. Thank you for being honest about that.'**
+  String get closingLevelWorse;
 
   /// No description provided for @closingNextBodyScan.
   ///
@@ -2630,11 +2810,11 @@ abstract class AppLocalizations {
   /// **'Your answers will be linked only to your study-issued Participant ID. You can go back and change them before submitting.'**
   String get finalReviewBody;
 
-  /// No description provided for @finalReviewAnxiety.
+  /// No description provided for @finalReviewQuestions.
   ///
   /// In en, this message translates to:
-  /// **'Anxiety questions'**
-  String get finalReviewAnxiety;
+  /// **'Questions {first}–{last}'**
+  String finalReviewQuestions(int first, int last);
 
   /// No description provided for @finalAnsweredOf.
   ///
@@ -2642,53 +2822,365 @@ abstract class AppLocalizations {
   /// **'{count} of {total} answered'**
   String finalAnsweredOf(int count, int total);
 
-  /// No description provided for @finalOutOfFive.
-  ///
-  /// In en, this message translates to:
-  /// **'{value} of 5'**
-  String finalOutOfFive(int value);
-
-  /// No description provided for @finalReviewExperience.
-  ///
-  /// In en, this message translates to:
-  /// **'Experience questions'**
-  String get finalReviewExperience;
-
-  /// No description provided for @finalReviewWritten.
-  ///
-  /// In en, this message translates to:
-  /// **'Written feedback'**
-  String get finalReviewWritten;
-
-  /// No description provided for @finalScreeningTotals.
-  ///
-  /// In en, this message translates to:
-  /// **'Recorded screening totals'**
-  String get finalScreeningTotals;
-
-  /// No description provided for @finalGadTotals.
-  ///
-  /// In en, this message translates to:
-  /// **'GAD-2: {gad2}/6  |  GAD-7: {gad7}/21'**
-  String finalGadTotals(int gad2, int gad7);
-
-  /// No description provided for @finalGadIncomplete.
-  ///
-  /// In en, this message translates to:
-  /// **'GAD-2: {gad2}/6  |  GAD-7 incomplete'**
-  String finalGadIncomplete(int gad2);
-
-  /// RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants.
-  ///
-  /// In en, this message translates to:
-  /// **'These are screening scores, not a diagnosis.'**
-  String get finalScreeningNote;
-
   /// No description provided for @finalSaveFailed.
   ///
   /// In en, this message translates to:
   /// **'Your answers could not be saved. Try again.'**
   String get finalSaveFailed;
+
+  /// No description provided for @dictationStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Speak instead of typing'**
+  String get dictationStart;
+
+  /// No description provided for @dictationStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop and turn into text'**
+  String get dictationStop;
+
+  /// No description provided for @dictationRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Recording, {seconds} seconds left'**
+  String dictationRecording(int seconds);
+
+  /// No description provided for @dictationWorking.
+  ///
+  /// In en, this message translates to:
+  /// **'Turning your words into text…'**
+  String get dictationWorking;
+
+  /// No description provided for @dictationNotHeard.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing was heard. Try again, a little closer to the microphone.'**
+  String get dictationNotHeard;
+
+  /// No description provided for @dictationBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice typing is busy right now. Please try again in a moment, or type instead.'**
+  String get dictationBusy;
+
+  /// No description provided for @dictationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice typing did not work this time. Please type instead.'**
+  String get dictationFailed;
+
+  /// No description provided for @dictationNoMic.
+  ///
+  /// In en, this message translates to:
+  /// **'The microphone is not available. Allow microphone access in your browser, then try again.'**
+  String get dictationNoMic;
+
+  /// No description provided for @prepConcernTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Is there one thing you would like your healthcare team to understand or discuss at your next appointment?'**
+  String get prepConcernTitle;
+
+  /// No description provided for @prepConcernSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe it in your own words: what you noticed, or what you want to ask.'**
+  String get prepConcernSubtitle;
+
+  /// No description provided for @prepConcernLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Your concern, symptom or question'**
+  String get prepConcernLabel;
+
+  /// No description provided for @prepConcernHint.
+  ///
+  /// In en, this message translates to:
+  /// **'For example: I feel dizzy after taking my morning tablets.'**
+  String get prepConcernHint;
+
+  /// No description provided for @prepTopicsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What would you most like to ask about?'**
+  String get prepTopicsTitle;
+
+  /// No description provided for @prepTopicsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose one or more.'**
+  String get prepTopicsSubtitle;
+
+  /// No description provided for @prepTopicWhy.
+  ///
+  /// In en, this message translates to:
+  /// **'Why this may be happening'**
+  String get prepTopicWhy;
+
+  /// No description provided for @prepTopicMonitor.
+  ///
+  /// In en, this message translates to:
+  /// **'What I should monitor'**
+  String get prepTopicMonitor;
+
+  /// No description provided for @prepTopicNextTime.
+  ///
+  /// In en, this message translates to:
+  /// **'What to do if it happens again'**
+  String get prepTopicNextTime;
+
+  /// No description provided for @prepTopicOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Something else'**
+  String get prepTopicOther;
+
+  /// No description provided for @prepWorking.
+  ///
+  /// In en, this message translates to:
+  /// **'Putting your question together…'**
+  String get prepWorking;
+
+  /// No description provided for @prepResultTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A clearer way to ask it'**
+  String get prepResultTitle;
+
+  /// No description provided for @prepResultSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'It uses only what you wrote. You can change it before saving.'**
+  String get prepResultSubtitle;
+
+  /// No description provided for @prepBusyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'We could not reword it right now'**
+  String get prepBusyTitle;
+
+  /// No description provided for @prepBusyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You can save it in your own words, or try again in a minute.'**
+  String get prepBusyBody;
+
+  /// No description provided for @prepNotAdvice.
+  ///
+  /// In en, this message translates to:
+  /// **'This only helps you ask your question. It is not medical advice.'**
+  String get prepNotAdvice;
+
+  /// No description provided for @prepSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save question'**
+  String get prepSave;
+
+  /// No description provided for @prepEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get prepEdit;
+
+  /// No description provided for @prepEditDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done editing'**
+  String get prepEditDone;
+
+  /// No description provided for @prepEditLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Your question'**
+  String get prepEditLabel;
+
+  /// No description provided for @prepAnotherWording.
+  ///
+  /// In en, this message translates to:
+  /// **'Try another wording'**
+  String get prepAnotherWording;
+
+  /// No description provided for @prepFull.
+  ///
+  /// In en, this message translates to:
+  /// **'You already have 3 questions saved. Remove one in My appointment questions to add this one.'**
+  String get prepFull;
+
+  /// No description provided for @prepEmergencyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Please get help first'**
+  String get prepEmergencyTitle;
+
+  /// No description provided for @prepEmergencyAfter.
+  ///
+  /// In en, this message translates to:
+  /// **'If it happened earlier and has passed, contact your care team soon rather than waiting for your appointment.'**
+  String get prepEmergencyAfter;
+
+  /// No description provided for @prepSavedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved for your next appointment'**
+  String get prepSavedTitle;
+
+  /// No description provided for @prepSavedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You have {count} of {max} questions. You can see and reorder them in My appointment questions.'**
+  String prepSavedBody(int count, int max);
+
+  /// No description provided for @appointmentListTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My appointment questions'**
+  String get appointmentListTitle;
+
+  /// No description provided for @appointmentListIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Bring these to your next appointment. Question 1 is the one you will ask first. Use Move up or Move down to change the order.'**
+  String get appointmentListIntro;
+
+  /// No description provided for @appointmentListEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No questions yet.'**
+  String get appointmentListEmpty;
+
+  /// No description provided for @appointmentListFull.
+  ///
+  /// In en, this message translates to:
+  /// **'You can keep up to 3 questions. Remove one to add another.'**
+  String get appointmentListFull;
+
+  /// No description provided for @appointmentAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a question'**
+  String get appointmentAdd;
+
+  /// No description provided for @appointmentMoveUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Move up'**
+  String get appointmentMoveUp;
+
+  /// No description provided for @appointmentMoveDown.
+  ///
+  /// In en, this message translates to:
+  /// **'Move down'**
+  String get appointmentMoveDown;
+
+  /// No description provided for @appointmentDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get appointmentDelete;
+
+  /// No description provided for @appointmentDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Question removed'**
+  String get appointmentDeleted;
+
+  /// No description provided for @appointmentNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Question {number}'**
+  String appointmentNumber(int number);
+
+  /// No description provided for @appointmentLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Your questions could not be loaded. Check your connection and try again.'**
+  String get appointmentLoadFailed;
+
+  /// No description provided for @appointmentSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'That could not be saved. Check your connection and try again.'**
+  String get appointmentSaveFailed;
+
+  /// No description provided for @appointmentEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Prepare questions for your appointment'**
+  String get appointmentEntry;
+
+  /// No description provided for @appointmentEntryBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn what you have noticed into clear questions for your care team.'**
+  String get appointmentEntryBody;
+
+  /// No description provided for @prepFullTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You have 3 questions ready for your next appointment'**
+  String get prepFullTitle;
+
+  /// No description provided for @prepFullBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep them for your appointment, or replace one with a new question.'**
+  String get prepFullBody;
+
+  /// No description provided for @prepReplace.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace this one'**
+  String get prepReplace;
+
+  /// No description provided for @prepReplacing.
+  ///
+  /// In en, this message translates to:
+  /// **'Your new question will replace: {question}'**
+  String prepReplacing(String question);
+
+  /// No description provided for @appointmentMoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Moved to question {number}'**
+  String appointmentMoved(int number);
+
+  /// No description provided for @prepStep.
+  ///
+  /// In en, this message translates to:
+  /// **'Step {step} of {total}'**
+  String prepStep(int step, int total);
+
+  /// No description provided for @prepWorkingBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This usually takes a few seconds.'**
+  String get prepWorkingBody;
+
+  /// No description provided for @appointmentRemoveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this question?'**
+  String get appointmentRemoveTitle;
+
+  /// No description provided for @appointmentEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Write down what you would like to ask your care team, and get help putting it into clear words.'**
+  String get appointmentEmptyBody;
+
+  /// No description provided for @appointmentCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} of {max} questions'**
+  String appointmentCount(int count, int max);
+
+  /// No description provided for @prepErrorBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You can save it in your own words, edit it first, or try again.'**
+  String get prepErrorBody;
 }
 
 class _AppLocalizationsDelegate

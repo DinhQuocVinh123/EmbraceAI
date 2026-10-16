@@ -252,9 +252,107 @@ void main() {
       );
 
       expect(withCaption, withoutCaption);
+      // Patrick: chữ to làm video nhỏ lại. Trên điện thoại dọc, video luôn
+      // rộng hết màn hình, ở cỡ chữ nào cũng vậy.
+      expect(withCaption.width, 390);
+      expect(withCaption.height, closeTo(390 * 9 / 16, 0.5));
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('large text keeps the video full width in a mobile browser', (
+    tester,
+  ) async {
+    // Trình duyệt trên điện thoại mất chỗ cho thanh địa chỉ: khung còn ~700 px.
+    // Trước đây phụ đề giữ sẵn 6 dòng ở cỡ chữ 200%, video gần như biến mất.
+    tester.view.physicalSize = const Size(390, 700);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MediaQuery(
+          data: const MediaQueryData(
+            size: Size(390, 700),
+            textScaler: TextScaler.linear(2),
+            disableAnimations: true,
+          ),
+          child: Scaffold(
+            body: SessionStage(
+              videoSurface: const ColoredBox(
+                key: ValueKey('video-surface'),
+                color: Colors.black,
+              ),
+              aspectRatio: 16 / 9,
+              beatNumber: 1,
+              beatTitle: 'Arrival and orientation',
+              totalBeats: 6,
+              position: const Duration(seconds: 22),
+              total: const Duration(minutes: 5, seconds: 5),
+              isPlaying: true,
+              caption:
+                  "I'll guide you through a short relaxation exercise using "
+                  'gentle breathing and present-moment awareness.',
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    final video = tester.getRect(find.byKey(const ValueKey('video-surface')));
+    expect(video.width, 390);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the video keeps its size and place at any text size', (
+    tester,
+  ) async {
+    // Hai ảnh chụp trên điện thoại: ở chữ to video cùng cỡ nhưng bị đẩy lên
+    // trên, để trống một khoảng đen bên dưới.
+    tester.view.physicalSize = const Size(333, 720);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    Future<Rect> videoAt(double scale) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MediaQuery(
+            data: MediaQueryData(
+              size: const Size(333, 720),
+              textScaler: TextScaler.linear(scale),
+              disableAnimations: true,
+            ),
+            child: const Scaffold(
+              body: SessionStage(
+                videoSurface: ColoredBox(
+                  key: ValueKey('video-surface'),
+                  color: Colors.black,
+                ),
+                aspectRatio: 16 / 9,
+                beatNumber: 1,
+                beatTitle: 'Arrival and orientation',
+                totalBeats: 7,
+                position: Duration(seconds: 2),
+                total: Duration(minutes: 6, seconds: 5),
+                isPlaying: true,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      return tester.getRect(find.byKey(const ValueKey('video-surface')));
+    }
+
+    final normal = await videoAt(1);
+    final large = await videoAt(1.5);
+    expect(large.size, normal.size);
+    expect(large.width, 333);
+    // Thanh trên và dưới cao hơn khi chữ to, nên video có thể xê dịch chút
+    // ít theo chúng, nhưng không bị đẩy hẳn lên trên như trước.
+    expect((large.center.dy - normal.center.dy).abs(), lessThan(40));
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('mood chart exposes adjustable day values', (tester) async {
     final semantics = tester.ensureSemantics();

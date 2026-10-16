@@ -79,8 +79,8 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String journalLineStress(int before, int after) {
-    return 'Căng thẳng: $before → $after';
+  String journalLineLevel(String name, int before, int after) {
+    return '$name: $before → $after';
   }
 
   @override
@@ -359,21 +359,133 @@ class AppLocalizationsVi extends AppLocalizations {
   String get checkInFeelingTitle => 'Lúc này bạn thấy thế nào?';
 
   @override
-  String get checkInStressTitle => 'Lúc này bạn thấy căng thẳng đến mức nào?';
+  String get checkInScaleSubtitle =>
+      'Kéo thanh trượt đến con số hợp với bạn nhất.';
 
   @override
-  String get checkInStressSubtitle =>
-      '0 là hoàn toàn thoải mái, 10 là căng thẳng nhất.';
+  String get checkInSuggested => 'Gợi ý';
+
+  @override
+  String get checkInGentleTitle => 'Mình tập nhẹ nhàng thôi nhé';
+
+  @override
+  String get checkInCalmScaleTitle => 'Lúc này bạn thấy bình tâm đến mức nào?';
+
+  @override
+  String get checkInCalmScaleLow => '0 · không bình tâm chút nào';
+
+  @override
+  String get checkInCalmScaleHigh => '10 · hoàn toàn bình tâm';
+
+  @override
+  String get checkInCalmAfterTitle =>
+      'Còn bây giờ bạn thấy bình tâm đến mức nào?';
+
+  @override
+  String get checkInCalmName => 'Bình tâm';
+
+  @override
+  String get checkInCalmMeasure => 'bình tâm';
+
+  @override
+  String get checkInStressedScaleTitle =>
+      'Lúc này bạn thấy căng thẳng đến mức nào?';
+
+  @override
+  String get checkInStressedScaleLow => '0 · thoải mái';
+
+  @override
+  String get checkInStressedScaleHigh => '10 · rất căng thẳng';
+
+  @override
+  String get checkInStressedAfterTitle =>
+      'Còn mức căng thẳng của bạn bây giờ thì sao?';
+
+  @override
+  String get checkInStressedName => 'Căng thẳng';
+
+  @override
+  String get checkInStressedMeasure => 'căng thẳng';
+
+  @override
+  String get checkInStressedStrongBody =>
+      'Lúc này bạn đang mang nhiều căng thẳng. Bài tiếp đất thường giúp bạn lắng lại nhanh hơn.';
+
+  @override
+  String get checkInTiredScaleTitle => 'Lúc này bạn thấy mệt đến mức nào?';
+
+  @override
+  String get checkInTiredScaleLow => '0 · đầy năng lượng';
+
+  @override
+  String get checkInTiredScaleHigh => '10 · kiệt sức';
+
+  @override
+  String get checkInTiredAfterTitle => 'Còn bây giờ bạn thấy mệt đến mức nào?';
+
+  @override
+  String get checkInTiredName => 'Mệt mỏi';
+
+  @override
+  String get checkInTiredMeasure => 'mệt mỏi';
+
+  @override
+  String get checkInTiredStrongBody =>
+      'Lúc này bạn đang ít năng lượng. Chỉ cần theo dõi hơi thở thường đã đủ.';
+
+  @override
+  String get checkInUpsetScaleTitle =>
+      'Cảm giác buồn bực lúc này mạnh đến mức nào?';
+
+  @override
+  String get checkInUpsetScaleLow => '0 · không có';
+
+  @override
+  String get checkInUpsetScaleHigh => '10 · rất mạnh';
+
+  @override
+  String get checkInUpsetAfterTitle =>
+      'Còn bây giờ cảm giác đó mạnh đến mức nào?';
+
+  @override
+  String get checkInUpsetName => 'Buồn bực';
+
+  @override
+  String get checkInUpsetMeasure => 'buồn bực';
+
+  @override
+  String get checkInUpsetStrongBody =>
+      'Lúc này chắc hẳn không dễ chịu. Bài tiếp đất có thể giúp những cảm xúc mạnh lắng xuống.';
+
+  @override
+  String get checkInDistractedScaleTitle =>
+      'Lúc này bạn thấy khó tập trung đến mức nào?';
+
+  @override
+  String get checkInDistractedScaleLow => '0 · tập trung dễ dàng';
+
+  @override
+  String get checkInDistractedScaleHigh => '10 · rất khó tập trung';
+
+  @override
+  String get checkInDistractedAfterTitle =>
+      'Còn bây giờ bạn thấy khó tập trung đến mức nào?';
+
+  @override
+  String get checkInDistractedName => 'Khó tập trung';
+
+  @override
+  String get checkInDistractedMeasure => 'khó tập trung';
+
+  @override
+  String get checkInDistractedStrongBody =>
+      'Tâm trí bạn đang bận rộn. Bài tiếp đất giúp đưa sự chú ý trở về với hiện tại.';
 
   @override
   String get checkInSlowerTitle => 'Mình đi chậm lại một chút nhé';
 
   @override
   String get checkInChooseTitle => 'Bạn muốn tập bài nào?';
-
-  @override
-  String get checkInSlowerBody =>
-      'Lúc này bạn đang mang nhiều căng thẳng. Bài tiếp đất thường giúp bạn lắng lại nhanh hơn.';
 
   @override
   String get checkInLengthTitle => 'Bạn muốn tập trong bao lâu?';
@@ -407,11 +519,7 @@ class AppLocalizationsVi extends AppLocalizations {
       'Chọn câu gần nhất với cảm nhận của bạn. Không có câu trả lời đúng hay sai.';
 
   @override
-  String get feedbackStressTitle =>
-      'Còn mức căng thẳng của bạn bây giờ thì sao?';
-
-  @override
-  String feedbackStressStarted(int value) {
+  String feedbackLevelStarted(int value) {
     return 'Lúc đầu bạn chọn $value.';
   }
 
@@ -430,18 +538,9 @@ class AppLocalizationsVi extends AppLocalizations {
       'Ví dụ: vai tôi thả lỏng hơn, hơi thở chậm dần về cuối.';
 
   @override
-  String get stressLevel => 'Mức căng thẳng';
-
-  @override
-  String stressOutOfTen(int value) {
+  String levelOutOfTen(int value) {
     return '$value trên 10';
   }
-
-  @override
-  String get stressScaleLow => '0 · thoải mái';
-
-  @override
-  String get stressScaleHigh => '10 · rất căng thẳng';
 
   @override
   String get helpTitle => 'Trợ giúp';
@@ -591,23 +690,23 @@ class AppLocalizationsVi extends AppLocalizations {
   String get tagSynced => 'Đã đồng bộ';
 
   @override
-  String closingStressDown(int before, int after) {
-    return 'Mức căng thẳng của bạn giảm từ $before xuống $after.';
+  String closingLevelBetter(String measure, int before, int after) {
+    return 'Mức $measure của bạn đi từ $before đến $after.';
   }
 
   @override
-  String closingStressEased(int before, int after) {
-    return 'Mức căng thẳng của bạn dịu đi một chút, từ $before xuống $after.';
+  String closingLevelBetterLittle(String measure, int before, int after) {
+    return 'Mức $measure của bạn thay đổi một chút, từ $before đến $after.';
   }
 
   @override
-  String closingStressSame(int value) {
-    return 'Mức căng thẳng của bạn vẫn ở $value. Chuyện này vẫn thường gặp — một buổi tập không phải lúc nào cũng thay đổi được ngay.';
+  String closingLevelSame(String measure, int value) {
+    return 'Mức $measure của bạn vẫn ở $value. Chuyện này vẫn thường gặp — một buổi tập không phải lúc nào cũng thay đổi được ngay.';
   }
 
   @override
-  String get closingStressUp =>
-      'Bạn thấy căng thẳng hơn lúc bắt đầu. Cảm ơn bạn đã thành thật về điều đó.';
+  String get closingLevelWorse =>
+      'Lúc này bạn thấy khó chịu hơn lúc bắt đầu một chút. Cảm ơn bạn đã thành thật về điều đó.';
 
   @override
   String get closingNextBodyScan =>
@@ -1429,7 +1528,9 @@ class AppLocalizationsVi extends AppLocalizations {
       'Câu trả lời của bạn chỉ được gắn với Mã người tham gia do nghiên cứu cấp. Bạn có thể quay lại sửa trước khi gửi.';
 
   @override
-  String get finalReviewAnxiety => 'Câu hỏi về lo âu';
+  String finalReviewQuestions(int first, int last) {
+    return 'Câu $first–$last';
+  }
 
   @override
   String finalAnsweredOf(int count, int total) {
@@ -1437,34 +1538,217 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String finalOutOfFive(int value) {
-    return '$value/5';
-  }
-
-  @override
-  String get finalReviewExperience => 'Câu hỏi về trải nghiệm';
-
-  @override
-  String get finalReviewWritten => 'Góp ý bằng lời';
-
-  @override
-  String get finalScreeningTotals => 'Tổng điểm sàng lọc đã ghi';
-
-  @override
-  String finalGadTotals(int gad2, int gad7) {
-    return 'GAD-2: $gad2/6  |  GAD-7: $gad7/21';
-  }
-
-  @override
-  String finalGadIncomplete(int gad2) {
-    return 'GAD-2: $gad2/6  |  GAD-7 chưa đủ câu';
-  }
-
-  @override
-  String get finalScreeningNote =>
-      'Đây là điểm sàng lọc, không phải chẩn đoán.';
-
-  @override
   String get finalSaveFailed =>
       'Không lưu được câu trả lời của bạn. Vui lòng thử lại.';
+
+  @override
+  String get dictationStart => 'Nói thay vì gõ';
+
+  @override
+  String get dictationStop => 'Dừng và chuyển thành chữ';
+
+  @override
+  String dictationRecording(int seconds) {
+    return 'Đang ghi âm, còn $seconds giây';
+  }
+
+  @override
+  String get dictationWorking => 'Đang chuyển lời nói thành chữ…';
+
+  @override
+  String get dictationNotHeard =>
+      'Chưa nghe được gì. Bạn thử lại, nói gần micro hơn một chút nhé.';
+
+  @override
+  String get dictationBusy =>
+      'Tính năng nói thay vì gõ đang bận. Bạn thử lại sau ít phút, hoặc gõ phím nhé.';
+
+  @override
+  String get dictationFailed =>
+      'Lần này chưa chuyển được lời nói thành chữ. Bạn gõ phím giúp nhé.';
+
+  @override
+  String get dictationNoMic =>
+      'Không dùng được micro. Bạn cho phép trình duyệt dùng micro rồi thử lại nhé.';
+
+  @override
+  String get prepConcernTitle =>
+      'Có điều gì bạn muốn nhóm chăm sóc sức khoẻ hiểu rõ hoặc trao đổi trong buổi khám tới không?';
+
+  @override
+  String get prepConcernSubtitle =>
+      'Hãy kể bằng lời của bạn: điều bạn nhận thấy, hoặc điều bạn muốn hỏi.';
+
+  @override
+  String get prepConcernLabel => 'Điều bạn lo, triệu chứng hoặc câu hỏi';
+
+  @override
+  String get prepConcernHint =>
+      'Ví dụ: tôi thấy chóng mặt sau khi uống thuốc buổi sáng.';
+
+  @override
+  String get prepTopicsTitle => 'Bạn muốn hỏi điều gì nhất?';
+
+  @override
+  String get prepTopicsSubtitle => 'Chọn một hoặc nhiều mục.';
+
+  @override
+  String get prepTopicWhy => 'Vì sao điều này có thể xảy ra';
+
+  @override
+  String get prepTopicMonitor => 'Tôi nên theo dõi điều gì';
+
+  @override
+  String get prepTopicNextTime => 'Nên làm gì nếu nó xảy ra lại';
+
+  @override
+  String get prepTopicOther => 'Điều khác';
+
+  @override
+  String get prepWorking => 'Đang sắp xếp câu hỏi của bạn…';
+
+  @override
+  String get prepResultTitle => 'Cách hỏi rõ ràng hơn';
+
+  @override
+  String get prepResultSubtitle =>
+      'Câu này chỉ dùng những gì bạn đã viết. Bạn có thể sửa trước khi lưu.';
+
+  @override
+  String get prepBusyTitle => 'Lúc này chưa viết lại được';
+
+  @override
+  String get prepBusyBody =>
+      'Bạn có thể lưu bằng lời của mình, hoặc thử lại sau một phút.';
+
+  @override
+  String get prepNotAdvice =>
+      'Phần này chỉ giúp bạn đặt câu hỏi, không phải lời khuyên y tế.';
+
+  @override
+  String get prepSave => 'Lưu câu hỏi';
+
+  @override
+  String get prepEdit => 'Sửa';
+
+  @override
+  String get prepEditDone => 'Sửa xong';
+
+  @override
+  String get prepEditLabel => 'Câu hỏi của bạn';
+
+  @override
+  String get prepAnotherWording => 'Thử cách viết khác';
+
+  @override
+  String get prepFull =>
+      'Bạn đã lưu đủ 3 câu hỏi. Hãy xoá bớt một câu trong mục Câu hỏi cho buổi khám để thêm câu này.';
+
+  @override
+  String get prepEmergencyTitle => 'Hãy tìm trợ giúp trước';
+
+  @override
+  String get prepEmergencyAfter =>
+      'Nếu chuyện đó đã xảy ra trước đây và đã qua, hãy liên hệ nhóm chăm sóc của bạn sớm, đừng đợi tới buổi khám.';
+
+  @override
+  String get prepSavedTitle => 'Đã lưu cho buổi khám tới';
+
+  @override
+  String prepSavedBody(int count, int max) {
+    return 'Bạn có $count trên $max câu hỏi. Bạn có thể xem và sắp xếp lại trong mục Câu hỏi cho buổi khám.';
+  }
+
+  @override
+  String get appointmentListTitle => 'Câu hỏi cho buổi khám';
+
+  @override
+  String get appointmentListIntro =>
+      'Mang những câu này tới buổi khám tới. Câu hỏi 1 là câu bạn sẽ hỏi trước. Dùng nút Đưa lên hoặc Đưa xuống để đổi thứ tự.';
+
+  @override
+  String get appointmentListEmpty => 'Chưa có câu hỏi nào.';
+
+  @override
+  String get appointmentListFull =>
+      'Bạn giữ được tối đa 3 câu hỏi. Xoá bớt một câu để thêm câu khác.';
+
+  @override
+  String get appointmentAdd => 'Thêm câu hỏi';
+
+  @override
+  String get appointmentMoveUp => 'Đưa lên';
+
+  @override
+  String get appointmentMoveDown => 'Đưa xuống';
+
+  @override
+  String get appointmentDelete => 'Xoá';
+
+  @override
+  String get appointmentDeleted => 'Đã xoá câu hỏi';
+
+  @override
+  String appointmentNumber(int number) {
+    return 'Câu hỏi $number';
+  }
+
+  @override
+  String get appointmentLoadFailed =>
+      'Chưa tải được câu hỏi của bạn. Bạn kiểm tra kết nối mạng rồi thử lại nhé.';
+
+  @override
+  String get appointmentSaveFailed =>
+      'Chưa lưu được. Bạn kiểm tra kết nối mạng rồi thử lại nhé.';
+
+  @override
+  String get appointmentEntry => 'Chuẩn bị câu hỏi cho buổi khám';
+
+  @override
+  String get appointmentEntryBody =>
+      'Biến những điều bạn nhận thấy thành câu hỏi rõ ràng cho nhóm chăm sóc.';
+
+  @override
+  String get prepFullTitle => 'Bạn đã có 3 câu hỏi sẵn sàng cho buổi khám tới';
+
+  @override
+  String get prepFullBody =>
+      'Hãy giữ chúng cho buổi khám, hoặc thay một câu bằng câu hỏi mới.';
+
+  @override
+  String get prepReplace => 'Thay câu này';
+
+  @override
+  String prepReplacing(String question) {
+    return 'Câu hỏi mới sẽ thay cho: $question';
+  }
+
+  @override
+  String appointmentMoved(int number) {
+    return 'Đã chuyển thành câu hỏi $number';
+  }
+
+  @override
+  String prepStep(int step, int total) {
+    return 'Bước $step/$total';
+  }
+
+  @override
+  String get prepWorkingBody => 'Thường chỉ mất vài giây.';
+
+  @override
+  String get appointmentRemoveTitle => 'Xoá câu hỏi này?';
+
+  @override
+  String get appointmentEmptyBody =>
+      'Ghi lại điều bạn muốn hỏi nhóm chăm sóc, và nhận trợ giúp để diễn đạt cho rõ ràng.';
+
+  @override
+  String appointmentCount(int count, int max) {
+    return '$count trên $max câu hỏi';
+  }
+
+  @override
+  String get prepErrorBody =>
+      'Bạn có thể lưu bằng lời của mình, sửa lại trước, hoặc thử lại.';
 }

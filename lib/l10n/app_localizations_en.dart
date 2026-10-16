@@ -79,8 +79,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String journalLineStress(int before, int after) {
-    return 'Stress: $before → $after';
+  String journalLineLevel(String name, int before, int after) {
+    return '$name: $before → $after';
   }
 
   @override
@@ -360,21 +360,128 @@ class AppLocalizationsEn extends AppLocalizations {
   String get checkInFeelingTitle => 'How are you feeling right now?';
 
   @override
-  String get checkInStressTitle => 'How stressed do you feel right now?';
+  String get checkInScaleSubtitle =>
+      'Move the slider to the number that fits best.';
 
   @override
-  String get checkInStressSubtitle =>
-      '0 is completely at ease, 10 is the most stressed.';
+  String get checkInSuggested => 'Suggested';
+
+  @override
+  String get checkInGentleTitle => 'Let\'s keep this gentle';
+
+  @override
+  String get checkInCalmScaleTitle => 'How calm do you feel right now?';
+
+  @override
+  String get checkInCalmScaleLow => '0 · not calm at all';
+
+  @override
+  String get checkInCalmScaleHigh => '10 · completely calm';
+
+  @override
+  String get checkInCalmAfterTitle => 'And how calm do you feel now?';
+
+  @override
+  String get checkInCalmName => 'Calm';
+
+  @override
+  String get checkInCalmMeasure => 'sense of calm';
+
+  @override
+  String get checkInStressedScaleTitle => 'How stressed do you feel right now?';
+
+  @override
+  String get checkInStressedScaleLow => '0 · at ease';
+
+  @override
+  String get checkInStressedScaleHigh => '10 · very stressed';
+
+  @override
+  String get checkInStressedAfterTitle => 'And where is your stress now?';
+
+  @override
+  String get checkInStressedName => 'Stress';
+
+  @override
+  String get checkInStressedMeasure => 'stress';
+
+  @override
+  String get checkInStressedStrongBody =>
+      'You are carrying a lot right now. Grounding often settles things faster.';
+
+  @override
+  String get checkInTiredScaleTitle => 'How tired do you feel right now?';
+
+  @override
+  String get checkInTiredScaleLow => '0 · full of energy';
+
+  @override
+  String get checkInTiredScaleHigh => '10 · exhausted';
+
+  @override
+  String get checkInTiredAfterTitle => 'And how tired do you feel now?';
+
+  @override
+  String get checkInTiredName => 'Tiredness';
+
+  @override
+  String get checkInTiredMeasure => 'tiredness';
+
+  @override
+  String get checkInTiredStrongBody =>
+      'Your energy is low right now. Simply following the breath is often enough.';
+
+  @override
+  String get checkInUpsetScaleTitle =>
+      'How strong is this upset feeling right now?';
+
+  @override
+  String get checkInUpsetScaleLow => '0 · not at all';
+
+  @override
+  String get checkInUpsetScaleHigh => '10 · very strong';
+
+  @override
+  String get checkInUpsetAfterTitle => 'And how strong is that feeling now?';
+
+  @override
+  String get checkInUpsetName => 'Upset';
+
+  @override
+  String get checkInUpsetMeasure => 'upset feeling';
+
+  @override
+  String get checkInUpsetStrongBody =>
+      'That sounds hard right now. Grounding can help strong feelings settle.';
+
+  @override
+  String get checkInDistractedScaleTitle =>
+      'How hard is it to focus right now?';
+
+  @override
+  String get checkInDistractedScaleLow => '0 · easy to focus';
+
+  @override
+  String get checkInDistractedScaleHigh => '10 · very hard to focus';
+
+  @override
+  String get checkInDistractedAfterTitle => 'And how hard is it to focus now?';
+
+  @override
+  String get checkInDistractedName => 'Focus difficulty';
+
+  @override
+  String get checkInDistractedMeasure => 'difficulty focusing';
+
+  @override
+  String get checkInDistractedStrongBody =>
+      'Your mind is busy right now. Grounding helps bring your attention back to the here and now.';
 
   @override
   String get checkInSlowerTitle => 'Let\'s take this a little slower';
 
   @override
   String get checkInChooseTitle => 'What would you like to practise?';
-
-  @override
-  String get checkInSlowerBody =>
-      'You are carrying a lot right now. Grounding often settles things faster.';
 
   @override
   String get checkInLengthTitle => 'How much time would you like?';
@@ -406,10 +513,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Choose the answer that feels closest. There is no right answer.';
 
   @override
-  String get feedbackStressTitle => 'And where is your stress now?';
-
-  @override
-  String feedbackStressStarted(int value) {
+  String feedbackLevelStarted(int value) {
     return 'You started at $value.';
   }
 
@@ -428,18 +532,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'For example: my shoulders softened, my breathing slowed towards the end.';
 
   @override
-  String get stressLevel => 'Stress level';
-
-  @override
-  String stressOutOfTen(int value) {
+  String levelOutOfTen(int value) {
     return '$value out of 10';
   }
-
-  @override
-  String get stressScaleLow => '0 · at ease';
-
-  @override
-  String get stressScaleHigh => '10 · very stressed';
 
   @override
   String get helpTitle => 'Help';
@@ -587,23 +682,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tagSynced => 'Synced';
 
   @override
-  String closingStressDown(int before, int after) {
-    return 'Your stress went from $before down to $after.';
+  String closingLevelBetter(String measure, int before, int after) {
+    return 'Your $measure went from $before to $after.';
   }
 
   @override
-  String closingStressEased(int before, int after) {
-    return 'Your stress eased a little, from $before to $after.';
+  String closingLevelBetterLittle(String measure, int before, int after) {
+    return 'Your $measure shifted a little, from $before to $after.';
   }
 
   @override
-  String closingStressSame(int value) {
-    return 'Your stress stayed at $value. That happens — one session does not always shift things right away.';
+  String closingLevelSame(String measure, int value) {
+    return 'Your $measure stayed at $value. That happens — one session does not always shift things right away.';
   }
 
   @override
-  String get closingStressUp =>
-      'You feel more tense than when you started. Thank you for being honest about that.';
+  String get closingLevelWorse =>
+      'Things feel a little harder than when you started. Thank you for being honest about that.';
 
   @override
   String get closingNextBodyScan =>
@@ -1443,7 +1538,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your answers will be linked only to your study-issued Participant ID. You can go back and change them before submitting.';
 
   @override
-  String get finalReviewAnxiety => 'Anxiety questions';
+  String finalReviewQuestions(int first, int last) {
+    return 'Questions $first–$last';
+  }
 
   @override
   String finalAnsweredOf(int count, int total) {
@@ -1451,33 +1548,217 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String finalOutOfFive(int value) {
-    return '$value of 5';
-  }
-
-  @override
-  String get finalReviewExperience => 'Experience questions';
-
-  @override
-  String get finalReviewWritten => 'Written feedback';
-
-  @override
-  String get finalScreeningTotals => 'Recorded screening totals';
-
-  @override
-  String finalGadTotals(int gad2, int gad7) {
-    return 'GAD-2: $gad2/6  |  GAD-7: $gad7/21';
-  }
-
-  @override
-  String finalGadIncomplete(int gad2) {
-    return 'GAD-2: $gad2/6  |  GAD-7 incomplete';
-  }
-
-  @override
-  String get finalScreeningNote =>
-      'These are screening scores, not a diagnosis.';
-
-  @override
   String get finalSaveFailed => 'Your answers could not be saved. Try again.';
+
+  @override
+  String get dictationStart => 'Speak instead of typing';
+
+  @override
+  String get dictationStop => 'Stop and turn into text';
+
+  @override
+  String dictationRecording(int seconds) {
+    return 'Recording, $seconds seconds left';
+  }
+
+  @override
+  String get dictationWorking => 'Turning your words into text…';
+
+  @override
+  String get dictationNotHeard =>
+      'Nothing was heard. Try again, a little closer to the microphone.';
+
+  @override
+  String get dictationBusy =>
+      'Voice typing is busy right now. Please try again in a moment, or type instead.';
+
+  @override
+  String get dictationFailed =>
+      'Voice typing did not work this time. Please type instead.';
+
+  @override
+  String get dictationNoMic =>
+      'The microphone is not available. Allow microphone access in your browser, then try again.';
+
+  @override
+  String get prepConcernTitle =>
+      'Is there one thing you would like your healthcare team to understand or discuss at your next appointment?';
+
+  @override
+  String get prepConcernSubtitle =>
+      'Describe it in your own words: what you noticed, or what you want to ask.';
+
+  @override
+  String get prepConcernLabel => 'Your concern, symptom or question';
+
+  @override
+  String get prepConcernHint =>
+      'For example: I feel dizzy after taking my morning tablets.';
+
+  @override
+  String get prepTopicsTitle => 'What would you most like to ask about?';
+
+  @override
+  String get prepTopicsSubtitle => 'Choose one or more.';
+
+  @override
+  String get prepTopicWhy => 'Why this may be happening';
+
+  @override
+  String get prepTopicMonitor => 'What I should monitor';
+
+  @override
+  String get prepTopicNextTime => 'What to do if it happens again';
+
+  @override
+  String get prepTopicOther => 'Something else';
+
+  @override
+  String get prepWorking => 'Putting your question together…';
+
+  @override
+  String get prepResultTitle => 'A clearer way to ask it';
+
+  @override
+  String get prepResultSubtitle =>
+      'It uses only what you wrote. You can change it before saving.';
+
+  @override
+  String get prepBusyTitle => 'We could not reword it right now';
+
+  @override
+  String get prepBusyBody =>
+      'You can save it in your own words, or try again in a minute.';
+
+  @override
+  String get prepNotAdvice =>
+      'This only helps you ask your question. It is not medical advice.';
+
+  @override
+  String get prepSave => 'Save question';
+
+  @override
+  String get prepEdit => 'Edit';
+
+  @override
+  String get prepEditDone => 'Done editing';
+
+  @override
+  String get prepEditLabel => 'Your question';
+
+  @override
+  String get prepAnotherWording => 'Try another wording';
+
+  @override
+  String get prepFull =>
+      'You already have 3 questions saved. Remove one in My appointment questions to add this one.';
+
+  @override
+  String get prepEmergencyTitle => 'Please get help first';
+
+  @override
+  String get prepEmergencyAfter =>
+      'If it happened earlier and has passed, contact your care team soon rather than waiting for your appointment.';
+
+  @override
+  String get prepSavedTitle => 'Saved for your next appointment';
+
+  @override
+  String prepSavedBody(int count, int max) {
+    return 'You have $count of $max questions. You can see and reorder them in My appointment questions.';
+  }
+
+  @override
+  String get appointmentListTitle => 'My appointment questions';
+
+  @override
+  String get appointmentListIntro =>
+      'Bring these to your next appointment. Question 1 is the one you will ask first. Use Move up or Move down to change the order.';
+
+  @override
+  String get appointmentListEmpty => 'No questions yet.';
+
+  @override
+  String get appointmentListFull =>
+      'You can keep up to 3 questions. Remove one to add another.';
+
+  @override
+  String get appointmentAdd => 'Add a question';
+
+  @override
+  String get appointmentMoveUp => 'Move up';
+
+  @override
+  String get appointmentMoveDown => 'Move down';
+
+  @override
+  String get appointmentDelete => 'Remove';
+
+  @override
+  String get appointmentDeleted => 'Question removed';
+
+  @override
+  String appointmentNumber(int number) {
+    return 'Question $number';
+  }
+
+  @override
+  String get appointmentLoadFailed =>
+      'Your questions could not be loaded. Check your connection and try again.';
+
+  @override
+  String get appointmentSaveFailed =>
+      'That could not be saved. Check your connection and try again.';
+
+  @override
+  String get appointmentEntry => 'Prepare questions for your appointment';
+
+  @override
+  String get appointmentEntryBody =>
+      'Turn what you have noticed into clear questions for your care team.';
+
+  @override
+  String get prepFullTitle =>
+      'You have 3 questions ready for your next appointment';
+
+  @override
+  String get prepFullBody =>
+      'Keep them for your appointment, or replace one with a new question.';
+
+  @override
+  String get prepReplace => 'Replace this one';
+
+  @override
+  String prepReplacing(String question) {
+    return 'Your new question will replace: $question';
+  }
+
+  @override
+  String appointmentMoved(int number) {
+    return 'Moved to question $number';
+  }
+
+  @override
+  String prepStep(int step, int total) {
+    return 'Step $step of $total';
+  }
+
+  @override
+  String get prepWorkingBody => 'This usually takes a few seconds.';
+
+  @override
+  String get appointmentRemoveTitle => 'Remove this question?';
+
+  @override
+  String get appointmentEmptyBody =>
+      'Write down what you would like to ask your care team, and get help putting it into clear words.';
+
+  @override
+  String appointmentCount(int count, int max) {
+    return '$count of $max questions';
+  }
+
+  @override
+  String get prepErrorBody =>
+      'You can save it in your own words, edit it first, or try again.';
 }

@@ -1,3 +1,4 @@
+import '../data/check_in_paths.dart';
 import 'mood.dart';
 
 /// Lựa chọn ở ô kiểm tra an toàn (Beat 2), đúng ba nhãn video đang dùng.
@@ -17,11 +18,14 @@ enum PracticeLength { short, full }
 class SessionAnswers {
   SafetyAnswer? safety;
   CheckInFeeling? feeling;
-  int? stressBefore;
+
+  /// Mức độ 0–10 của chính cảm xúc đã chọn (căng thẳng, mệt, khó tập trung...),
+  /// trước và sau buổi tập. Xem lib/data/check_in_paths.dart.
+  int? levelBefore;
   PracticeChoice? practice;
   PracticeLength? practiceLength;
   String? question;
-  int? stressAfter;
+  int? levelAfter;
   Mood? moodAfter;
   String? reflection;
 
@@ -32,9 +36,12 @@ class SessionAnswers {
   /// không tính là một buổi.
   bool practiceStarted = false;
 
-  /// Mức giảm căng thẳng, null nếu thiếu một trong hai lần đo.
-  int? get stressDelta => (stressBefore != null && stressAfter != null)
-      ? stressBefore! - stressAfter!
+  /// Mức đỡ hơn theo thang của cảm xúc đã chọn (dương là đỡ hơn), null nếu
+  /// thiếu một trong hai lần đo. Thiếu cảm xúc thì coi như thang căng thẳng.
+  int? get improvement => (levelBefore != null && levelAfter != null)
+      ? (feeling ?? CheckInFeeling.stressed).path.improvement(
+          levelBefore!,
+          levelAfter!,
+        )
       : null;
-
 }

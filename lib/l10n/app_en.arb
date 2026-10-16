@@ -1,5 +1,5 @@
 {
-  "@@locale": "en",
+  "@locale": "en",
   "languageTitle": "Language",
   "languagePhone": "Same as my phone",
   "@languagePhone": {
@@ -36,9 +36,12 @@
       }
     }
   },
-  "journalLineStress": "Stress: {before} → {after}",
-  "@journalLineStress": {
+  "journalLineLevel": "{name}: {before} → {after}",
+  "@journalLineLevel": {
     "placeholders": {
+      "name": {
+        "type": "String"
+      },
       "before": {
         "type": "int"
       },
@@ -184,11 +187,45 @@
     "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
   },
   "checkInFeelingTitle": "How are you feeling right now?",
-  "checkInStressTitle": "How stressed do you feel right now?",
-  "checkInStressSubtitle": "0 is completely at ease, 10 is the most stressed.",
+  "checkInScaleSubtitle": "Move the slider to the number that fits best.",
+  "checkInSuggested": "Suggested",
+  "checkInGentleTitle": "Let's keep this gentle",
+  "checkInCalmScaleTitle": "How calm do you feel right now?",
+  "checkInCalmScaleLow": "0 · not calm at all",
+  "checkInCalmScaleHigh": "10 · completely calm",
+  "checkInCalmAfterTitle": "And how calm do you feel now?",
+  "checkInCalmName": "Calm",
+  "checkInCalmMeasure": "sense of calm",
+  "checkInStressedScaleTitle": "How stressed do you feel right now?",
+  "checkInStressedScaleLow": "0 · at ease",
+  "checkInStressedScaleHigh": "10 · very stressed",
+  "checkInStressedAfterTitle": "And where is your stress now?",
+  "checkInStressedName": "Stress",
+  "checkInStressedMeasure": "stress",
+  "checkInStressedStrongBody": "You are carrying a lot right now. Grounding often settles things faster.",
+  "checkInTiredScaleTitle": "How tired do you feel right now?",
+  "checkInTiredScaleLow": "0 · full of energy",
+  "checkInTiredScaleHigh": "10 · exhausted",
+  "checkInTiredAfterTitle": "And how tired do you feel now?",
+  "checkInTiredName": "Tiredness",
+  "checkInTiredMeasure": "tiredness",
+  "checkInTiredStrongBody": "Your energy is low right now. Simply following the breath is often enough.",
+  "checkInUpsetScaleTitle": "How strong is this upset feeling right now?",
+  "checkInUpsetScaleLow": "0 · not at all",
+  "checkInUpsetScaleHigh": "10 · very strong",
+  "checkInUpsetAfterTitle": "And how strong is that feeling now?",
+  "checkInUpsetName": "Upset",
+  "checkInUpsetMeasure": "upset feeling",
+  "checkInUpsetStrongBody": "That sounds hard right now. Grounding can help strong feelings settle.",
+  "checkInDistractedScaleTitle": "How hard is it to focus right now?",
+  "checkInDistractedScaleLow": "0 · easy to focus",
+  "checkInDistractedScaleHigh": "10 · very hard to focus",
+  "checkInDistractedAfterTitle": "And how hard is it to focus now?",
+  "checkInDistractedName": "Focus difficulty",
+  "checkInDistractedMeasure": "difficulty focusing",
+  "checkInDistractedStrongBody": "Your mind is busy right now. Grounding helps bring your attention back to the here and now.",
   "checkInSlowerTitle": "Let's take this a little slower",
   "checkInChooseTitle": "What would you like to practise?",
-  "checkInSlowerBody": "You are carrying a lot right now. Grounding often settles things faster.",
   "checkInLengthTitle": "How much time would you like?",
   "checkInLengthSubtitle": "Both options end with time to reflect.",
   "questionTitle": "Is there one question you would like answered?",
@@ -198,9 +235,8 @@
   "questionSave": "Save and continue",
   "feedbackMoodTitle": "How do you feel now?",
   "feedbackMoodSubtitle": "Choose the answer that feels closest. There is no right answer.",
-  "feedbackStressTitle": "And where is your stress now?",
-  "feedbackStressStarted": "You started at {value}.",
-  "@feedbackStressStarted": {
+  "feedbackLevelStarted": "You started at {value}.",
+  "@feedbackLevelStarted": {
     "placeholders": {
       "value": {
         "type": "int"
@@ -211,17 +247,14 @@
   "feedbackNoticeSubtitle": "One sentence is plenty. There is no right answer.",
   "feedbackNoticeLabel": "What you noticed",
   "feedbackNoticeHint": "For example: my shoulders softened, my breathing slowed towards the end.",
-  "stressLevel": "Stress level",
-  "stressOutOfTen": "{value} out of 10",
-  "@stressOutOfTen": {
+  "levelOutOfTen": "{value} out of 10",
+  "@levelOutOfTen": {
     "placeholders": {
       "value": {
         "type": "int"
       }
     }
   },
-  "stressScaleLow": "0 · at ease",
-  "stressScaleHigh": "10 · very stressed",
   "helpTitle": "Help",
   "helpClose": "Close help",
   "helpBody": "Take your time. Find a comfortable position and let your breathing stay natural. You can leave the practice whenever you need to.",
@@ -267,9 +300,12 @@
   "tagAlone": "Alone",
   "tagSession": "Session",
   "tagSynced": "Synced",
-  "closingStressDown": "Your stress went from {before} down to {after}.",
-  "@closingStressDown": {
+  "closingLevelBetter": "Your {measure} went from {before} to {after}.",
+  "@closingLevelBetter": {
     "placeholders": {
+      "measure": {
+        "type": "String"
+      },
       "before": {
         "type": "int"
       },
@@ -278,9 +314,12 @@
       }
     }
   },
-  "closingStressEased": "Your stress eased a little, from {before} to {after}.",
-  "@closingStressEased": {
+  "closingLevelBetterLittle": "Your {measure} shifted a little, from {before} to {after}.",
+  "@closingLevelBetterLittle": {
     "placeholders": {
+      "measure": {
+        "type": "String"
+      },
       "before": {
         "type": "int"
       },
@@ -289,15 +328,18 @@
       }
     }
   },
-  "closingStressSame": "Your stress stayed at {value}. That happens — one session does not always shift things right away.",
-  "@closingStressSame": {
+  "closingLevelSame": "Your {measure} stayed at {value}. That happens — one session does not always shift things right away.",
+  "@closingLevelSame": {
     "placeholders": {
+      "measure": {
+        "type": "String"
+      },
       "value": {
         "type": "int"
       }
     }
   },
-  "closingStressUp": "You feel more tense than when you started. Thank you for being honest about that.",
+  "closingLevelWorse": "Things feel a little harder than when you started. Thank you for being honest about that.",
   "closingNextBodyScan": "Next time, a short body scan may suit you.",
   "closingNextGrounding": "Next time, try adding the grounding part at the start and see whether it helps you settle.",
   "closingQuestionSaved": "The question you wrote down has been saved for your next appointment.",
@@ -992,7 +1034,17 @@
   "@finalReviewBody": {
     "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
   },
-  "finalReviewAnxiety": "Anxiety questions",
+  "finalReviewQuestions": "Questions {first}–{last}",
+  "@finalReviewQuestions": {
+    "placeholders": {
+      "first": {
+        "type": "int"
+      },
+      "last": {
+        "type": "int"
+      }
+    }
+  },
   "finalAnsweredOf": "{count} of {total} answered",
   "@finalAnsweredOf": {
     "placeholders": {
@@ -1004,39 +1056,122 @@
       }
     }
   },
-  "finalOutOfFive": "{value} of 5",
-  "@finalOutOfFive": {
+  "finalSaveFailed": "Your answers could not be saved. Try again.",
+  "dictationStart": "Speak instead of typing",
+  "dictationStop": "Stop and turn into text",
+  "dictationRecording": "Recording, {seconds} seconds left",
+  "@dictationRecording": {
     "placeholders": {
-      "value": {
+      "seconds": {
         "type": "int"
       }
     }
   },
-  "finalReviewExperience": "Experience questions",
-  "finalReviewWritten": "Written feedback",
-  "finalScreeningTotals": "Recorded screening totals",
-  "finalGadTotals": "GAD-2: {gad2}/6  |  GAD-7: {gad7}/21",
-  "@finalGadTotals": {
+  "dictationWorking": "Turning your words into text…",
+  "dictationNotHeard": "Nothing was heard. Try again, a little closer to the microphone.",
+  "dictationBusy": "Voice typing is busy right now. Please try again in a moment, or type instead.",
+  "dictationFailed": "Voice typing did not work this time. Please type instead.",
+  "dictationNoMic": "The microphone is not available. Allow microphone access in your browser, then try again.",
+  "prepConcernTitle": "Is there one thing you would like your healthcare team to understand or discuss at your next appointment?",
+  "prepConcernSubtitle": "Describe it in your own words: what you noticed, or what you want to ask.",
+  "prepConcernLabel": "Your concern, symptom or question",
+  "prepConcernHint": "For example: I feel dizzy after taking my morning tablets.",
+  "prepTopicsTitle": "What would you most like to ask about?",
+  "prepTopicsSubtitle": "Choose one or more.",
+  "prepTopicWhy": "Why this may be happening",
+  "prepTopicMonitor": "What I should monitor",
+  "prepTopicNextTime": "What to do if it happens again",
+  "prepTopicOther": "Something else",
+  "prepWorking": "Putting your question together…",
+  "prepResultTitle": "A clearer way to ask it",
+  "prepResultSubtitle": "It uses only what you wrote. You can change it before saving.",
+  "prepBusyTitle": "We could not reword it right now",
+  "prepBusyBody": "You can save it in your own words, or try again in a minute.",
+  "prepNotAdvice": "This only helps you ask your question. It is not medical advice.",
+  "prepSave": "Save question",
+  "prepEdit": "Edit",
+  "prepEditDone": "Done editing",
+  "prepEditLabel": "Your question",
+  "prepAnotherWording": "Try another wording",
+  "prepFull": "You already have 3 questions saved. Remove one in My appointment questions to add this one.",
+  "prepEmergencyTitle": "Please get help first",
+  "prepEmergencyAfter": "If it happened earlier and has passed, contact your care team soon rather than waiting for your appointment.",
+  "prepSavedTitle": "Saved for your next appointment",
+  "prepSavedBody": "You have {count} of {max} questions. You can see and reorder them in My appointment questions.",
+  "@prepSavedBody": {
     "placeholders": {
-      "gad2": {
+      "count": {
         "type": "int"
       },
-      "gad7": {
+      "max": {
         "type": "int"
       }
     }
   },
-  "finalGadIncomplete": "GAD-2: {gad2}/6  |  GAD-7 incomplete",
-  "@finalGadIncomplete": {
+  "appointmentListTitle": "My appointment questions",
+  "appointmentListIntro": "Bring these to your next appointment. Question 1 is the one you will ask first. Use Move up or Move down to change the order.",
+  "appointmentListEmpty": "No questions yet.",
+  "appointmentListFull": "You can keep up to 3 questions. Remove one to add another.",
+  "appointmentAdd": "Add a question",
+  "appointmentMoveUp": "Move up",
+  "appointmentMoveDown": "Move down",
+  "appointmentDelete": "Remove",
+  "appointmentDeleted": "Question removed",
+  "appointmentNumber": "Question {number}",
+  "@appointmentNumber": {
     "placeholders": {
-      "gad2": {
+      "number": {
         "type": "int"
       }
     }
   },
-  "finalScreeningNote": "These are screening scores, not a diagnosis.",
-  "@finalScreeningNote": {
-    "description": "RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants."
+  "appointmentLoadFailed": "Your questions could not be loaded. Check your connection and try again.",
+  "appointmentSaveFailed": "That could not be saved. Check your connection and try again.",
+  "appointmentEntry": "Prepare questions for your appointment",
+  "appointmentEntryBody": "Turn what you have noticed into clear questions for your care team.",
+  "prepFullTitle": "You have 3 questions ready for your next appointment",
+  "prepFullBody": "Keep them for your appointment, or replace one with a new question.",
+  "prepReplace": "Replace this one",
+  "prepReplacing": "Your new question will replace: {question}",
+  "@prepReplacing": {
+    "placeholders": {
+      "question": {
+        "type": "String"
+      }
+    }
   },
-  "finalSaveFailed": "Your answers could not be saved. Try again."
+  "appointmentMoved": "Moved to question {number}",
+  "@appointmentMoved": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "prepStep": "Step {step} of {total}",
+  "prepWorkingBody": "This usually takes a few seconds.",
+  "appointmentRemoveTitle": "Remove this question?",
+  "appointmentEmptyBody": "Write down what you would like to ask your care team, and get help putting it into clear words.",
+  "appointmentCount": "{count} of {max} questions",
+  "@prepStep": {
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "@appointmentCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "prepErrorBody": "You can save it in your own words, edit it first, or try again."
 }

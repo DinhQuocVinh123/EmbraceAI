@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../core/motion.dart';
@@ -179,6 +181,10 @@ class SessionTopBar extends StatelessWidget {
                       beatTitle,
                     ),
                     style: const TextStyle(color: Colors.white, fontSize: 14),
+                    // Ở cỡ chữ lớn tên phần dài xuống 3 dòng, chiếm chỗ của
+                    // video. Trình đọc màn hình vẫn đọc đủ qua nhãn ở trên.
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ),
@@ -356,12 +362,6 @@ class SessionStage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final captionFontSize = MediaQuery.textScalerOf(context).scale(21);
-    final captionScale = captionFontSize / 21;
-    final reservedCaptionLines = (4 + (captionScale - 1) * 2).clamp(4.0, 7.0);
-    final captionRailHeight =
-        (32 + captionFontSize * 1.35 * reservedCaptionLines)
-            .clamp(136.0, 420.0)
-            .floorToDouble();
 
     return Column(
       children: [
@@ -376,44 +376,33 @@ class SessionStage extends StatelessWidget {
           child: SafeArea(
             top: false,
             bottom: false,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Flexible(
-                  child: AspectRatio(
-                    aspectRatio: aspectRatio,
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        ExcludeSemantics(
-                          child: ClarityFilter(
-                            enabled: highClarity,
-                            child: videoSurface,
-                          ),
-                        ),
-                        if (breathingCue case final cue?)
-                          Center(
-                            child: BreathingGuide(
-                              cue: cue,
-                              reduceMotion: reduceMotion,
-                            ),
-                          ),
-                      ],
-                    ),
+            child: LayoutBuilder(
+              builder: (context, box) {
+                // Video cùng cỡ và cùng chỗ ở mọi cỡ chữ: đủ chiều rộng, nằm
+                // giữa. Phụ đề dùng nửa dưới và tự cuộn khi dài. Chỉ khi nửa
+                // dưới không đủ một dòng phụ đề thì video mới nhích lên, rồi
+                // mới co lại. Trước đây phụ đề giữ sẵn tới 7 dòng, nên ở cỡ
+                // chữ lớn video bị co lại và đẩy lên trên (góp ý của Patrick).
+                final minCaptionHeight = captionsOn
+                    ? 32 + captionFontSize * 1.35
+                    : 0.0;
+                final videoHeight = math.max(
+                  0.0,
+                  math.min(
+                    box.maxWidth / aspectRatio,
+                    box.maxHeight - minCaptionHeight,
                   ),
-                ),
-                if (captionsOn)
-                  SizedBox(
-                    height: captionRailHeight,
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                      child: Align(
-                        alignment: Alignment.topCenter,
-                        child: SessionCaption(text: caption),
-                      ),
-                    ),
-                  ),
-              ],
+                );
+                final free = box.maxHeight - videoHeight;
+                final below = captionsOn
+                    ? math.max(free / 2, math.min(minCaptionHeight, free))
+                    : free / 2;
+                return _stageColumn(
+                  top: (free - below).floorToDouble(),
+                  videoHeight: videoHeight,
+                  captionHeight: below.floorToDouble(),
+                );
+              },
             ),
           ),
         ),
@@ -423,6 +412,51 @@ class SessionStage extends StatelessWidget {
           isPlaying: isPlaying,
           onTogglePlay: onTogglePlay,
         ),
+      ],
+    );
+  }
+
+  Widget _stageColumn({
+    required double top,
+    required double videoHeight,
+    required double captionHeight,
+  }) {
+    return Column(
+      children: [
+        SizedBox(height: top),
+        SizedBox(
+          height: videoHeight,
+          width: videoHeight * aspectRatio,
+          child: AspectRatio(
+            aspectRatio: aspectRatio,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                ExcludeSemantics(
+                  child: ClarityFilter(
+                    enabled: highClarity,
+                    child: videoSurface,
+                  ),
+                ),
+                if (breathingCue case final cue?)
+                  Center(
+                    child: BreathingGuide(cue: cue, reduceMotion: reduceMotion),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        if (captionsOn)
+          SizedBox(
+            height: captionHeight,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: SessionCaption(text: caption),
+              ),
+            ),
+          ),
       ],
     );
   }

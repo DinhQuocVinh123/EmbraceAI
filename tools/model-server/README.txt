@@ -25,6 +25,21 @@ Giữ kín server-key.txt và file zip có chứa nó; xoá sau khi dùng xong.
 Nhật ký của chương trình chạy nền: C:\ProgramData\EmbraceAI\worker-log.txt
 (không ghi nội dung câu hỏi).
 
+Bước 3: nói thay vì gõ (làm sau bước 2)
+1. Deploy hàm transcribe, ai-worker mới và migration ai_jobs_transcribe lên Supabase.
+2. Đóng lại bộ cài: tools\model-server
+ew-key.ps1 -KeepKey (giữ khoá đang dùng).
+3. Chép zip sang máy GPU, giải nén, bấm đúp 3-ADD-SPEECH-TO-TEXT.bat, bấm Yes khi
+   Windows hỏi quyền Administrator. Chờ chữ DONE màu xanh.
+Bước này tải whisper.cpp (khoảng 675 MB) và model Whisper large-v3-turbo (khoảng
+575 MB), chạy nó nền ở 127.0.0.1:8178 (chỉ trong máy, không mở cổng nào), thử với
+một câu tiếng Việt, rồi khởi động lại chương trình chạy nền để nó nhận cả việc
+chuyển giọng nói thành chữ. Whisper chiếm thêm khoảng 1 GB bộ nhớ GPU; nếu GPU
+không chạy được (card quá mới cho bản CUDA này hoặc hết bộ nhớ), bộ cài tự chuyển
+sang chạy bằng CPU, chậm hơn nhưng vẫn dùng được. Đoạn ghi âm bị xoá ngay sau khi
+chuyển xong, nhật ký không ghi nội dung.
+Nếu thấy FAILED màu đỏ: gửi file speech-setup-log.txt cho Claude.
+
 Bộ cài làm gì:
 - Cài Ollama (phần mềm chạy model) và tải model gpt-oss:20b.
 - Cho Ollama nhận yêu cầu qua mạng, nhưng tường lửa chỉ mở cho các máy

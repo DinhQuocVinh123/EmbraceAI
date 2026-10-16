@@ -6,6 +6,7 @@ import 'package:embrace_ai/models/study_assessment.dart';
 import 'package:embrace_ai/screens/staff_dashboard_screen.dart';
 import 'package:embrace_ai/services/staff_portal_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -289,6 +290,75 @@ void main() {
     },
   );
 
+  testWidgets('staff can show and copy the fixed sign-in link', (tester) async {
+    final service = _FakeStaffPortalService(participants);
+    String? copied;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') {
+          copied = (call.arguments as Map)['text'] as String?;
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+    await pumpPortal(tester, size: const Size(1440, 900), service: service);
+
+    await tester.tap(find.text('Participants').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('EA-23AB-89XY').last);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Show sign-in link'));
+    await tester.tap(find.text('Show sign-in link'));
+    await tester.pumpAndSettle();
+
+    expect(service.linkRequests, ['EA23AB89XY']);
+    expect(find.text('Sign-in link'), findsOneWidget);
+    expect(find.textContaining('This link stays the same'), findsOneWidget);
+    expect(find.text(_FakeStaffPortalService.linkUrl), findsOneWidget);
+    await tester.tap(find.text('Copy link'));
+    await tester.pumpAndSettle();
+    expect(copied, _FakeStaffPortalService.linkUrl);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('resetting the sign-in link asks first', (tester) async {
+    final service = _FakeStaffPortalService(participants);
+    await pumpPortal(tester, size: const Size(1440, 900), service: service);
+
+    await tester.tap(find.text('Participants').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('EA-23AB-89XY').last);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Reset sign-in link'));
+    await tester.tap(find.text('Reset sign-in link'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Reset sign-in link?'), findsOneWidget);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(service.linkRequests, isEmpty);
+
+    await tester.tap(find.text('EA-23AB-89XY').last);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Reset sign-in link'));
+    await tester.tap(find.text('Reset sign-in link'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Reset link'));
+    await tester.pumpAndSettle();
+
+    expect(service.linkRequests, ['EA23AB89XY (reset)']);
+    expect(find.text('New sign-in link'), findsOneWidget);
+    expect(find.textContaining('The old link no longer works'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('mobile portal remains usable at 200 percent text', (
     tester,
   ) async {
@@ -322,6 +392,20 @@ class _FakeStaffPortalService extends StaffPortalService {
   @override
   Future<StudyResponseSummary> loadStudyResponses(String code) async =>
       const StudyResponseSummary();
+
+  static const linkUrl =
+      'https://example.test/?link=EA23AB89XY.q3Zt0dB-8kYv_Ls2wPmN4xRc7fHj9aEu1oTiG5yKpQw';
+  final linkRequests = <String>[];
+
+  @override
+  Future<SignInLink> signInLink(String code, {bool reset = false}) async {
+    linkRequests.add(reset ? '$code (reset)' : code);
+    return SignInLink(
+      code: 'EA-23AB-89XY',
+      url: linkUrl,
+      expiresAt: DateTime(2026, 12, 20),
+    );
+  }
 }
 
 class _DelayedCreateStaffPortalService extends _FakeStaffPortalService {

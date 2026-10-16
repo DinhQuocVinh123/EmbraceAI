@@ -78,3 +78,6 @@ app.*.map.json
 
 # Bộ cài cho máy GPU có chứa khoá máy chủ
 /tools/*.zip
+
+# Danh sách tài khoản test kèm link đăng nhập và khoá truy cập
+/tools/test-accounts/out/

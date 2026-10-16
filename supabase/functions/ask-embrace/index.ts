@@ -281,6 +281,8 @@ Deno.serve(async (request) => {
       .from('ai_interactions')
       .select('id', { count: 'exact', head: true })
       .eq('participant_code', code)
+      // Thẻ chuẩn bị câu hỏi cho buổi khám có giới hạn riêng.
+      .eq('feature', 'ask')
       .gte('created_at', since);
     if ((count ?? 0) >= dailyLimit) {
       return json(200, {

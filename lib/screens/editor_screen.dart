@@ -11,6 +11,7 @@ import '../models/mood.dart';
 import '../services/reflection_service.dart';
 import '../state/journal_store.dart';
 import '../widgets/mood_picker.dart';
+import '../widgets/dictation_button.dart';
 import '../widgets/reflection_card.dart';
 
 /// Màn hình thêm mới / sửa một dòng nhật ký.
@@ -110,6 +111,10 @@ class _EditorScreenState extends State<EditorScreen> {
                 decoration: InputDecoration(
                   labelText: context.l10n.editorNoteLabel,
                   hintText: context.l10n.editorNoteHint,
+                  suffixIcon: DictationButton.maybe(
+                    _noteController,
+                    onChanged: () => setState(() {}),
+                  ),
                 ),
               ),
               Gap.l,

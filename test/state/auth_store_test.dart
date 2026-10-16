@@ -58,4 +58,40 @@ void main() {
       );
     });
   });
+
+  group('AuthStore.signInLinkFromUri', () {
+    const secret = 'q3Zt0dB-8kYv_Ls2wPmN4xRc7fHj9aEu1oTiG5yKpQw';
+
+    test('reads a reusable link: participant code and 43-character secret', () {
+      final uri = Uri.parse(
+        'https://embrace-ai-prototype-2026.web.app/?link=EAP8WNP77A.$secret',
+      );
+      expect(AuthStore.signInLinkFromUri(uri), 'EAP8WNP77A.$secret');
+    });
+
+    test('ignores missing or malformed links', () {
+      for (final link in [
+        '',
+        'EAP8WNP77A',
+        'EAP8WNP77A.short',
+        'XX12345678.$secret',
+        'EAP8WNP77A.${secret}x',
+        'EAP8WNP77A.$secret.extra',
+      ]) {
+        expect(
+          AuthStore.signInLinkFromUri(
+            Uri.parse(
+              'https://example.test/',
+            ).replace(queryParameters: {'link': link}),
+          ),
+          isNull,
+          reason: link,
+        );
+      }
+      expect(
+        AuthStore.signInLinkFromUri(Uri.parse('https://example.test/')),
+        isNull,
+      );
+    });
+  });
 }

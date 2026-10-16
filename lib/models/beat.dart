@@ -30,7 +30,7 @@ enum BeatInteraction {
   /// "Hôm nay bạn thấy thế nào?" — chọn một trạng thái.
   moodCheckIn,
 
-  /// Thang căng thẳng 0–10, dùng để chọn bài phù hợp.
+  /// Thang 0–10 đo mức độ của cảm xúc vừa chọn, dùng để chọn bài phù hợp.
   stressScale,
 
   /// Câu hỏi mở, người dùng tự gõ.
