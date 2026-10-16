@@ -11,6 +11,13 @@ import {
   systemPrompt,
   withVietnameseNames,
 } from '../_shared/ask_prompts.ts';
+import {
+  type AskDomain,
+  askDomains,
+  isHealthDomain,
+  rankDomains,
+  shelfForDomains,
+} from '../_shared/ask_domains.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { isEmergency } from '../_shared/emergency.ts';
 
@@ -43,6 +50,7 @@ const queueFullMessage = 'Many people are asking right now. Please try again in 
 
 interface Chunk {
   id: string;
+  domain: AskDomain;
   document_title: string;
   heading: string;
   content: string;
@@ -180,11 +188,12 @@ async function runModel(
 async function callModel(
   admin: SupabaseClient,
   language: AskLanguage,
+  domain: AskDomain,
   user: string,
 ): Promise<ModelReply> {
   const content = await runModel(
     admin,
-    modelRequest(systemPrompt(language), user, answerFormat(language)),
+    modelRequest(systemPrompt(language, domain), user, answerFormat(language)),
     answerWaitMs,
   );
 
@@ -197,6 +206,10 @@ async function callModel(
       throw new Error(`unexpected reply type ${parsed.type}`);
     }
     if (language === 'vi') parsed.answer = withVietnameseNames(parsed.answer);
+    // Câu sức khoẻ mà tài liệu không nói tới: chỉ cho người hỏi tới nhóm chăm
+    // sóc thay vì "chưa có thông tin". Thử trên model, câu về số đo của chính
+    // người hỏi ("huyết áp tôi 150/95 có sao không?") hay rơi vào not_found.
+    if (isHealthDomain(domain) && parsed.type === 'not_found') parsed.type = 'medical_redirect';
     return parsed;
   } catch (error) {
     throw new ModelError('error', `Invalid model reply: ${error}`);
@@ -205,19 +218,27 @@ async function callModel(
 
 let shelfCache: { at: number; chunks: Chunk[] } | null = null;
 
-// Cả kệ, theo thứ tự đã nạp (giống data/shelf.json của bộ thử). Cùng thứ tự thì
-// phần đầu prompt giống hệt nhau giữa các câu hỏi.
+// Cả kệ, theo thứ tự đã nạp, mỗi đoạn mang lĩnh vực của tài liệu. Mỗi câu hỏi
+// chỉ gửi đoạn của lĩnh vực hợp nhất (ask_domains.ts); cùng lĩnh vực thì phần
+// đầu prompt giống hệt nhau giữa các câu hỏi.
 async function loadShelf(admin: SupabaseClient): Promise<Chunk[]> {
   if (shelfCache && Date.now() - shelfCache.at < shelfCacheMs) return shelfCache.chunks;
   const { data, error } = await admin
     .from('ai_chunks')
-    .select('chunk_key, heading, content, ai_documents(slug, title)')
+    .select('chunk_key, heading, content, ai_documents(slug, title, domain)')
     .order('id');
   if (error) throw new Error(`Shelf lookup failed: ${error.message}`);
   const chunks = (data ?? []).map((row) => {
-    const document = row.ai_documents as unknown as { slug: string; title: string };
+    const document = row.ai_documents as unknown as {
+      slug: string;
+      title: string;
+      domain: string;
+    };
     return {
       id: `${document.slug}#${row.chunk_key}`,
+      domain: (askDomains as string[]).includes(document.domain)
+        ? document.domain as AskDomain
+        : 'app' as const,
       document_title: document.title,
       heading: row.heading,
       content: row.content,
@@ -293,6 +314,8 @@ Deno.serve(async (request) => {
     }
   }
 
+  // Lĩnh vực của câu hỏi (biên bản họp, mục 3); ghi vào nhật ký.
+  let domain: AskDomain | null = null;
   const log = async (
     resultType: string,
     answer: string,
@@ -308,6 +331,7 @@ Deno.serve(async (request) => {
       result_type: resultType,
       answer: answer.slice(0, 4000),
       sources,
+      domain,
       model: Deno.env.get('MODEL_NAME') ?? 'gpt-oss:20b',
       latency_ms: Date.now() - started,
     });
@@ -326,11 +350,14 @@ Deno.serve(async (request) => {
     return json(200, { type: 'busy', answer: queueFullMessage, sources: [] });
   }
 
-  // Bước 3–4: cả kệ đi kèm câu hỏi. Kệ quá dài thì Ollama sẽ lặng lẽ cắt mất
-  // lời dặn, nên dừng hẳn ở đây.
+  // Bước 3–4: tài liệu của lĩnh vực hợp nhất đi kèm câu hỏi, cùng lĩnh vực
+  // bằng điểm nếu còn vừa. Quá dài thì Ollama sẽ lặng lẽ cắt mất lời dặn, nên
+  // dừng hẳn ở đây.
   let shelf: Chunk[];
+  const domains = rankDomains(question);
+  domain = domains[0];
   try {
-    shelf = await loadShelf(admin);
+    shelf = shelfForDomains(await loadShelf(admin), domains, shelfCharacters, maxShelfCharacters);
   } catch (error) {
     await log('error', String(error).slice(0, 500), []);
     return json(200, { type: 'error', answer: '', sources: [] });
@@ -342,12 +369,14 @@ Deno.serve(async (request) => {
 
   // Bước 5–6: model xếp loại và viết câu trả lời, rồi kiểm tra.
   try {
-    const reply = await callModel(admin, language, passagesMessage(shelf, question));
+    const reply = await callModel(admin, language, domain, passagesMessage(shelf, question));
     // Nguồn chỉ được là những đoạn có thật trên kệ.
     const used = shelf.filter((chunk) => (reply.used_sources ?? []).includes(chunk.id));
     await log(reply.type, reply.answer, used.map((chunk) => chunk.id), reply.question_english);
     return json(200, {
       type: reply.type,
+      // App hiện thêm dòng nhắc "thông tin chung, không phải chẩn đoán".
+      domain,
       answer: shownAnswer(reply),
       // Câu tiếng Việt: lần hỏi phụ đọc bản dịch của chính model, đáng tin hơn.
       also_asked: reply.type === 'medical_redirect' &&

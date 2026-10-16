@@ -981,11 +981,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get askTitle => 'Ask EmbraceAI';
 
   @override
-  String get askIntroTitle => 'Ask about the exercises or the app';
+  String get askIntroTitle =>
+      'Ask about the app, your wellbeing or healthy living';
 
   @override
   String get askIntroBody =>
-      'Answers come only from the study materials. For anything about your health, medicines or test results, please ask your care team. Please don\'t include your name or other personal details.';
+      'Answers come only from the study materials and give general information, not a diagnosis. For your own symptoms, medicines or test results, please ask your care team. Please don\'t include your name or other personal details.';
 
   @override
   String get askTryAsking => 'Try asking';
@@ -1761,4 +1762,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get prepErrorBody =>
       'You can save it in your own words, edit it first, or try again.';
+
+  @override
+  String get askExampleSalt => 'How can I eat less salt?';
+
+  @override
+  String get askHealthNote =>
+      'General information only, not a diagnosis or medical advice. Talk to your care team about your own situation.';
 }

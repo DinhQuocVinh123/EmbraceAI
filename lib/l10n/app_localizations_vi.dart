@@ -972,11 +972,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get askTitle => 'Hỏi EmbraceAI';
 
   @override
-  String get askIntroTitle => 'Hỏi về bài tập hoặc về app';
+  String get askIntroTitle =>
+      'Hỏi về app, sức khoẻ tinh thần hay lối sống lành mạnh';
 
   @override
   String get askIntroBody =>
-      'Câu trả lời chỉ lấy từ tài liệu của nghiên cứu. Mọi điều về sức khoẻ, thuốc men hay kết quả xét nghiệm, hãy hỏi nhóm chăm sóc của bạn. Vui lòng không ghi tên hay thông tin cá nhân khác.';
+      'Câu trả lời chỉ lấy từ tài liệu của nghiên cứu và là thông tin chung, không phải chẩn đoán. Về triệu chứng, thuốc men hay kết quả xét nghiệm của riêng bạn, hãy hỏi nhóm chăm sóc. Vui lòng không ghi tên hay thông tin cá nhân khác.';
 
   @override
   String get askTryAsking => 'Thử hỏi';
@@ -1751,4 +1752,11 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String get prepErrorBody =>
       'Bạn có thể lưu bằng lời của mình, sửa lại trước, hoặc thử lại.';
+
+  @override
+  String get askExampleSalt => 'Làm sao để ăn bớt muối?';
+
+  @override
+  String get askHealthNote =>
+      'Đây chỉ là thông tin chung, không phải chẩn đoán hay lời khuyên y tế. Hãy trao đổi với nhóm chăm sóc về tình trạng của riêng bạn.';
 }

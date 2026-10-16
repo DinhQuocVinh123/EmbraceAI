@@ -32,19 +32,23 @@ const { access_token: token } = await signIn.json();
 const manifest = JSON.parse(await readFile('content/manifest.json', 'utf8'));
 const files = (await readdir('content')).filter((f) => f.endsWith('.md'));
 
-// ask-embrace gửi cả kệ trong mỗi câu hỏi. Kệ không vừa một prompt thì mọi câu
-// hỏi sẽ báo lỗi, nên không đưa lên, và phải quay lại bước tìm đoạn.
+// ask-embrace gửi tài liệu của một lĩnh vực trong mỗi câu hỏi (ask_domains.ts).
+// Một lĩnh vực không vừa một prompt thì câu hỏi thuộc lĩnh vực đó sẽ báo lỗi,
+// nên không đưa lên: tách tài liệu đó sang lĩnh vực khác hoặc rút gọn lại.
 const shelf = [];
 for (const file of files) {
   const slug = file.replace(/\.md$/, '');
   if (!manifest[slug]) continue;
   for (const c of chunkMarkdown(await readFile(`content/${file}`, 'utf8'), slug)) {
-    shelf.push({ id: c.id, content: c.text });
+    shelf.push({ id: c.id, content: c.text, domain: manifest[slug].domain ?? 'app' });
   }
 }
-if (shelfCharacters(shelf) > maxShelfCharacters) {
-  console.error(`The shelf would have ${shelfCharacters(shelf)} characters; at most ${maxShelfCharacters} fit in one prompt.`);
-  process.exit(1);
+for (const domain of new Set(shelf.map((passage) => passage.domain))) {
+  const size = shelfCharacters(shelf.filter((passage) => passage.domain === domain));
+  if (size > maxShelfCharacters) {
+    console.error(`The ${domain} documents would have ${size} characters; at most ${maxShelfCharacters} fit in one prompt.`);
+    process.exit(1);
+  }
 }
 
 for (const file of files) {

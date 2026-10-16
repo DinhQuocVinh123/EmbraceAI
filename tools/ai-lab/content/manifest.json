@@ -1,6 +1,25 @@
 {
   "user-guide": {
     "title": "EmbraceAI Prototype User Guide (participant sections)",
-    "version": "2026-09-29"
+    "version": "2026-09-29",
+    "domain": "app"
+  },
+  "health-conditions": {
+    "title": "Living with a heart condition: symptoms and when to get help",
+    "version": "2026-10-16-draft",
+    "domain": "health",
+    "status": "Draft written for the prototype. Must be reviewed by the clinical team before real participants use it."
+  },
+  "emotional-wellbeing": {
+    "title": "Feelings and emotional wellbeing",
+    "version": "2026-10-16-draft",
+    "domain": "wellbeing",
+    "status": "Draft written for the prototype. Must be reviewed by the research and clinical team before real participants use it."
+  },
+  "healthy-living": {
+    "title": "Healthy living and self-care",
+    "version": "2026-10-16-draft",
+    "domain": "lifestyle",
+    "status": "Draft written for the prototype. Must be reviewed by the clinical team before real participants use it. Salt and activity figures: World Health Organization guidance."
   }
 }

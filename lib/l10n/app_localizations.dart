@@ -1817,13 +1817,13 @@ abstract class AppLocalizations {
   /// No description provided for @askIntroTitle.
   ///
   /// In en, this message translates to:
-  /// **'Ask about the exercises or the app'**
+  /// **'Ask about the app, your wellbeing or healthy living'**
   String get askIntroTitle;
 
   /// RESEARCH TEXT: the Vietnamese is a draft that the study team must approve before use with participants.
   ///
   /// In en, this message translates to:
-  /// **'Answers come only from the study materials. For anything about your health, medicines or test results, please ask your care team. Please don\'t include your name or other personal details.'**
+  /// **'Answers come only from the study materials and give general information, not a diagnosis. For your own symptoms, medicines or test results, please ask your care team. Please don\'t include your name or other personal details.'**
   String get askIntroBody;
 
   /// No description provided for @askTryAsking.
@@ -3181,6 +3181,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You can save it in your own words, edit it first, or try again.'**
   String get prepErrorBody;
+
+  /// No description provided for @askExampleSalt.
+  ///
+  /// In en, this message translates to:
+  /// **'How can I eat less salt?'**
+  String get askExampleSalt;
+
+  /// No description provided for @askHealthNote.
+  ///
+  /// In en, this message translates to:
+  /// **'General information only, not a diagnosis or medical advice. Talk to your care team about your own situation.'**
+  String get askHealthNote;
 }
 
 class _AppLocalizationsDelegate

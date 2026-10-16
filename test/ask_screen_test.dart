@@ -109,6 +109,52 @@ void main() {
     expect(answer.alsoAsked, isFalse);
   });
 
+  test(
+    'only answers about health topics carry the general-information note',
+    () {
+      for (final domain in ['health', 'wellbeing', 'lifestyle']) {
+        expect(
+          AskResult.fromJson({'type': 'answer', 'domain': domain}).healthTopic,
+          isTrue,
+          reason: domain,
+        );
+      }
+      expect(
+        AskResult.fromJson({'type': 'answer', 'domain': 'app'}).healthTopic,
+        isFalse,
+      );
+      expect(AskResult.fromJson({'type': 'answer'}).healthTopic, isFalse);
+    },
+  );
+
+  testWidgets('a health answer carries a fixed general-information note', (
+    tester,
+  ) async {
+    final service = FakeAskService({
+      'How can I eat less salt?': const AskResult(
+        type: AskResultType.answer,
+        answer: 'Cook with herbs and spices instead of salt.',
+        healthTopic: true,
+      ),
+      'How long does a session take?': _answer,
+    });
+    await _pumpAsk(tester, service);
+
+    await tester.tap(find.text('How can I eat less salt?'));
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining('General information only, not a diagnosis'),
+      findsOneWidget,
+    );
+
+    await _ask(tester, 'How long does a session take?');
+    // Câu về app không có dòng nhắc: chỉ một dòng, của câu muối.
+    expect(
+      find.textContaining('General information only, not a diagnosis'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('an answer shows its sources and the AI label', (tester) async {
     final service = FakeAskService({'How long does a session take?': _answer});
     await _pumpAsk(tester, service);
@@ -330,7 +376,10 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(entry);
       await tester.pumpAndSettle();
-      expect(find.text('Ask about the exercises or the app'), findsOneWidget);
+      expect(
+        find.text('Ask about the app, your wellbeing or healthy living'),
+        findsOneWidget,
+      );
     });
   });
 }

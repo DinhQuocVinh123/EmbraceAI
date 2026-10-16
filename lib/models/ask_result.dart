@@ -1,5 +1,5 @@
 /// Kết quả một lần hỏi Ask EmbraceAI, theo đúng hợp đồng với Edge Function
-/// `ask-embrace`: `{type, answer, also_asked, sources: [{title, heading}]}`.
+/// `ask-embrace`: `{type, domain, answer, also_asked, sources: [{title, heading}]}`.
 enum AskResultType {
   answer('answer'),
   medicalRedirect('medical_redirect'),
@@ -43,6 +43,7 @@ class AskResult {
     this.answer = '',
     this.sources = const [],
     this.alsoAsked = false,
+    this.healthTopic = false,
   });
 
   static const busy = AskResult(type: AskResultType.busy);
@@ -57,6 +58,10 @@ class AskResult {
   /// Câu hỏi y tế có kèm một ý khác: app nhắc hỏi riêng phần đó, vì không bao
   /// giờ hiện chữ do model viết cho câu y tế.
   final bool alsoAsked;
+
+  /// Câu hỏi thuộc một lĩnh vực sức khoẻ (biên bản họp, mục 3): app hiện thêm
+  /// dòng nhắc cố định "thông tin chung, không phải chẩn đoán".
+  final bool healthTopic;
 
   /// Chỉ ba loại này mang chữ do model viết, nên chỉ chúng mang nhãn AI.
   bool get writtenByAi =>
@@ -82,6 +87,11 @@ class AskResult {
       sources: sources,
       alsoAsked:
           type == AskResultType.medicalRedirect && json['also_asked'] == true,
+      healthTopic: const {
+        'health',
+        'wellbeing',
+        'lifestyle',
+      }.contains(json['domain']),
     );
   }
 }

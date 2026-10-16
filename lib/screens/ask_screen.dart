@@ -140,6 +140,7 @@ class _AskScreenState extends State<AskScreen> {
                         ? [
                             context.l10n.askExampleLength,
                             context.l10n.askExampleCaptions,
+                            context.l10n.askExampleSalt,
                             context.l10n.askExampleJournal,
                           ]
                         : const [],
@@ -473,6 +474,30 @@ class _ResultCard extends StatelessWidget {
                   icon: const Icon(Icons.bookmark_add_outlined),
                   label: Text(l10n.askSaveForAppointment),
                 ),
+            ],
+            // Dòng nhắc cố định, không phải chữ của model.
+            if (result.type == AskResultType.answer && result.healthTopic) ...[
+              Gap.m,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 20,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  Gap.s,
+                  Expanded(
+                    child: Text(
+                      l10n.askHealthNote,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ],
             if (result.sources.isNotEmpty) ...[
               Gap.m,

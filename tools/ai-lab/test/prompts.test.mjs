@@ -13,6 +13,7 @@ import {
   vietnameseUiNames,
   withVietnameseNames,
 } from '../../../supabase/functions/_shared/ask_prompts.ts';
+import { routeQuestion, shelfForDomains } from '../../../supabase/functions/_shared/ask_domains.ts';
 import { chunkMarkdown } from '../shelf.mjs';
 
 const arb = async (name) =>
@@ -55,16 +56,55 @@ test('English screen names left in a Vietnamese answer are replaced', () => {
   assert.equal(withVietnameseNames('Bạn có thể pause video.'), 'Bạn có thể pause video.');
 });
 
-test('the whole shelf fits in one prompt', async () => {
-  // Cắt đoạn từ tài liệu gốc, đúng như upload.mjs đưa lên kệ.
+test('every domain fits in one prompt', async () => {
+  // Cắt đoạn từ tài liệu gốc, đúng như upload.mjs đưa lên kệ; mỗi câu hỏi chỉ
+  // gửi tài liệu của một lĩnh vực (ask_domains.ts).
   const content = new URL('../content/', import.meta.url);
   const manifest = JSON.parse(await readFile(new URL('manifest.json', content), 'utf8'));
-  const shelf = [];
-  for (const slug of Object.keys(manifest)) {
+  const byDomain = {};
+  for (const [slug, meta] of Object.entries(manifest)) {
+    assert.ok(['app', 'health', 'wellbeing', 'lifestyle'].includes(meta.domain), slug);
     for (const chunk of chunkMarkdown(await readFile(new URL(`${slug}.md`, content), 'utf8'), slug)) {
-      shelf.push({ id: chunk.id, content: chunk.text });
+      (byDomain[meta.domain] ??= []).push({ id: chunk.id, content: chunk.text });
     }
   }
-  assert.ok(shelf.length > 0);
-  assert.ok(shelfCharacters(shelf) <= maxShelfCharacters, `${shelfCharacters(shelf)} characters`);
+  assert.deepEqual(Object.keys(byDomain).sort(), ['app', 'health', 'lifestyle', 'wellbeing']);
+  for (const [domain, passages] of Object.entries(byDomain)) {
+    assert.ok(
+      shelfCharacters(passages) <= maxShelfCharacters,
+      `${domain}: ${shelfCharacters(passages)} characters`,
+    );
+  }
+});
+
+test('questions go to the domain whose documents answer them', () => {
+  const cases = {
+    'How do I turn on captions?': 'app',
+    'Làm sao để bật phụ đề?': 'app',
+    'Đường link đăng nhập hết hạn': 'app',
+    'My ankles are swollen in the evening': 'health',
+    'I get out of breath walking up stairs': 'health',
+    'Tôi quên uống thuốc thì sao?': 'health',
+    'toi bi kho tho khi leo cau thang': 'health',
+    'I feel so worried and cannot sleep': 'wellbeing',
+    'Tôi thấy lo lắng và khó ngủ': 'wellbeing',
+    'How much salt can I eat?': 'lifestyle',
+    'Tôi có nên tập thể dục không?': 'lifestyle',
+    'I feel fatigue': 'health',
+  };
+  for (const [question, domain] of Object.entries(cases)) {
+    assert.equal(routeQuestion(question), domain, question);
+  }
+});
+
+test('an equal second domain is added only while the prompt still fits', () => {
+  const passages = [
+    { domain: 'health', content: 'a'.repeat(60) },
+    { domain: 'wellbeing', content: 'b'.repeat(30) },
+    { domain: 'app', content: 'c'.repeat(30) },
+  ];
+  const size = (list) => list.reduce((n, p) => n + p.content.length, 0);
+  assert.equal(shelfForDomains(passages, ['health', 'wellbeing'], size, 100).length, 2);
+  assert.equal(shelfForDomains(passages, ['health', 'wellbeing'], size, 80).length, 1);
+  assert.equal(shelfForDomains(passages, ['app'], size, 100)[0].domain, 'app');
 });

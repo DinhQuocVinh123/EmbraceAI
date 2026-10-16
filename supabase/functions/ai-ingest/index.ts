@@ -83,10 +83,13 @@ Deno.serve(async (request) => {
   const slug = String(document.slug ?? '');
   const title = String(document.title ?? '').trim();
   const version = String(document.version ?? '').trim();
+  // Lĩnh vực của tài liệu (content/manifest.json); thiếu thì là hướng dẫn app.
+  const domain = String(document.domain ?? 'app');
   const chunks = Array.isArray(body.chunks) ? body.chunks : [];
   if (
     !slugPattern.test(slug) || !title || title.length > 200 ||
     !version || version.length > 40 ||
+    !['app', 'health', 'wellbeing', 'lifestyle'].includes(domain) ||
     chunks.length < 1 || chunks.length > maxChunksPerCall ||
     !chunks.every(validChunk)
   ) {
@@ -96,7 +99,7 @@ Deno.serve(async (request) => {
   const { data: doc, error: docError } = await admin
     .from('ai_documents')
     .upsert(
-      { slug, title, version, updated_at: new Date().toISOString() },
+      { slug, title, version, domain, updated_at: new Date().toISOString() },
       { onConflict: 'slug' },
     )
     .select('id')

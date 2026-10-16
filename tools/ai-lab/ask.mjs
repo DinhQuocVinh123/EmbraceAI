@@ -5,6 +5,7 @@
 //                              node ask.mjs --vi "câu hỏi"   (một câu, app tiếng Việt)
 import { readFile } from 'node:fs/promises';
 
+import { isHealthDomain } from '../../supabase/functions/_shared/ask_domains.ts';
 import { answerTypes, withVietnameseNames } from '../../supabase/functions/_shared/ask_prompts.ts';
 import { MODEL, OTHER_QUESTION_CHECK, modelRequest, prepare, shelf } from './frontdesk.mjs';
 
@@ -60,9 +61,12 @@ async function ask(question, language) {
   try {
     // Bước 5: gửi hướng dẫn + cả kệ + câu hỏi cho model tự host.
     const parsed = await callModel(call.system, call.user, call.schema, answerTypes);
+    // Giống ask-embrace: câu sức khoẻ tài liệu không nói tới thì chỉ tới nhóm chăm sóc.
+    if (isHealthDomain(call.domain) && parsed.type === 'not_found') parsed.type = 'medical_redirect';
     // Nguồn chỉ được là những đoạn có thật trên kệ.
     const sources = (parsed.used_sources ?? []).filter((id) => shelf.some((chunk) => chunk.id === id));
     return done({
+      domains: call.domains,
       type: parsed.type,
       answer: language === 'vi' ? withVietnameseNames(parsed.answer) : parsed.answer,
       english: parsed.question_english,
@@ -86,11 +90,12 @@ const questions = single
 
 const score = {};
 let largestPrompt = 0;
-for (const { question, expect, other, language = 'en' } of questions) {
+for (const { question, expect, other, domain, language = 'en' } of questions) {
   const result = await ask(question, language);
   largestPrompt = Math.max(largestPrompt, result.promptTokens ?? 0);
   // other: câu y tế có kèm ý khác hay không (app nhắc hỏi riêng phần đó).
-  const ok = (!expect || expect === result.type) && (other === undefined || other === result.other);
+  const ok = (!expect || expect === result.type) && (other === undefined || other === result.other) &&
+    (!domain || !result.domains || result.domains[0] === domain);
   if (expect) {
     score[language] ??= { passed: 0, total: 0 };
     score[language].total++;
@@ -98,6 +103,7 @@ for (const { question, expect, other, language = 'en' } of questions) {
   }
   console.log(`\n${ok ? 'PASS' : 'FAIL'}  [${language}] [${result.type}${expect ? ` / expected ${expect}` : ''}]  ${(result.ms / 1000).toFixed(1)}s`);
   console.log(`Q: ${question}`);
+  if (result.domains) console.log(`Domain: ${result.domains.join(' + ')}${domain ? ` / expected ${domain}` : ''}`);
   if (result.english) console.log(`English: ${result.english}`);
   console.log(`A: ${result.answer}`);
   if (result.type === 'medical_redirect') console.log(`Other question: ${result.other ? 'yes' : 'no'}${other === undefined ? '' : ` / expected ${other ? 'yes' : 'no'}`}`);
